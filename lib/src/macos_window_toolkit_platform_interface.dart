@@ -38,4 +38,66 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   Future<List<Map<String, dynamic>>> getAllWindows() {
     throw UnimplementedError('getAllWindows() has not been implemented.');
   }
+
+  /// Checks if the app has screen recording permission.
+  /// 
+  /// Returns `true` if the app has been granted screen recording permission,
+  /// `false` otherwise. On macOS versions prior to 10.15 (Catalina), this
+  /// always returns `true` as screen recording permission is not required.
+  /// 
+  /// This is useful for checking permission status before calling [getAllWindows]
+  /// to determine if window names will be available.
+  Future<bool> hasScreenRecordingPermission() {
+    throw UnimplementedError('hasScreenRecordingPermission() has not been implemented.');
+  }
+
+  /// Requests screen recording permission from the user.
+  /// 
+  /// Shows a system dialog asking for screen recording permission. If the user
+  /// clicks "Open System Preferences", they will be taken directly to the
+  /// Screen Recording section of Privacy settings.
+  /// 
+  /// Returns `true` if permission is granted, `false` if denied.
+  /// 
+  /// Note: The system dialog will only appear once per app session. If the user
+  /// has already seen and dismissed the dialog, subsequent calls will not show
+  /// the dialog again until the app is restarted.
+  /// 
+  /// On macOS versions prior to 10.15 (Catalina), this always returns `true`
+  /// as screen recording permission is not required.
+  Future<bool> requestScreenRecordingPermission() {
+    throw UnimplementedError('requestScreenRecordingPermission() has not been implemented.');
+  }
+
+  /// Opens the Screen Recording section in System Preferences.
+  /// 
+  /// This method will attempt to open the specific Screen Recording settings page.
+  /// If that fails, it will fall back to opening the general Privacy & Security
+  /// settings, and as a last resort, it will open System Preferences.
+  /// 
+  /// Returns `true` if System Preferences was opened successfully, `false` otherwise.
+  /// 
+  /// This is useful when the system permission dialog doesn't appear (e.g., when
+  /// the user has already denied permission once) and you need to guide users
+  /// to manually enable the permission.
+  /// 
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  /// final hasPermission = await toolkit.hasScreenRecordingPermission();
+  /// 
+  /// if (!hasPermission) {
+  ///   final granted = await toolkit.requestScreenRecordingPermission();
+  ///   if (!granted) {
+  ///     // System dialog didn't appear or was denied
+  ///     final opened = await toolkit.openScreenRecordingSettings();
+  ///     if (opened) {
+  ///       // Show user guidance message
+  ///     }
+  ///   }
+  /// }
+  /// ```
+  Future<bool> openScreenRecordingSettings() {
+    throw UnimplementedError('openScreenRecordingSettings() has not been implemented.');
+  }
 }

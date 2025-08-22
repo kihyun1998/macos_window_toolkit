@@ -15,6 +15,12 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     switch call.method {
     case "getAllWindows":
       getAllWindows(result: result)
+    case "hasScreenRecordingPermission":
+      hasScreenRecordingPermission(result: result)
+    case "requestScreenRecordingPermission":
+      requestScreenRecordingPermission(result: result)
+    case "openScreenRecordingSettings":
+      openScreenRecordingSettings(result: result)
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -34,5 +40,23 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
           message: error.localizedDescription,
           details: nil))
     }
+  }
+
+  /// Checks if the app has screen recording permission
+  private func hasScreenRecordingPermission(result: @escaping FlutterResult) {
+    let hasPermission = windowHandler.hasScreenRecordingPermission()
+    result(hasPermission)
+  }
+
+  /// Requests screen recording permission
+  private func requestScreenRecordingPermission(result: @escaping FlutterResult) {
+    let granted = windowHandler.requestScreenRecordingPermission()
+    result(granted)
+  }
+
+  /// Opens screen recording settings in System Preferences
+  private func openScreenRecordingSettings(result: @escaping FlutterResult) {
+    let success = windowHandler.openScreenRecordingSettings()
+    result(success)
   }
 }

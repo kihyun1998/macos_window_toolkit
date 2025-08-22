@@ -17,4 +17,22 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
     }
     return result.map((item) => Map<String, dynamic>.from(item as Map)).toList();
   }
+
+  @override
+  Future<bool> hasScreenRecordingPermission() async {
+    final result = await methodChannel.invokeMethod<bool>('hasScreenRecordingPermission');
+    return result ?? false;
+  }
+
+  @override
+  Future<bool> requestScreenRecordingPermission() async {
+    final result = await methodChannel.invokeMethod<bool>('requestScreenRecordingPermission');
+    return result ?? false;
+  }
+
+  @override
+  Future<bool> openScreenRecordingSettings() async {
+    final result = await methodChannel.invokeMethod<bool>('openScreenRecordingSettings');
+    return result ?? false;
+  }
 }
