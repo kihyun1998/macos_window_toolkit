@@ -241,6 +241,72 @@ The plugin implements comprehensive error handling:
 - Large window lists may impact performance
 - Consider pagination for applications with many windows
 
+## Flutter Development Preferences
+
+### Widget Architecture
+
+**Preferred Approach**: Use class-based widget declarations with `StatelessWidget` and `StatefulWidget` instead of function-based widgets.
+
+**✅ Preferred:**
+```dart
+class MyCustomWidget extends StatelessWidget {
+  final String title;
+  final VoidCallback onTap;
+  
+  const MyCustomWidget({
+    super.key,
+    required this.title,
+    required this.onTap,
+  });
+  
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        title: Text(title),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+```
+
+**❌ Avoid:**
+```dart
+Widget _buildCustomWidget(String title, VoidCallback onTap) {
+  return Card(
+    child: ListTile(
+      title: Text(title),
+      onTap: onTap,
+    ),
+  );
+}
+```
+
+**Reasons for class-based approach:**
+- Better performance (widget can be const and optimizes rebuilds)
+- Clearer separation of concerns
+- Better IDE support and refactoring capabilities
+- Easier testing and debugging
+- Follows Flutter best practices and conventions
+- Better widget tree visualization in Flutter Inspector
+
+### Example App Structure
+
+The example app follows a modular widget structure:
+```
+example/lib/
+├── main.dart                    # Main app and page logic
+└── widgets/
+    ├── permission_card.dart     # Permission status display
+    ├── search_controls.dart     # Search and control components
+    ├── windows_list.dart        # Window list with empty states
+    ├── window_card.dart         # Individual window display
+    └── window_detail_sheet.dart # Window details modal
+```
+
+Each widget is implemented as a proper class extending `StatelessWidget` with clear prop definitions and const constructors where possible.
+
 ## Future Development
 
 Potential enhancements:
