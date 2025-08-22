@@ -16,35 +16,31 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
+  List<Map<String, dynamic>> _windows = [];
+  bool _isLoading = false;
   final _macosWindowToolkitPlugin = MacosWindowToolkit();
 
-  @override
-  void initState() {
-    super.initState();
-    initPlatformState();
-  }
-
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    // We also handle the message potentially returning null.
-    try {
-      platformVersion =
-          await _macosWindowToolkitPlugin.getPlatformVersion() ?? 'Unknown platform version';
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
-    }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
+  Future<void> _getAllWindows() async {
     setState(() {
-      _platformVersion = platformVersion;
+      _isLoading = true;
     });
+
+    try {
+      final windows = await _macosWindowToolkitPlugin.getAllWindows();
+      setState(() {
+        _windows = windows;
+        _isLoading = false;
+      });
+    } on PlatformException catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.message}')),
+        );
+      }
+    }
   }
 
   @override
@@ -52,10 +48,51 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: const Text('macOS Window Toolkit Demo'),
         ),
-        body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ElevatedButton(
+                onPressed: _isLoading ? null : _getAllWindows,
+                child: _isLoading 
+                    ? const CircularProgressIndicator()
+                    : const Text('Get All Windows'),
+              ),
+              const SizedBox(height: 20),
+              if (_windows.isNotEmpty) ...[
+                Text('Found ${_windows.length} windows:'),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: _windows.length,
+                    itemBuilder: (context, index) {
+                      final window = _windows[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        child: ListTile(
+                          title: Text(window['name']?.toString() ?? 'Untitled'),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('App: ${window['ownerName'] ?? 'Unknown'}'),
+                              Text('Window ID: ${window['windowId']}'),
+                              Text('Process ID: ${window['processId']}'),
+                              Text('Bounds: ${window['bounds']}'),
+                              Text('Layer: ${window['layer']}, On Screen: ${window['isOnScreen']}'),
+                            ],
+                          ),
+                          isThreeLine: true,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

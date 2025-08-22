@@ -10,8 +10,11 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
   final methodChannel = const MethodChannel('macos_window_toolkit');
 
   @override
-  Future<String?> getPlatformVersion() async {
-    final version = await methodChannel.invokeMethod<String>('getPlatformVersion');
-    return version;
+  Future<List<Map<String, dynamic>>> getAllWindows() async {
+    final result = await methodChannel.invokeMethod<List<dynamic>>('getAllWindows');
+    if (result == null) {
+      return [];
+    }
+    return result.map((item) => Map<String, dynamic>.from(item as Map)).toList();
   }
 }

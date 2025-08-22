@@ -23,7 +23,19 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<String?> getPlatformVersion() {
-    throw UnimplementedError('platformVersion() has not been implemented.');
+  /// Retrieves information about all windows currently open on the system.
+  /// 
+  /// Returns a list of maps containing window properties:
+  /// - `windowId`: Unique identifier for the window (int)
+  /// - `name`: Window title/name (String)
+  /// - `ownerName`: Name of the application that owns the window (String)
+  /// - `bounds`: Window position and size as [x, y, width, height] (List<double>)
+  /// - `layer`: Window layer level (int)
+  /// - `isOnScreen`: Whether the window is currently visible on screen (bool)
+  /// - `processId`: Process ID of the application that owns the window (int)
+  /// 
+  /// Throws [PlatformException] if unable to retrieve window information.
+  Future<List<Map<String, dynamic>>> getAllWindows() {
+    throw UnimplementedError('getAllWindows() has not been implemented.');
   }
 }
