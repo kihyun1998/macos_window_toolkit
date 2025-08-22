@@ -306,24 +306,26 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
             // Permission Status Card
             PermissionCard(
               hasPermission: _hasPermission,
-              onOpenSettings: _openSettings,
+              onOpenSettings: _checkPermissionAndOpenSettings,
             ),
 
             // Version Info Card
             VersionInfoCard(versionInfo: _versionInfo),
 
             // Search and Controls
-          SearchControls(
-            searchController: _searchController,
-            totalWindows: _windows.length,
-            filteredWindows: _filteredWindows.length,
-            autoRefresh: _autoRefresh,
-            onToggleAutoRefresh: _toggleAutoRefresh,
-          ),
+            SearchControls(
+              searchController: _searchController,
+              totalWindows: _windows.length,
+              filteredWindows: _filteredWindows.length,
+              autoRefresh: _autoRefresh,
+              onToggleAutoRefresh: _toggleAutoRefresh,
+            ),
 
             // Windows List
             SizedBox(
-              height: MediaQuery.of(context).size.height - 400, // Adjust based on other widgets
+              height:
+                  MediaQuery.of(context).size.height -
+                  400, // Adjust based on other widgets
               child: WindowsList(
                 isLoading: _isLoading,
                 windows: _windows,

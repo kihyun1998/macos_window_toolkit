@@ -64,18 +64,21 @@ class PermissionCard extends StatelessWidget {
               ],
             ),
           ),
-          if (!isGranted) ...[
-            const SizedBox(width: 12),
-            FilledButton.icon(
-              onPressed: onOpenSettings,
-              icon: const Icon(Icons.settings, size: 16),
-              label: const Text('Settings'),
-              style: FilledButton.styleFrom(
-                backgroundColor: colorScheme.error,
-                foregroundColor: colorScheme.onError,
-              ),
+
+          const SizedBox(width: 12),
+          FilledButton.icon(
+            onPressed: onOpenSettings,
+            icon: const Icon(Icons.settings, size: 16),
+            label: const Text('Settings'),
+            style: FilledButton.styleFrom(
+              backgroundColor: isGranted
+                  ? colorScheme.primary
+                  : colorScheme.error,
+              foregroundColor: isGranted
+                  ? colorScheme.onPrimary
+                  : colorScheme.onError,
             ),
-          ],
+          ),
         ],
       ),
     );
