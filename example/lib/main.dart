@@ -8,6 +8,7 @@ import 'widgets/capturable_windows_tab.dart';
 import 'widgets/legacy_windows_tab.dart';
 import 'widgets/permission_card.dart';
 import 'widgets/search_controls.dart';
+import 'widgets/smart_capture_tab.dart';
 import 'widgets/version_info_card.dart';
 import 'widgets/window_detail_sheet.dart';
 import 'widgets/windows_list.dart';
@@ -49,7 +50,7 @@ class MainTabView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('macOS Window Toolkit'),
@@ -59,13 +60,14 @@ class MainTabView extends StatelessWidget {
           bottom: const TabBar(
             tabs: [
               Tab(icon: Icon(Icons.window), text: 'All Windows'),
+              Tab(icon: Icon(Icons.auto_awesome), text: 'Smart Capture'),
               Tab(icon: Icon(Icons.camera_alt), text: 'ScreenCaptureKit'),
               Tab(icon: Icon(Icons.camera), text: 'Legacy Capture'),
             ],
           ),
         ),
         body: const TabBarView(
-          children: [WindowDemoPage(), CapturableWindowsTab(), LegacyWindowsTab()],
+          children: [WindowDemoPage(), SmartCaptureTab(), CapturableWindowsTab(), LegacyWindowsTab()],
         ),
       ),
     );
