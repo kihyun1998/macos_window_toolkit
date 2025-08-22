@@ -199,4 +199,46 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   Future<List<CapturableWindowInfo>> getCapturableWindows() {
     throw UnimplementedError('getCapturableWindows() has not been implemented.');
   }
+
+  /// Captures a window using CGWindowListCreateImage (legacy method).
+  /// 
+  /// Returns the captured image as bytes in PNG format.
+  /// 
+  /// [windowId] is the unique identifier of the window to capture.
+  /// 
+  /// This method uses the legacy CGWindowListCreateImage API which is available
+  /// on all macOS versions (10.5+) but may have lower quality or performance
+  /// compared to ScreenCaptureKit.
+  /// 
+  /// Throws [PlatformException] with appropriate error codes:
+  /// - `INVALID_WINDOW_ID`: Window with the specified ID was not found
+  /// - `CAPTURE_FAILED`: Window capture failed for other reasons
+  /// 
+  /// Example usage:
+  /// ```dart
+  /// try {
+  ///   final imageBytes = await toolkit.captureWindowLegacy(12345);
+  ///   // Use imageBytes to display or save the captured image
+  /// } catch (e) {
+  ///   if (e is PlatformException && e.code == 'INVALID_WINDOW_ID') {
+  ///     print('Window not found');
+  ///   }
+  /// }
+  /// ```
+  Future<Uint8List> captureWindowLegacy(int windowId) {
+    throw UnimplementedError('captureWindowLegacy() has not been implemented.');
+  }
+
+  /// Gets list of capturable windows using CGWindowListCopyWindowInfo (legacy method).
+  /// 
+  /// Returns a list of [CapturableWindowInfo] objects using the legacy
+  /// CGWindowListCopyWindowInfo API. This method is available on all macOS
+  /// versions but may provide different window information compared to
+  /// ScreenCaptureKit.
+  /// 
+  /// This method always succeeds and does not throw exceptions. Empty list
+  /// is returned if no windows are found.
+  Future<List<CapturableWindowInfo>> getCapturableWindowsLegacy() {
+    throw UnimplementedError('getCapturableWindowsLegacy() has not been implemented.');
+  }
 }

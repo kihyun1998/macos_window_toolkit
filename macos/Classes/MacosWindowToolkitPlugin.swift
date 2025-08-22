@@ -36,6 +36,10 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       captureWindow(call: call, result: result)
     case "getCapturableWindows":
       getCapturableWindows(result: result)
+    case "captureWindowLegacy":
+      captureWindowLegacy(call: call, result: result)
+    case "getCapturableWindowsLegacy":
+      getCapturableWindowsLegacy(result: result)
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -204,6 +208,40 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
         message: "macOS version does not support ScreenCaptureKit",
         details: "Current version: \(ProcessInfo.processInfo.operatingSystemVersionString), Required: 12.3+"))
     }
+  }
+
+  /// Captures a window using CGWindowListCreateImage (legacy method)
+  private func captureWindowLegacy(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let arguments = call.arguments as? [String: Any],
+          let windowId = arguments["windowId"] as? Int else {
+      result(FlutterError(
+        code: "INVALID_ARGUMENTS",
+        message: "WindowId parameter is required",
+        details: nil))
+      return
+    }
+
+    do {
+      let imageData = try LegacyCaptureHandler.captureWindow(windowId: windowId)
+      result(FlutterStandardTypedData(bytes: imageData))
+    } catch let error as LegacyCaptureHandler.LegacyCaptureError {
+      let errorInfo = LegacyCaptureHandler.handleLegacyCaptureError(error)
+      result(FlutterError(
+        code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
+        message: errorInfo["message"] as? String ?? "Unknown error",
+        details: errorInfo["details"]))
+    } catch {
+      result(FlutterError(
+        code: "CAPTURE_FAILED",
+        message: "Unexpected error occurred",
+        details: error.localizedDescription))
+    }
+  }
+
+  /// Gets list of capturable windows using CGWindowListCopyWindowInfo (legacy method)
+  private func getCapturableWindowsLegacy(result: @escaping FlutterResult) {
+    let windows = LegacyCaptureHandler.getCapturableWindows()
+    result(windows)
   }
 
   /// Helper method to handle window operation results

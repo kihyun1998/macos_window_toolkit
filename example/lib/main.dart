@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:macos_window_toolkit/macos_window_toolkit.dart';
 
 import 'widgets/capturable_windows_tab.dart';
+import 'widgets/legacy_windows_tab.dart';
 import 'widgets/permission_card.dart';
 import 'widgets/search_controls.dart';
 import 'widgets/version_info_card.dart';
@@ -48,7 +49,7 @@ class MainTabView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('macOS Window Toolkit'),
@@ -58,12 +59,13 @@ class MainTabView extends StatelessWidget {
           bottom: const TabBar(
             tabs: [
               Tab(icon: Icon(Icons.window), text: 'All Windows'),
-              Tab(icon: Icon(Icons.camera_alt), text: 'Capturable Windows'),
+              Tab(icon: Icon(Icons.camera_alt), text: 'ScreenCaptureKit'),
+              Tab(icon: Icon(Icons.camera), text: 'Legacy Capture'),
             ],
           ),
         ),
         body: const TabBarView(
-          children: [WindowDemoPage(), CapturableWindowsTab()],
+          children: [WindowDemoPage(), CapturableWindowsTab(), LegacyWindowsTab()],
         ),
       ),
     );

@@ -123,4 +123,32 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
         .map((map) => CapturableWindowInfo.fromMap(map))
         .toList();
   }
+
+  @override
+  Future<Uint8List> captureWindowLegacy(int windowId) async {
+    final result = await methodChannel.invokeMethod<Uint8List>(
+      'captureWindowLegacy',
+      {'windowId': windowId},
+    );
+    if (result == null) {
+      throw PlatformException(
+        code: 'CAPTURE_FAILED',
+        message: 'Failed to capture window - no data returned',
+        details: null,
+      );
+    }
+    return result;
+  }
+
+  @override
+  Future<List<CapturableWindowInfo>> getCapturableWindowsLegacy() async {
+    final result = await methodChannel.invokeMethod<List<dynamic>>('getCapturableWindowsLegacy');
+    if (result == null) {
+      return [];
+    }
+    return result
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .map((map) => CapturableWindowInfo.fromMap(map))
+        .toList();
+  }
 }

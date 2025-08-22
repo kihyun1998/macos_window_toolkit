@@ -319,4 +319,68 @@ class MacosWindowToolkit {
   Future<List<CapturableWindowInfo>> getCapturableWindows() async {
     return await MacosWindowToolkitPlatform.instance.getCapturableWindows();
   }
+
+  /// Captures a window using CGWindowListCreateImage (legacy method).
+  /// 
+  /// Returns the captured image as bytes in PNG format.
+  /// 
+  /// [windowId] is the unique identifier of the window to capture, which can be
+  /// obtained from [getAllWindows], [getWindowById], or [getCapturableWindowsLegacy].
+  /// 
+  /// This method uses the legacy CGWindowListCreateImage API which is available
+  /// on all macOS versions (10.5+) but may have lower quality or performance
+  /// compared to ScreenCaptureKit. Use this method when you need compatibility
+  /// with older macOS versions or when ScreenCaptureKit is not available.
+  /// 
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  /// 
+  /// try {
+  ///   final imageBytes = await toolkit.captureWindowLegacy(12345);
+  ///   // Convert bytes to image and display
+  ///   final image = Image.memory(imageBytes);
+  /// } catch (e) {
+  ///   if (e is PlatformException && e.code == 'INVALID_WINDOW_ID') {
+  ///     print('Window not found');
+  ///   }
+  /// }
+  /// ```
+  /// 
+  /// Throws [PlatformException] with the following error codes:
+  /// - `INVALID_WINDOW_ID`: Window with the specified ID was not found or is not capturable
+  /// - `CAPTURE_NOT_SUPPORTED`: Window capture is not supported for this specific window
+  /// - `CAPTURE_FAILED`: Window capture failed due to system restrictions or other errors
+  Future<Uint8List> captureWindowLegacy(int windowId) async {
+    return await MacosWindowToolkitPlatform.instance.captureWindowLegacy(windowId);
+  }
+
+  /// Gets list of capturable windows using CGWindowListCopyWindowInfo (legacy method).
+  /// 
+  /// Returns a list of [CapturableWindowInfo] objects using the legacy
+  /// CGWindowListCopyWindowInfo API. This method is available on all macOS
+  /// versions and provides broader compatibility compared to ScreenCaptureKit.
+  /// 
+  /// Note that the window information returned by this method may differ
+  /// slightly from [getCapturableWindows] as it uses different underlying APIs.
+  /// The bundleIdentifier field will be empty as CGWindowListCopyWindowInfo
+  /// does not provide bundle information.
+  /// 
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  /// 
+  /// final capturableWindows = await toolkit.getCapturableWindowsLegacy();
+  /// for (final window in capturableWindows) {
+  ///   print('Capturable window: ${window.title} (ID: ${window.windowId})');
+  ///   print('App: ${window.ownerName}');
+  ///   print('Size: ${window.frame.width} x ${window.frame.height}');
+  /// }
+  /// ```
+  /// 
+  /// This method always succeeds and does not throw exceptions. Returns an
+  /// empty list if no windows are found.
+  Future<List<CapturableWindowInfo>> getCapturableWindowsLegacy() async {
+    return await MacosWindowToolkitPlatform.instance.getCapturableWindowsLegacy();
+  }
 }
