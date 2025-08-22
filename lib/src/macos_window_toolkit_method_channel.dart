@@ -35,4 +35,52 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
     final result = await methodChannel.invokeMethod<bool>('openScreenRecordingSettings');
     return result ?? false;
   }
+
+  @override
+  Future<List<Map<String, dynamic>>> getWindowsByName(String name) async {
+    final result = await methodChannel.invokeMethod<List<dynamic>>(
+      'getWindowsByName',
+      {'name': name},
+    );
+    if (result == null) {
+      return [];
+    }
+    return result.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getWindowsByOwnerName(String ownerName) async {
+    final result = await methodChannel.invokeMethod<List<dynamic>>(
+      'getWindowsByOwnerName',
+      {'ownerName': ownerName},
+    );
+    if (result == null) {
+      return [];
+    }
+    return result.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getWindowById(int windowId) async {
+    final result = await methodChannel.invokeMethod<List<dynamic>>(
+      'getWindowById',
+      {'windowId': windowId},
+    );
+    if (result == null) {
+      return [];
+    }
+    return result.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getWindowsByProcessId(int processId) async {
+    final result = await methodChannel.invokeMethod<List<dynamic>>(
+      'getWindowsByProcessId',
+      {'processId': processId},
+    );
+    if (result == null) {
+      return [];
+    }
+    return result.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+  }
 }

@@ -100,4 +100,46 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   Future<bool> openScreenRecordingSettings() {
     throw UnimplementedError('openScreenRecordingSettings() has not been implemented.');
   }
+
+  /// Retrieves windows filtered by name (window title).
+  /// 
+  /// Returns a list of maps containing window properties for windows whose
+  /// name/title contains the specified [name] string. The search is case-sensitive
+  /// and uses substring matching.
+  /// 
+  /// Throws [PlatformException] if unable to retrieve window information.
+  Future<List<Map<String, dynamic>>> getWindowsByName(String name) {
+    throw UnimplementedError('getWindowsByName() has not been implemented.');
+  }
+
+  /// Retrieves windows filtered by owner name (application name).
+  /// 
+  /// Returns a list of maps containing window properties for windows owned by
+  /// applications whose name contains the specified [ownerName] string.
+  /// The search is case-sensitive and uses substring matching.
+  /// 
+  /// Throws [PlatformException] if unable to retrieve window information.
+  Future<List<Map<String, dynamic>>> getWindowsByOwnerName(String ownerName) {
+    throw UnimplementedError('getWindowsByOwnerName() has not been implemented.');
+  }
+
+  /// Retrieves a specific window by its window ID.
+  /// 
+  /// Returns a list containing the window with the specified [windowId].
+  /// Returns an empty list if no window with the given ID is found.
+  /// 
+  /// Throws [PlatformException] if unable to retrieve window information.
+  Future<List<Map<String, dynamic>>> getWindowById(int windowId) {
+    throw UnimplementedError('getWindowById() has not been implemented.');
+  }
+
+  /// Retrieves windows filtered by process ID.
+  /// 
+  /// Returns a list of maps containing window properties for windows owned by
+  /// the application with the specified [processId].
+  /// 
+  /// Throws [PlatformException] if unable to retrieve window information.
+  Future<List<Map<String, dynamic>>> getWindowsByProcessId(int processId) {
+    throw UnimplementedError('getWindowsByProcessId() has not been implemented.');
+  }
 }

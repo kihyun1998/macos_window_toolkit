@@ -16,6 +16,14 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     switch call.method {
     case "getAllWindows":
       getAllWindows(result: result)
+    case "getWindowsByName":
+      getWindowsByName(call: call, result: result)
+    case "getWindowsByOwnerName":
+      getWindowsByOwnerName(call: call, result: result)
+    case "getWindowById":
+      getWindowById(call: call, result: result)
+    case "getWindowsByProcessId":
+      getWindowsByProcessId(call: call, result: result)
     case "hasScreenRecordingPermission":
       hasScreenRecordingPermission(result: result)
     case "requestScreenRecordingPermission":
@@ -59,5 +67,78 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   private func openScreenRecordingSettings(result: @escaping FlutterResult) {
     let success = permissionHandler.openScreenRecordingSettings()
     result(success)
+  }
+
+  /// Retrieves windows filtered by name (window title)
+  private func getWindowsByName(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let arguments = call.arguments as? [String: Any],
+          let name = arguments["name"] as? String else {
+      result(FlutterError(
+        code: "INVALID_ARGUMENTS",
+        message: "Name parameter is required",
+        details: nil))
+      return
+    }
+
+    let windowResult = windowHandler.getWindowsByName(name)
+    handleWindowResult(windowResult, result: result)
+  }
+
+  /// Retrieves windows filtered by owner name (application name)
+  private func getWindowsByOwnerName(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let arguments = call.arguments as? [String: Any],
+          let ownerName = arguments["ownerName"] as? String else {
+      result(FlutterError(
+        code: "INVALID_ARGUMENTS",
+        message: "OwnerName parameter is required",
+        details: nil))
+      return
+    }
+
+    let windowResult = windowHandler.getWindowsByOwnerName(ownerName)
+    handleWindowResult(windowResult, result: result)
+  }
+
+  /// Retrieves a specific window by its window ID
+  private func getWindowById(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let arguments = call.arguments as? [String: Any],
+          let windowId = arguments["windowId"] as? Int else {
+      result(FlutterError(
+        code: "INVALID_ARGUMENTS",
+        message: "WindowId parameter is required",
+        details: nil))
+      return
+    }
+
+    let windowResult = windowHandler.getWindowById(windowId)
+    handleWindowResult(windowResult, result: result)
+  }
+
+  /// Retrieves windows filtered by process ID
+  private func getWindowsByProcessId(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let arguments = call.arguments as? [String: Any],
+          let processId = arguments["processId"] as? Int else {
+      result(FlutterError(
+        code: "INVALID_ARGUMENTS",
+        message: "ProcessId parameter is required",
+        details: nil))
+      return
+    }
+
+    let windowResult = windowHandler.getWindowsByProcessId(processId)
+    handleWindowResult(windowResult, result: result)
+  }
+
+  /// Helper method to handle window operation results
+  private func handleWindowResult(_ windowResult: Result<[[String: Any]], WindowError>, result: @escaping FlutterResult) {
+    switch windowResult {
+    case .success(let windows):
+      result(windows)
+    case .failure(let error):
+      result(FlutterError(
+        code: "WINDOW_LIST_ERROR",
+        message: error.localizedDescription,
+        details: nil))
+    }
   }
 }
