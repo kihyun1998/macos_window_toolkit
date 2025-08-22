@@ -14,7 +14,7 @@ class CaptureHandler {
         case requiresMacOS14
     }
 
-    static func captureWindow(windowId: Int) async throws -> Data {
+    static func captureWindow(windowId: Int, excludeTitlebar: Bool = false) async throws -> Data {
         // macOS 버전 확인 - SCScreenshotManager는 macOS 14.0+에서만 사용 가능
         guard #available(macOS 14.0, *) else {
             throw CaptureError.requiresMacOS14
@@ -55,8 +55,39 @@ class CaptureHandler {
                 configuration: configuration
             )
 
+            // Titlebar 제외가 요청된 경우 이미지를 crop
+            let finalImage: CGImage
+            if excludeTitlebar {
+                // Get content bounds excluding titlebar
+                let contentBounds = CaptureUtil.getWindowContentBounds(
+                    windowId: windowId, 
+                    windowBounds: targetWindow.frame
+                ) ?? CGRect(
+                    x: targetWindow.frame.origin.x,
+                    y: targetWindow.frame.origin.y + 28,
+                    width: targetWindow.frame.width,
+                    height: targetWindow.frame.height - 28
+                )
+                
+                // Calculate crop rectangle (titlebar height from top)
+                let titlebarHeight = targetWindow.frame.height - contentBounds.height
+                let cropRect = CGRect(
+                    x: 0,
+                    y: titlebarHeight,
+                    width: targetWindow.frame.width,
+                    height: contentBounds.height
+                )
+                
+                guard let croppedImage = screenshot.cropping(to: cropRect) else {
+                    throw CaptureError.captureFailed("Failed to crop titlebar from image")
+                }
+                finalImage = croppedImage
+            } else {
+                finalImage = screenshot
+            }
+
             // CGImage를 PNG 데이터로 변환
-            guard let pngData = convertCGImageToPNG(screenshot) else {
+            guard let pngData = convertCGImageToPNG(finalImage) else {
                 throw CaptureError.captureFailed("Failed to convert image to PNG")
             }
 

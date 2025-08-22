@@ -161,11 +161,13 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
         details: nil))
       return
     }
+    
+    let excludeTitlebar = arguments["excludeTitlebar"] as? Bool ?? false
 
     if #available(macOS 12.3, *) {
       Task {
         do {
-          let imageData = try await CaptureHandler.captureWindow(windowId: windowId)
+          let imageData = try await CaptureHandler.captureWindow(windowId: windowId, excludeTitlebar: excludeTitlebar)
           result(FlutterStandardTypedData(bytes: imageData))
         } catch let error as CaptureHandler.CaptureError {
           let errorInfo = CaptureHandler.handleCaptureError(error)
@@ -260,11 +262,13 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
         details: nil))
       return
     }
+    
+    let excludeTitlebar = arguments["excludeTitlebar"] as? Bool ?? false
 
     if #available(macOS 10.15, *) {
       Task {
         do {
-          let imageData = try await SmartCaptureHandler.captureWindowAuto(windowId: windowId)
+          let imageData = try await SmartCaptureHandler.captureWindowAuto(windowId: windowId, excludeTitlebar: excludeTitlebar)
           result(FlutterStandardTypedData(bytes: imageData))
         } catch let error as SmartCaptureHandler.SmartCaptureError {
           let errorInfo = SmartCaptureHandler.handleSmartCaptureError(error)

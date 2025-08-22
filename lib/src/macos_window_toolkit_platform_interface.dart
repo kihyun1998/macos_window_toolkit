@@ -181,7 +181,7 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   ///   }
   /// }
   /// ```
-  Future<Uint8List> captureWindow(int windowId) {
+  Future<Uint8List> captureWindow(int windowId, {bool excludeTitlebar = false}) {
     throw UnimplementedError('captureWindow() has not been implemented.');
   }
 
@@ -272,7 +272,7 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   ///   }
   /// }
   /// ```
-  Future<Uint8List> captureWindowAuto(int windowId) {
+  Future<Uint8List> captureWindowAuto(int windowId, {bool excludeTitlebar = false}) {
     throw UnimplementedError('captureWindowAuto() has not been implemented.');
   }
 

@@ -101,6 +101,47 @@ class _LegacyWindowsTabState extends State<LegacyWindowsTab> {
             ),
           ),
 
+          // Titlebar Options (Disabled for Legacy)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Switch(
+                      value: false,
+                      onChanged: null, // Disabled
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Exclude Titlebar',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: Colors.grey,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Not available for legacy capture method. Use ScreenCaptureKit or Smart Capture for titlebar exclusion.',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 8),
+
           // Windows List
           Expanded(child: _buildWindowsList()),
         ],

@@ -49,6 +49,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
   Uint8List? _capturedImage;
   String? _captureError;
   MacosVersionInfo? _versionInfo;
+  bool _excludeTitlebar = false;
 
   @override
   void initState() {
@@ -76,6 +77,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
     try {
       final imageBytes = await _macosWindowToolkit.captureWindow(
         widget.window.windowId,
+        excludeTitlebar: _excludeTitlebar,
       );
       setState(() {
         _capturedImage = imageBytes;
@@ -198,8 +200,29 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                         ],
                       ),
                     ] else ...[
-                      Row(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Row(
+                            children: [
+                              Switch(
+                                value: _excludeTitlebar,
+                                onChanged: _isCapturing ? null : (value) {
+                                  setState(() {
+                                    _excludeTitlebar = value;
+                                  });
+                                },
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Exclude Titlebar',
+                                style: TextStyle(
+                                  color: _isCapturing ? Colors.grey : null,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
                           ElevatedButton.icon(
                             onPressed: _isCapturing ? null : _captureWindow,
                             icon: _isCapturing
@@ -215,8 +238,12 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                               _isCapturing ? 'Capturing...' : 'Capture Window',
                             ),
                           ),
-                          if (_capturedImage != null) ...[
-                            const SizedBox(width: 12),
+                        ],
+                      ),
+                      if (_capturedImage != null) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
                             Icon(
                               Icons.check_circle,
                               color: Colors.green,
@@ -232,8 +259,8 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                               ),
                             ),
                           ],
-                        ],
-                      ),
+                        ),
+                      ],
 
                       if (_captureError != null) ...[
                         const SizedBox(height: 8),

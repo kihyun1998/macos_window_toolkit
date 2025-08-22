@@ -97,10 +97,13 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
   }
 
   @override
-  Future<Uint8List> captureWindow(int windowId) async {
+  Future<Uint8List> captureWindow(int windowId, {bool excludeTitlebar = false}) async {
     final result = await methodChannel.invokeMethod<Uint8List>(
       'captureWindow',
-      {'windowId': windowId},
+      {
+        'windowId': windowId,
+        'excludeTitlebar': excludeTitlebar,
+      },
     );
     if (result == null) {
       throw PlatformException(
@@ -153,10 +156,13 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
   }
 
   @override
-  Future<Uint8List> captureWindowAuto(int windowId) async {
+  Future<Uint8List> captureWindowAuto(int windowId, {bool excludeTitlebar = false}) async {
     final result = await methodChannel.invokeMethod<Uint8List>(
       'captureWindowAuto',
-      {'windowId': windowId},
+      {
+        'windowId': windowId,
+        'excludeTitlebar': excludeTitlebar,
+      },
     );
     if (result == null) {
       throw PlatformException(

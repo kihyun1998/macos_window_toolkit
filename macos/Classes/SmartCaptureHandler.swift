@@ -14,12 +14,12 @@ class SmartCaptureHandler {
     /// Automatically captures a window using the best available method
     /// - Uses ScreenCaptureKit on macOS 14.0+ for best quality
     /// - Falls back to CGWindowListCreateImage on older versions
-    static func captureWindowAuto(windowId: Int) async throws -> Data {
+    static func captureWindowAuto(windowId: Int, excludeTitlebar: Bool = false) async throws -> Data {
         if shouldUseScreenCaptureKit() {
             if #available(macOS 12.3, *) {
                 do {
                     // Try ScreenCaptureKit first
-                    return try await CaptureHandler.captureWindow(windowId: windowId)
+                    return try await CaptureHandler.captureWindow(windowId: windowId, excludeTitlebar: excludeTitlebar)
                 } catch {
                     // If ScreenCaptureKit fails, fall back to legacy method
                     return try LegacyCaptureHandler.captureWindow(windowId: windowId)

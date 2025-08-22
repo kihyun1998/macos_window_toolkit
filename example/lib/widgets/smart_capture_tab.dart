@@ -17,6 +17,7 @@ class _SmartCaptureTabState extends State<SmartCaptureTab> {
   Map<String, dynamic>? _captureMethodInfo;
   bool _isLoading = false;
   String? _error;
+  bool _excludeTitlebar = false;
 
   @override
   void initState() {
@@ -114,6 +115,49 @@ class _SmartCaptureTabState extends State<SmartCaptureTab> {
               ),
             ),
           ),
+
+          // Titlebar Options
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Switch(
+                      value: _excludeTitlebar,
+                      onChanged: (value) {
+                        setState(() {
+                          _excludeTitlebar = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Exclude Titlebar',
+                            style: theme.textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Capture only the content area without the window titlebar',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 8),
 
           // Windows List
           Expanded(child: _buildWindowsList()),
@@ -266,7 +310,7 @@ class _SmartCaptureTabState extends State<SmartCaptureTab> {
     final windowId = window.windowId;
 
     try {
-      final imageBytes = await _macosWindowToolkit.captureWindowAuto(windowId);
+      final imageBytes = await _macosWindowToolkit.captureWindowAuto(windowId, excludeTitlebar: _excludeTitlebar);
 
       if (mounted) {
         _showCaptureResult(window, imageBytes);
