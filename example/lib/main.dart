@@ -31,7 +31,7 @@ class WindowDemoPage extends StatefulWidget {
 }
 
 class _WindowDemoPageState extends State<WindowDemoPage> {
-  List<Map<String, dynamic>> _windows = [];
+  List<MacosWindowInfo> _windows = [];
   bool _isLoading = false;
   bool? _hasPermission;
   final _macosWindowToolkitPlugin = MacosWindowToolkit();
@@ -173,6 +173,26 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
     }
   }
 
+  String _getSharingStateText(int sharingState) {
+    switch (sharingState) {
+      case 0:
+        return 'None';
+      case 1:
+        return 'ReadOnly';
+      case 2:
+        return 'ReadWrite';
+      default:
+        return 'Unknown($sharingState)';
+    }
+  }
+
+  String _formatBytes(int bytes) {
+    if (bytes < 1024) return '${bytes}B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)}KB';
+    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)}GB';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -288,15 +308,19 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
                       return Card(
                         margin: const EdgeInsets.symmetric(vertical: 4),
                         child: ListTile(
-                          title: Text(window['name']?.toString() ?? 'Untitled'),
+                          title: Text(window.name.isEmpty ? 'Untitled' : window.name),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('App: ${window['ownerName'] ?? 'Unknown'}'),
-                              Text('Window ID: ${window['windowId']}'),
-                              Text('Process ID: ${window['processId']}'),
-                              Text('Bounds: ${window['bounds']}'),
-                              Text('Layer: ${window['layer']}, On Screen: ${window['isOnScreen']}'),
+                              Text('App: ${window.ownerName.isEmpty ? 'Unknown' : window.ownerName}'),
+                              Text('Window ID: ${window.windowId}'),
+                              Text('Process ID: ${window.processId}'),
+                              Text('Position: (${window.x.toStringAsFixed(1)}, ${window.y.toStringAsFixed(1)})'),
+                              Text('Size: ${window.width.toStringAsFixed(1)} x ${window.height.toStringAsFixed(1)}'),
+                              Text('Layer: ${window.layer}, On Screen: ${window.isOnScreen}'),
+                              if (window.alpha != null) Text('Alpha: ${window.alpha!.toStringAsFixed(2)}'),
+                              if (window.sharingState != null) Text('Sharing: ${_getSharingStateText(window.sharingState!)}'),
+                              if (window.memoryUsage != null) Text('Memory: ${_formatBytes(window.memoryUsage!)}'),
                             ],
                           ),
                           isThreeLine: true,

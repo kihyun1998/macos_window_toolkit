@@ -1,37 +1,40 @@
 library;
 
 import 'macos_window_toolkit_platform_interface.dart';
+import 'macos_window_info.dart';
 
 export 'macos_window_toolkit_method_channel.dart';
 export 'macos_window_toolkit_platform_interface.dart';
+export 'macos_window_info.dart';
 
 /// Main class for macOS Window Toolkit functionality
 class MacosWindowToolkit {
   /// Retrieves information about all windows currently open on the system.
   ///
-  /// Returns a list of maps containing window properties:
-  /// - `windowId`: Unique identifier for the window (int)
-  /// - `name`: Window title/name (String)
-  /// - `ownerName`: Name of the application that owns the window (String)
-  /// - `bounds`: Window position and size as [x, y, width, height] (`List<double>`)
-  /// - `layer`: Window layer level (int)
-  /// - `isOnScreen`: Whether the window is currently visible on screen (bool)
-  /// - `processId`: Process ID of the application that owns the window (int)
+  /// Returns a list of [MacosWindowInfo] objects containing window properties.
+  /// Each window includes basic properties like position, size, title, and
+  /// additional properties like transparency, workspace, and memory usage.
   ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
   /// final windows = await toolkit.getAllWindows();
   /// for (final window in windows) {
-  ///   print('Window: ${window['name']} (ID: ${window['windowId']})');
-  ///   print('App: ${window['ownerName']}');
-  ///   print('Bounds: ${window['bounds']}');
+  ///   print('Window: ${window.name} (ID: ${window.windowId})');
+  ///   print('App: ${window.ownerName}');
+  ///   print('Position: (${window.x}, ${window.y})');
+  ///   print('Size: ${window.width} x ${window.height}');
+  ///   if (window.alpha != null) {
+  ///     print('Transparency: ${window.alpha}');
+  ///   }
   /// }
   /// ```
   ///
   /// Throws [PlatformException] if unable to retrieve window information.
-  Future<List<Map<String, dynamic>>> getAllWindows() {
-    return MacosWindowToolkitPlatform.instance.getAllWindows();
+  Future<List<MacosWindowInfo>> getAllWindows() async {
+    final List<Map<String, dynamic>> windowMaps = 
+        await MacosWindowToolkitPlatform.instance.getAllWindows();
+    return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
   }
 
   /// Checks if the app has screen recording permission.
@@ -122,7 +125,7 @@ class MacosWindowToolkit {
 
   /// Retrieves windows filtered by name (window title).
   /// 
-  /// Returns a list of maps containing window properties for windows whose
+  /// Returns a list of [MacosWindowInfo] objects for windows whose
   /// name/title contains the specified [name] string. The search is case-sensitive
   /// and uses substring matching.
   /// 
@@ -131,18 +134,20 @@ class MacosWindowToolkit {
   /// final toolkit = MacosWindowToolkit();
   /// final chromeWindows = await toolkit.getWindowsByName('Chrome');
   /// for (final window in chromeWindows) {
-  ///   print('Found Chrome window: ${window['name']}');
+  ///   print('Found Chrome window: ${window.name}');
   /// }
   /// ```
   /// 
   /// Throws [PlatformException] if unable to retrieve window information.
-  Future<List<Map<String, dynamic>>> getWindowsByName(String name) {
-    return MacosWindowToolkitPlatform.instance.getWindowsByName(name);
+  Future<List<MacosWindowInfo>> getWindowsByName(String name) async {
+    final List<Map<String, dynamic>> windowMaps = 
+        await MacosWindowToolkitPlatform.instance.getWindowsByName(name);
+    return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
   }
 
   /// Retrieves windows filtered by owner name (application name).
   /// 
-  /// Returns a list of maps containing window properties for windows owned by
+  /// Returns a list of [MacosWindowInfo] objects for windows owned by
   /// applications whose name contains the specified [ownerName] string.
   /// The search is case-sensitive and uses substring matching.
   /// 
@@ -151,18 +156,20 @@ class MacosWindowToolkit {
   /// final toolkit = MacosWindowToolkit();
   /// final safariWindows = await toolkit.getWindowsByOwnerName('Safari');
   /// for (final window in safariWindows) {
-  ///   print('Safari window: ${window['name']}');
+  ///   print('Safari window: ${window.name}');
   /// }
   /// ```
   /// 
   /// Throws [PlatformException] if unable to retrieve window information.
-  Future<List<Map<String, dynamic>>> getWindowsByOwnerName(String ownerName) {
-    return MacosWindowToolkitPlatform.instance.getWindowsByOwnerName(ownerName);
+  Future<List<MacosWindowInfo>> getWindowsByOwnerName(String ownerName) async {
+    final List<Map<String, dynamic>> windowMaps = 
+        await MacosWindowToolkitPlatform.instance.getWindowsByOwnerName(ownerName);
+    return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
   }
 
   /// Retrieves a specific window by its window ID.
   /// 
-  /// Returns a list containing the window with the specified [windowId].
+  /// Returns a list containing the [MacosWindowInfo] with the specified [windowId].
   /// Returns an empty list if no window with the given ID is found.
   /// 
   /// Example usage:
@@ -170,20 +177,22 @@ class MacosWindowToolkit {
   /// final toolkit = MacosWindowToolkit();
   /// final windows = await toolkit.getWindowById(12345);
   /// if (windows.isNotEmpty) {
-  ///   print('Found window: ${windows.first['name']}');
+  ///   print('Found window: ${windows.first.name}');
   /// } else {
   ///   print('Window not found');
   /// }
   /// ```
   /// 
   /// Throws [PlatformException] if unable to retrieve window information.
-  Future<List<Map<String, dynamic>>> getWindowById(int windowId) {
-    return MacosWindowToolkitPlatform.instance.getWindowById(windowId);
+  Future<List<MacosWindowInfo>> getWindowById(int windowId) async {
+    final List<Map<String, dynamic>> windowMaps = 
+        await MacosWindowToolkitPlatform.instance.getWindowById(windowId);
+    return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
   }
 
   /// Retrieves windows filtered by process ID.
   /// 
-  /// Returns a list of maps containing window properties for windows owned by
+  /// Returns a list of [MacosWindowInfo] objects for windows owned by
   /// the application with the specified [processId].
   /// 
   /// Example usage:
@@ -194,7 +203,9 @@ class MacosWindowToolkit {
   /// ```
   /// 
   /// Throws [PlatformException] if unable to retrieve window information.
-  Future<List<Map<String, dynamic>>> getWindowsByProcessId(int processId) {
-    return MacosWindowToolkitPlatform.instance.getWindowsByProcessId(processId);
+  Future<List<MacosWindowInfo>> getWindowsByProcessId(int processId) async {
+    final List<Map<String, dynamic>> windowMaps = 
+        await MacosWindowToolkitPlatform.instance.getWindowsByProcessId(processId);
+    return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
   }
 }

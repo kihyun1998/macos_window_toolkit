@@ -45,15 +45,17 @@ class WindowHandler {
                 window["ownerName"] = ""
             }
             
-            // Extract window bounds
+            // Extract window bounds as separate x, y, width, height
             if let boundsDict = windowInfo[kCGWindowBounds as String] as? [String: Any] {
-                let x = boundsDict["X"] as? Double ?? 0
-                let y = boundsDict["Y"] as? Double ?? 0
-                let width = boundsDict["Width"] as? Double ?? 0
-                let height = boundsDict["Height"] as? Double ?? 0
-                window["bounds"] = [x, y, width, height]
+                window["x"] = boundsDict["X"] as? Double ?? 0
+                window["y"] = boundsDict["Y"] as? Double ?? 0
+                window["width"] = boundsDict["Width"] as? Double ?? 0
+                window["height"] = boundsDict["Height"] as? Double ?? 0
             } else {
-                window["bounds"] = [0, 0, 0, 0]
+                window["x"] = 0.0
+                window["y"] = 0.0
+                window["width"] = 0.0
+                window["height"] = 0.0
             }
             
             // Extract window layer
@@ -73,6 +75,34 @@ class WindowHandler {
             // Extract process ID
             if let pid = windowInfo[kCGWindowOwnerPID as String] as? NSNumber {
                 window["processId"] = pid.intValue
+            }
+            
+            // Extract additional properties
+            
+            // Store type
+            if let storeType = windowInfo[kCGWindowStoreType as String] as? NSNumber {
+                window["storeType"] = storeType.intValue
+            }
+            
+            // Sharing state
+            if let sharingState = windowInfo[kCGWindowSharingState as String] as? NSNumber {
+                window["sharingState"] = sharingState.intValue
+            }
+            
+            // Alpha/transparency
+            if let alpha = windowInfo[kCGWindowAlpha as String] as? NSNumber {
+                window["alpha"] = alpha.doubleValue
+            }
+            
+            // Memory usage
+            if let memoryUsage = windowInfo[kCGWindowMemoryUsage as String] as? NSNumber {
+                window["memoryUsage"] = memoryUsage.intValue
+            }
+            
+            
+            // Video memory backing location
+            if let backingLocation = windowInfo[kCGWindowBackingLocationVideoMemory as String] as? NSNumber {
+                window["isInVideoMemory"] = backingLocation.boolValue
             }
             
             windows.append(window)
@@ -150,15 +180,17 @@ class WindowHandler {
                     window["ownerName"] = ""
                 }
                 
-                // Extract window bounds
+                // Extract window bounds as separate x, y, width, height
                 if let boundsDict = windowInfo[kCGWindowBounds as String] as? [String: Any] {
-                    let x = boundsDict["X"] as? Double ?? 0
-                    let y = boundsDict["Y"] as? Double ?? 0
-                    let width = boundsDict["Width"] as? Double ?? 0
-                    let height = boundsDict["Height"] as? Double ?? 0
-                    window["bounds"] = [x, y, width, height]
+                    window["x"] = boundsDict["X"] as? Double ?? 0
+                    window["y"] = boundsDict["Y"] as? Double ?? 0
+                    window["width"] = boundsDict["Width"] as? Double ?? 0
+                    window["height"] = boundsDict["Height"] as? Double ?? 0
                 } else {
-                    window["bounds"] = [0, 0, 0, 0]
+                    window["x"] = 0.0
+                    window["y"] = 0.0
+                    window["width"] = 0.0
+                    window["height"] = 0.0
                 }
                 
                 // Extract window layer
@@ -178,6 +210,34 @@ class WindowHandler {
                 // Extract process ID
                 if let pid = windowInfo[kCGWindowOwnerPID as String] as? NSNumber {
                     window["processId"] = pid.intValue
+                }
+                
+                // Extract additional properties
+                
+                // Store type
+                if let storeType = windowInfo[kCGWindowStoreType as String] as? NSNumber {
+                    window["storeType"] = storeType.intValue
+                }
+                
+                // Sharing state
+                if let sharingState = windowInfo[kCGWindowSharingState as String] as? NSNumber {
+                    window["sharingState"] = sharingState.intValue
+                }
+                
+                // Alpha/transparency
+                if let alpha = windowInfo[kCGWindowAlpha as String] as? NSNumber {
+                    window["alpha"] = alpha.doubleValue
+                }
+                
+                // Memory usage
+                if let memoryUsage = windowInfo[kCGWindowMemoryUsage as String] as? NSNumber {
+                    window["memoryUsage"] = memoryUsage.intValue
+                }
+                
+                
+                // Video memory backing location
+                if let backingLocation = windowInfo[kCGWindowBackingLocationVideoMemory as String] as? NSNumber {
+                    window["isInVideoMemory"] = backingLocation.boolValue
                 }
                 
                 windows.append(window)
