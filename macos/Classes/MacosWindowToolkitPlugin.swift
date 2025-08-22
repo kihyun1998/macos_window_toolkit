@@ -40,6 +40,12 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       captureWindowLegacy(call: call, result: result)
     case "getCapturableWindowsLegacy":
       getCapturableWindowsLegacy(result: result)
+    case "captureWindowAuto":
+      captureWindowAuto(call: call, result: result)
+    case "getCapturableWindowsAuto":
+      getCapturableWindowsAuto(result: result)
+    case "getCaptureMethodInfo":
+      getCaptureMethodInfo(result: result)
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -242,6 +248,88 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   private func getCapturableWindowsLegacy(result: @escaping FlutterResult) {
     let windows = LegacyCaptureHandler.getCapturableWindows()
     result(windows)
+  }
+
+  /// Captures a window using the best available method (auto-selection)
+  private func captureWindowAuto(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let arguments = call.arguments as? [String: Any],
+          let windowId = arguments["windowId"] as? Int else {
+      result(FlutterError(
+        code: "INVALID_ARGUMENTS",
+        message: "WindowId parameter is required",
+        details: nil))
+      return
+    }
+
+    if #available(macOS 10.15, *) {
+      Task {
+        do {
+          let imageData = try await SmartCaptureHandler.captureWindowAuto(windowId: windowId)
+          result(FlutterStandardTypedData(bytes: imageData))
+        } catch let error as SmartCaptureHandler.SmartCaptureError {
+          let errorInfo = SmartCaptureHandler.handleSmartCaptureError(error)
+          result(FlutterError(
+            code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
+            message: errorInfo["message"] as? String ?? "Unknown error",
+            details: errorInfo["details"]))
+        } catch {
+          result(FlutterError(
+            code: "CAPTURE_FAILED",
+            message: "Unexpected error occurred",
+            details: error.localizedDescription))
+        }
+      }
+    } else {
+      // For macOS < 10.15, use legacy capture directly (no async support)
+      do {
+        let imageData = try LegacyCaptureHandler.captureWindow(windowId: windowId)
+        result(FlutterStandardTypedData(bytes: imageData))
+      } catch let error as LegacyCaptureHandler.LegacyCaptureError {
+        let errorInfo = LegacyCaptureHandler.handleLegacyCaptureError(error)
+        result(FlutterError(
+          code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
+          message: errorInfo["message"] as? String ?? "Unknown error",
+          details: errorInfo["details"]))
+      } catch {
+        result(FlutterError(
+          code: "CAPTURE_FAILED",
+          message: "Unexpected error occurred",
+          details: error.localizedDescription))
+      }
+    }
+  }
+
+  /// Gets list of capturable windows using the best available method (auto-selection)
+  private func getCapturableWindowsAuto(result: @escaping FlutterResult) {
+    if #available(macOS 10.15, *) {
+      Task {
+        do {
+          let windows = try await SmartCaptureHandler.getCapturableWindowsAuto()
+          result(windows)
+        } catch let error as SmartCaptureHandler.SmartCaptureError {
+          let errorInfo = SmartCaptureHandler.handleSmartCaptureError(error)
+          result(FlutterError(
+            code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
+            message: errorInfo["message"] as? String ?? "Unknown error",
+            details: errorInfo["details"]))
+        } catch {
+          result(FlutterError(
+            code: "CAPTURE_FAILED",
+            message: "Unexpected error occurred",
+            details: error.localizedDescription))
+        }
+      }
+    } else {
+      // For macOS < 10.15, use legacy method directly
+      let windows = LegacyCaptureHandler.getCapturableWindows()
+      result(windows)
+    }
+  }
+
+  /// Gets information about the capture method that would be used
+  private func getCaptureMethodInfo(result: @escaping FlutterResult) {
+    let methodInfo = SmartCaptureHandler.getCaptureMethodInfo()
+    result(methodInfo)
   }
 
   /// Helper method to handle window operation results

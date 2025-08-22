@@ -241,4 +241,80 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   Future<List<CapturableWindowInfo>> getCapturableWindowsLegacy() {
     throw UnimplementedError('getCapturableWindowsLegacy() has not been implemented.');
   }
+
+  /// Captures a window using the best available method (auto-selection).
+  /// 
+  /// Automatically selects between ScreenCaptureKit and CGWindowListCreateImage
+  /// based on macOS version and availability:
+  /// - Uses ScreenCaptureKit on macOS 14.0+ for best quality
+  /// - Falls back to CGWindowListCreateImage on older versions or if ScreenCaptureKit fails
+  /// 
+  /// Returns the captured image as bytes in PNG format.
+  /// 
+  /// [windowId] is the unique identifier of the window to capture.
+  /// 
+  /// This is the recommended method for window capture as it provides the best
+  /// experience across all macOS versions.
+  /// 
+  /// Throws [PlatformException] with appropriate error codes:
+  /// - `NO_COMPATIBLE_CAPTURE_METHOD`: No capture method is available
+  /// - `CAPTURE_METHOD_FAILED`: The selected capture method failed
+  /// - `INVALID_WINDOW_ID`: Window with the specified ID was not found
+  /// 
+  /// Example usage:
+  /// ```dart
+  /// try {
+  ///   final imageBytes = await toolkit.captureWindowAuto(12345);
+  ///   // Use imageBytes to display or save the captured image
+  /// } catch (e) {
+  ///   if (e is PlatformException && e.code == 'INVALID_WINDOW_ID') {
+  ///     print('Window not found');
+  ///   }
+  /// }
+  /// ```
+  Future<Uint8List> captureWindowAuto(int windowId) {
+    throw UnimplementedError('captureWindowAuto() has not been implemented.');
+  }
+
+  /// Gets list of capturable windows using the best available method (auto-selection).
+  /// 
+  /// Automatically selects between ScreenCaptureKit and CGWindowListCopyWindowInfo
+  /// based on macOS version and availability:
+  /// - Uses ScreenCaptureKit on macOS 12.3+ for better window information
+  /// - Falls back to CGWindowListCopyWindowInfo on older versions or if ScreenCaptureKit fails
+  /// 
+  /// Returns a list of [CapturableWindowInfo] objects optimized for the current system.
+  /// This is the recommended method for getting capturable windows as it provides
+  /// the best experience across all macOS versions.
+  /// 
+  /// Throws [PlatformException] with appropriate error codes:
+  /// - `NO_COMPATIBLE_CAPTURE_METHOD`: No window listing method is available
+  /// - `CAPTURE_METHOD_FAILED`: The selected window listing method failed
+  Future<List<CapturableWindowInfo>> getCapturableWindowsAuto() {
+    throw UnimplementedError('getCapturableWindowsAuto() has not been implemented.');
+  }
+
+  /// Gets information about the capture method that would be used by auto-selection.
+  /// 
+  /// Returns a map containing:
+  /// - `captureMethod`: The capture method that would be used ("ScreenCaptureKit" or "CGWindowListCreateImage")
+  /// - `windowListMethod`: The window listing method that would be used ("ScreenCaptureKit" or "CGWindowListCopyWindowInfo")
+  /// - `macOSVersion`: Current macOS version string
+  /// - `isScreenCaptureKitAvailable`: Whether ScreenCaptureKit framework is available (bool)
+  /// - `supportsModernCapture`: Whether modern capture (ScreenCaptureKit) is supported (bool)
+  /// - `supportsModernWindowList`: Whether modern window listing (ScreenCaptureKit) is supported (bool)
+  /// 
+  /// This method is useful for debugging and providing user feedback about
+  /// the capture capabilities on their system.
+  /// 
+  /// Example usage:
+  /// ```dart
+  /// final info = await toolkit.getCaptureMethodInfo();
+  /// print('Capture method: ${info['captureMethod']}');
+  /// print('macOS version: ${info['macOSVersion']}');
+  /// print('Modern capture supported: ${info['supportsModernCapture']}');
+  /// ```
+  Future<Map<String, dynamic>> getCaptureMethodInfo() {
+    throw UnimplementedError('getCaptureMethodInfo() has not been implemented.');
+  }
 }
