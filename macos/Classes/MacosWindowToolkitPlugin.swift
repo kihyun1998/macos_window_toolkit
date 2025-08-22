@@ -30,6 +30,8 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       requestScreenRecordingPermission(result: result)
     case "openScreenRecordingSettings":
       openScreenRecordingSettings(result: result)
+    case "getMacOSVersionInfo":
+      getMacOSVersionInfo(result: result)
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -127,6 +129,12 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
 
     let windowResult = windowHandler.getWindowsByProcessId(processId)
     handleWindowResult(windowResult, result: result)
+  }
+
+  /// Gets macOS version information
+  private func getMacOSVersionInfo(result: @escaping FlutterResult) {
+    let versionInfo = VersionUtil.getMacOSVersionInfo()
+    result(versionInfo)
   }
 
   /// Helper method to handle window operation results

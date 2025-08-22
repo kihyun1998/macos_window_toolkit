@@ -1,11 +1,13 @@
 library;
 
 import 'macos_window_toolkit_platform_interface.dart';
-import 'macos_window_info.dart';
+import 'models/macos_window_info.dart';
+import 'models/macos_version_info.dart';
 
 export 'macos_window_toolkit_method_channel.dart';
 export 'macos_window_toolkit_platform_interface.dart';
-export 'macos_window_info.dart';
+export 'models/macos_window_info.dart';
+export 'models/macos_version_info.dart';
 
 /// Main class for macOS Window Toolkit functionality
 class MacosWindowToolkit {
@@ -207,5 +209,31 @@ class MacosWindowToolkit {
     final List<Map<String, dynamic>> windowMaps = 
         await MacosWindowToolkitPlatform.instance.getWindowsByProcessId(processId);
     return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
+  }
+
+  /// Gets macOS version information.
+  /// 
+  /// Returns a [MacosVersionInfo] object containing:
+  /// - `majorVersion`: Major version number (e.g., 13 for macOS Ventura)
+  /// - `minorVersion`: Minor version number (e.g., 0 for 13.0)
+  /// - `patchVersion`: Patch version number (e.g., 1 for 13.0.1)
+  /// - `versionString`: Full version string (e.g., "13.0.1")
+  /// - `isScreenCaptureKitAvailable`: Whether ScreenCaptureKit is available (macOS 12.3+)
+  /// 
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  /// final versionInfo = await toolkit.getMacOSVersionInfo();
+  /// print('macOS ${versionInfo.versionString}');
+  /// print('ScreenCaptureKit available: ${versionInfo.isScreenCaptureKitAvailable}');
+  /// 
+  /// // Check if running on macOS 13 or later
+  /// if (versionInfo.isAtLeast(13)) {
+  ///   print('Running on macOS Ventura or later');
+  /// }
+  /// ```
+  Future<MacosVersionInfo> getMacOSVersionInfo() async {
+    final versionMap = await MacosWindowToolkitPlatform.instance.getMacOSVersionInfo();
+    return MacosVersionInfo.fromMap(versionMap);
   }
 }

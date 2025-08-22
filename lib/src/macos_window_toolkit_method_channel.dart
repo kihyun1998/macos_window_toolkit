@@ -83,4 +83,13 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
     }
     return result.map((item) => Map<String, dynamic>.from(item as Map)).toList();
   }
+
+  @override
+  Future<Map<String, dynamic>> getMacOSVersionInfo() async {
+    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>('getMacOSVersionInfo');
+    if (result == null) {
+      return {};
+    }
+    return Map<String, dynamic>.from(result);
+  }
 }

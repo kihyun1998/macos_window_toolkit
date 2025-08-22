@@ -6,6 +6,7 @@ import 'package:macos_window_toolkit/macos_window_toolkit.dart';
 
 import 'widgets/permission_card.dart';
 import 'widgets/search_controls.dart';
+import 'widgets/version_info_card.dart';
 import 'widgets/window_detail_sheet.dart';
 import 'widgets/windows_list.dart';
 
@@ -52,6 +53,7 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
   List<MacosWindowInfo> _filteredWindows = [];
   bool _isLoading = false;
   bool? _hasPermission;
+  MacosVersionInfo? _versionInfo;
   final _macosWindowToolkitPlugin = MacosWindowToolkit();
   final _searchController = TextEditingController();
   Timer? _refreshTimer;
@@ -61,6 +63,7 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
   void initState() {
     super.initState();
     _checkPermission();
+    _getVersionInfo();
     _searchController.addListener(_filterWindows);
   }
 
@@ -140,6 +143,17 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _getVersionInfo() async {
+    try {
+      final versionInfo = await _macosWindowToolkitPlugin.getMacOSVersionInfo();
+      setState(() {
+        _versionInfo = versionInfo;
+      });
+    } on PlatformException catch (e) {
+      print('Error getting version info: ${e.message}');
     }
   }
 
@@ -286,15 +300,19 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Permission Status Card
-          PermissionCard(
-            hasPermission: _hasPermission,
-            onOpenSettings: _openSettings,
-          ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Permission Status Card
+            PermissionCard(
+              hasPermission: _hasPermission,
+              onOpenSettings: _openSettings,
+            ),
 
-          // Search and Controls
+            // Version Info Card
+            VersionInfoCard(versionInfo: _versionInfo),
+
+            // Search and Controls
           SearchControls(
             searchController: _searchController,
             totalWindows: _windows.length,
@@ -303,19 +321,21 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
             onToggleAutoRefresh: _toggleAutoRefresh,
           ),
 
-          // Windows List
-          Expanded(
-            child: WindowsList(
-              isLoading: _isLoading,
-              windows: _windows,
-              filteredWindows: _filteredWindows,
-              searchQuery: _searchController.text,
-              onRefresh: _getAllWindows,
-              onWindowTap: _showWindowDetails,
-              formatBytes: _formatBytes,
+            // Windows List
+            SizedBox(
+              height: MediaQuery.of(context).size.height - 400, // Adjust based on other widgets
+              child: WindowsList(
+                isLoading: _isLoading,
+                windows: _windows,
+                filteredWindows: _filteredWindows,
+                searchQuery: _searchController.text,
+                onRefresh: _getAllWindows,
+                onWindowTap: _showWindowDetails,
+                formatBytes: _formatBytes,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       floatingActionButton: _hasPermission == false
           ? FloatingActionButton.extended(
