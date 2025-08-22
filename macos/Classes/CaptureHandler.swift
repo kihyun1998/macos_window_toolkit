@@ -4,7 +4,7 @@ import ScreenCaptureKit
 
 @available(macOS 12.3, *)
 class CaptureHandler {
-    
+
     enum CaptureError: Error {
         case screenCaptureKitNotAvailable
         case invalidWindowId
@@ -13,28 +13,30 @@ class CaptureHandler {
         case unsupportedMacOSVersion
         case requiresMacOS14
     }
-    
+
     static func captureWindow(windowId: Int) async throws -> Data {
         // macOS 버전 확인 - SCScreenshotManager는 macOS 14.0+에서만 사용 가능
         guard #available(macOS 14.0, *) else {
             throw CaptureError.requiresMacOS14
         }
-        
+
         guard VersionUtil.isScreenCaptureKitAvailable() else {
             throw CaptureError.unsupportedMacOSVersion
         }
-        
+
         do {
             // 캡처 가능한 콘텐츠 가져오기
             let availableContent = try await SCShareableContent.current
-            
+
             // 특정 window ID 찾기
-            guard let targetWindow = availableContent.windows.first(where: { window in
-                window.windowID == CGWindowID(windowId)
-            }) else {
+            guard
+                let targetWindow = availableContent.windows.first(where: { window in
+                    window.windowID == CGWindowID(windowId)
+                })
+            else {
                 throw CaptureError.invalidWindowId
             }
-            
+
             // 캡처 설정
             let configuration = SCStreamConfiguration()
             configuration.width = Int(targetWindow.frame.width)
@@ -43,48 +45,47 @@ class CaptureHandler {
             configuration.showsCursor = false
             configuration.scalesToFit = false
             configuration.minimumFrameInterval = CMTime(value: 1, timescale: 60)
-            
+
             // 캡처 필터 설정 (특정 창만 캡처)
             let filter = SCContentFilter(desktopIndependentWindow: targetWindow)
-            
+
             // 캡처 실행 - macOS 14.0+에서 SCScreenshotManager 사용
             let screenshot = try await SCScreenshotManager.captureImage(
                 contentFilter: filter,
                 configuration: configuration
             )
-            
+
             // CGImage를 PNG 데이터로 변환
             guard let pngData = convertCGImageToPNG(screenshot) else {
                 throw CaptureError.captureFailed("Failed to convert image to PNG")
             }
-            
+
             return pngData
-            
+
         } catch let error as CaptureError {
             throw error
         } catch {
             throw CaptureError.captureFailed(error.localizedDescription)
         }
     }
-    
+
     private static func convertCGImageToPNG(_ cgImage: CGImage) -> Data? {
         let bitmapRep = NSBitmapImageRep(cgImage: cgImage)
         return bitmapRep.representation(using: .png, properties: [:])
     }
-    
-    
+
     // 캡처 가능한 창 목록 반환
     static func getCapturableWindows() async throws -> [[String: Any]] {
         guard VersionUtil.isScreenCaptureKitAvailable() else {
             throw CaptureError.unsupportedMacOSVersion
         }
-        
+
         do {
             let availableContent = try await SCShareableContent.current
-            
+
             return availableContent.windows.compactMap { window in
                 guard let title = window.title, !title.isEmpty else { return nil }
-                
+
                 return [
                     "windowId": Int(window.windowID),
                     "title": title,
@@ -94,16 +95,16 @@ class CaptureHandler {
                         "x": window.frame.origin.x,
                         "y": window.frame.origin.y,
                         "width": window.frame.size.width,
-                        "height": window.frame.size.height
+                        "height": window.frame.size.height,
                     ],
-                    "isOnScreen": window.isOnScreen
+                    "isOnScreen": window.isOnScreen,
                 ]
             }
         } catch {
             throw CaptureError.captureFailed(error.localizedDescription)
         }
     }
-    
+
     // 에러를 Flutter에 전달하기 위한 헬퍼 메서드
     static func handleCaptureError(_ error: CaptureError) -> [String: Any] {
         switch error {
@@ -111,37 +112,37 @@ class CaptureHandler {
             return [
                 "code": "SCREENCAPTUREKIT_NOT_AVAILABLE",
                 "message": "ScreenCaptureKit is not available on this macOS version",
-                "details": "Requires macOS 12.3 or later"
+                "details": "Requires macOS 12.3 or later",
             ]
         case .invalidWindowId:
             return [
                 "code": "INVALID_WINDOW_ID",
                 "message": "Window with the specified ID was not found",
-                "details": NSNull()
+                "details": NSNull(),
             ]
         case .captureNotSupported:
             return [
                 "code": "CAPTURE_NOT_SUPPORTED",
                 "message": "Window capture is not supported for this window",
-                "details": NSNull()
+                "details": NSNull(),
             ]
         case .captureFailed(let description):
             return [
                 "code": "CAPTURE_FAILED",
                 "message": "Window capture failed",
-                "details": description
+                "details": description,
             ]
         case .unsupportedMacOSVersion:
             return [
                 "code": "UNSUPPORTED_MACOS_VERSION",
                 "message": "macOS version does not support ScreenCaptureKit",
-                "details": "Current version: \(VersionUtil.getMacOSVersion()), Required: 12.3+"
+                "details": "Current version: \(VersionUtil.getMacOSVersion()), Required: 12.3+",
             ]
         case .requiresMacOS14:
             return [
                 "code": "REQUIRES_MACOS_14",
                 "message": "Window capture requires macOS 14.0 or later",
-                "details": "Current version: \(VersionUtil.getMacOSVersion()), Required: 14.0+"
+                "details": "Current version: \(VersionUtil.getMacOSVersion()), Required: 14.0+",
             ]
         }
     }

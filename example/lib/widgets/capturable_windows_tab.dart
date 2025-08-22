@@ -140,9 +140,7 @@ class _CapturableWindowsTabState extends State<CapturableWindowsTab> {
           ),
 
           // Windows List
-          Expanded(
-            child: _buildWindowsList(),
-          ),
+          Expanded(child: _buildWindowsList()),
         ],
       ),
     );
@@ -175,9 +173,7 @@ class _CapturableWindowsTabState extends State<CapturableWindowsTab> {
             const SizedBox(height: 16),
             Text(
               _error!,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.error,
-              ),
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -196,11 +192,7 @@ class _CapturableWindowsTabState extends State<CapturableWindowsTab> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.window_outlined,
-              size: 48,
-              color: Colors.grey,
-            ),
+            Icon(Icons.window_outlined, size: 48, color: Colors.grey),
             SizedBox(height: 16),
             Text(
               'No capturable windows found',
@@ -226,10 +218,10 @@ class _CapturableWindowsTabState extends State<CapturableWindowsTab> {
 
   Future<void> _captureWindow(CapturableWindowInfo window) async {
     final windowId = window.windowId;
-    
+
     try {
       final imageBytes = await _macosWindowToolkit.captureWindow(windowId);
-      
+
       if (mounted) {
         _showCaptureResult(window, imageBytes);
       }
@@ -243,10 +235,8 @@ class _CapturableWindowsTabState extends State<CapturableWindowsTab> {
   void _showCaptureResult(CapturableWindowInfo window, Uint8List imageData) {
     showDialog(
       context: context,
-      builder: (context) => CaptureResultDialog(
-        window: window,
-        imageData: imageData,
-      ),
+      builder: (context) =>
+          CaptureResultDialog(window: window, imageData: imageData),
     );
   }
 
@@ -287,16 +277,9 @@ class CapturableWindowCard extends StatelessWidget {
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: colorScheme.primaryContainer,
-          child: Icon(
-            Icons.window,
-            color: colorScheme.onPrimaryContainer,
-          ),
+          child: Icon(Icons.window, color: colorScheme.onPrimaryContainer),
         ),
-        title: Text(
-          window.title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+        title: Text(window.title, maxLines: 1, overflow: TextOverflow.ellipsis),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -372,10 +355,7 @@ class CaptureResultDialog extends StatelessWidget {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.memory(
-                    imageData,
-                    fit: BoxFit.contain,
-                  ),
+                  child: Image.memory(imageData, fit: BoxFit.contain),
                 ),
               ),
             ),

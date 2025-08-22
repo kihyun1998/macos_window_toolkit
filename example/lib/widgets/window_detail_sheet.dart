@@ -74,7 +74,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
     });
 
     try {
-      final imageBytes = await _macosWindowToolkit.captureWindow(widget.window.windowId);
+      final imageBytes = await _macosWindowToolkit.captureWindow(
+        widget.window.windowId,
+      );
       setState(() {
         _capturedImage = imageBytes;
         _isCapturing = false;
@@ -174,7 +176,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    
+
                     if (!_canCapture) ...[
                       Row(
                         children: [
@@ -200,14 +202,18 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                         children: [
                           ElevatedButton.icon(
                             onPressed: _isCapturing ? null : _captureWindow,
-                            icon: _isCapturing 
+                            icon: _isCapturing
                                 ? SizedBox(
                                     width: 16,
                                     height: 16,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   )
                                 : Icon(Icons.camera_alt),
-                            label: Text(_isCapturing ? 'Capturing...' : 'Capture Window'),
+                            label: Text(
+                              _isCapturing ? 'Capturing...' : 'Capture Window',
+                            ),
                           ),
                           if (_capturedImage != null) ...[
                             const SizedBox(width: 12),
@@ -228,16 +234,12 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                           ],
                         ],
                       ),
-                      
+
                       if (_captureError != null) ...[
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            Icon(
-                              Icons.error,
-                              color: Colors.red,
-                              size: 16,
-                            ),
+                            Icon(Icons.error, color: Colors.red, size: 16),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -251,7 +253,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                           ],
                         ),
                       ],
-                      
+
                       if (_capturedImage != null) ...[
                         const SizedBox(height: 12),
                         Container(
@@ -284,11 +286,15 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                 children: [
                   _DetailItem(
                     label: 'Window Name',
-                    value: widget.window.name.isEmpty ? 'Untitled' : widget.window.name,
+                    value: widget.window.name.isEmpty
+                        ? 'Untitled'
+                        : widget.window.name,
                   ),
                   _DetailItem(
                     label: 'Application',
-                    value: widget.window.ownerName.isEmpty ? 'Unknown' : widget.window.ownerName,
+                    value: widget.window.ownerName.isEmpty
+                        ? 'Unknown'
+                        : widget.window.ownerName,
                   ),
                   _DetailItem(
                     label: 'Window ID',
@@ -300,16 +306,15 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                   ),
                   _DetailItem(
                     label: 'Position',
-                    value: '(${widget.window.x.toStringAsFixed(1)}, ${widget.window.y.toStringAsFixed(1)})',
+                    value:
+                        '(${widget.window.x.toStringAsFixed(1)}, ${widget.window.y.toStringAsFixed(1)})',
                   ),
                   _DetailItem(
                     label: 'Size',
-                    value: '${widget.window.width.toStringAsFixed(1)} × ${widget.window.height.toStringAsFixed(1)}',
+                    value:
+                        '${widget.window.width.toStringAsFixed(1)} × ${widget.window.height.toStringAsFixed(1)}',
                   ),
-                  _DetailItem(
-                    label: 'Layer',
-                    value: '${widget.window.layer}',
-                  ),
+                  _DetailItem(label: 'Layer', value: '${widget.window.layer}'),
                   _DetailItem(
                     label: 'On Screen',
                     value: widget.window.isOnScreen ? 'Yes' : 'No',
@@ -322,7 +327,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                   if (widget.window.sharingState != null)
                     _DetailItem(
                       label: 'Sharing State',
-                      value: widget.getSharingStateText(widget.window.sharingState!),
+                      value: widget.getSharingStateText(
+                        widget.window.sharingState!,
+                      ),
                     ),
                   if (widget.window.memoryUsage != null)
                     _DetailItem(
@@ -343,10 +350,7 @@ class _DetailItem extends StatelessWidget {
   final String label;
   final String value;
 
-  const _DetailItem({
-    required this.label,
-    required this.value,
-  });
+  const _DetailItem({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -368,10 +372,7 @@ class _DetailItem extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Text(
-              value,
-              style: TextStyle(color: colorScheme.onSurface),
-            ),
+            child: Text(value, style: TextStyle(color: colorScheme.onSurface)),
           ),
         ],
       ),

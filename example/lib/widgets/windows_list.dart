@@ -101,16 +101,10 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             title,
-            style: TextStyle(
-              fontSize: 18,
-              color: colorScheme.onSurfaceVariant,
-            ),
+            style: TextStyle(fontSize: 18, color: colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: TextStyle(color: colorScheme.onSurfaceVariant),
-          ),
+          Text(subtitle, style: TextStyle(color: colorScheme.onSurfaceVariant)),
           if (actionLabel != null && onAction != null) ...[
             const SizedBox(height: 24),
             FilledButton.icon(

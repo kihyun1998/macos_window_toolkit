@@ -57,22 +57,13 @@ class MainTabView extends StatelessWidget {
           elevation: 0,
           bottom: const TabBar(
             tabs: [
-              Tab(
-                icon: Icon(Icons.window),
-                text: 'All Windows',
-              ),
-              Tab(
-                icon: Icon(Icons.camera_alt),
-                text: 'Capturable Windows',
-              ),
+              Tab(icon: Icon(Icons.window), text: 'All Windows'),
+              Tab(icon: Icon(Icons.camera_alt), text: 'Capturable Windows'),
             ],
           ),
         ),
         body: const TabBarView(
-          children: [
-            WindowDemoPage(),
-            CapturableWindowsTab(),
-          ],
+          children: [WindowDemoPage(), CapturableWindowsTab()],
         ),
       ),
     );
@@ -220,33 +211,6 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error requesting permission: ${e.message}')),
-        );
-      }
-    }
-  }
-
-  Future<void> _openSettings() async {
-    try {
-      final success = await _macosWindowToolkitPlugin
-          .openScreenRecordingSettings();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              success
-                  ? 'System Preferences opened. Please enable screen recording permission and restart the app.'
-                  : 'Failed to open System Preferences. Please open it manually.',
-            ),
-            backgroundColor: success ? Colors.blue : Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
-        );
-      }
-    } on PlatformException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error opening settings: ${e.message}')),
         );
       }
     }

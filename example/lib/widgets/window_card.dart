@@ -57,9 +57,7 @@ class WindowCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          window.name.isEmpty
-                              ? 'Untitled Window'
-                              : window.name,
+                          window.name.isEmpty ? 'Untitled Window' : window.name,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -203,10 +201,7 @@ class _PropertyChip extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 12,
-              color: colorScheme.onSurfaceVariant,
-            ),
+            style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
           ),
         ],
       ),

@@ -4,10 +4,7 @@ import 'package:macos_window_toolkit/macos_window_toolkit.dart';
 class VersionInfoCard extends StatelessWidget {
   final MacosVersionInfo? versionInfo;
 
-  const VersionInfoCard({
-    super.key,
-    required this.versionInfo,
-  });
+  const VersionInfoCard({super.key, required this.versionInfo});
 
   @override
   Widget build(BuildContext context) {
@@ -43,10 +40,12 @@ class VersionInfoCard extends StatelessWidget {
                           style: theme.textTheme.bodyMedium,
                         ),
                         Text(
-                          versionInfo!.isScreenCaptureKitAvailable ? 'Available' : 'Not Available',
+                          versionInfo!.isScreenCaptureKitAvailable
+                              ? 'Available'
+                              : 'Not Available',
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: versionInfo!.isScreenCaptureKitAvailable 
-                                ? Colors.green 
+                            color: versionInfo!.isScreenCaptureKitAvailable
+                                ? Colors.green
                                 : Colors.orange,
                             fontWeight: FontWeight.w500,
                           ),
