@@ -136,6 +136,43 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
     }
   }
 
+  Future<void> _checkPermissionAndOpenSettings() async {
+    try {
+      final hasPermission = await _macosWindowToolkitPlugin.hasScreenRecordingPermission();
+      
+      if (hasPermission) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Screen recording permission is already granted!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        final success = await _macosWindowToolkitPlugin.openScreenRecordingSettings();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(success 
+                  ? 'No permission detected. Opening System Preferences - please enable screen recording.'
+                  : 'No permission detected. Failed to open System Preferences. Please open it manually.'),
+              backgroundColor: success ? Colors.orange : Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      }
+    } on PlatformException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.message}')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -207,6 +244,15 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
                     label: const Text('Open Settings'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: _checkPermissionAndOpenSettings,
+                    icon: const Icon(Icons.verified_user),
+                    label: const Text('Check & Open Settings'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.purple,
                       foregroundColor: Colors.white,
                     ),
                   ),

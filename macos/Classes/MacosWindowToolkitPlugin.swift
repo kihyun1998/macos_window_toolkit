@@ -3,6 +3,7 @@ import FlutterMacOS
 
 public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   private let windowHandler = WindowHandler()
+  private let permissionHandler = PermissionHandler()
 
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(
@@ -44,19 +45,19 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
 
   /// Checks if the app has screen recording permission
   private func hasScreenRecordingPermission(result: @escaping FlutterResult) {
-    let hasPermission = windowHandler.hasScreenRecordingPermission()
+    let hasPermission = permissionHandler.hasScreenRecordingPermission()
     result(hasPermission)
   }
 
   /// Requests screen recording permission
   private func requestScreenRecordingPermission(result: @escaping FlutterResult) {
-    let granted = windowHandler.requestScreenRecordingPermission()
+    let granted = permissionHandler.requestScreenRecordingPermission()
     result(granted)
   }
 
   /// Opens screen recording settings in System Preferences
   private func openScreenRecordingSettings(result: @escaping FlutterResult) {
-    let success = windowHandler.openScreenRecordingSettings()
+    let success = permissionHandler.openScreenRecordingSettings()
     result(success)
   }
 }
