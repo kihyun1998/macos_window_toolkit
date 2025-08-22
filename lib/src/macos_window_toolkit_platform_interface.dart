@@ -1,6 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'macos_window_toolkit_method_channel.dart';
+import 'models/capturable_window_info.dart';
 
 abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   /// Constructs a MacosWindowToolkitPlatform.
@@ -153,5 +156,47 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   /// - `isScreenCaptureKitAvailable`: Whether ScreenCaptureKit is available (bool)
   Future<Map<String, dynamic>> getMacOSVersionInfo() {
     throw UnimplementedError('getMacOSVersionInfo() has not been implemented.');
+  }
+
+  /// Captures a window using ScreenCaptureKit.
+  /// 
+  /// Returns the captured image as bytes in PNG format.
+  /// 
+  /// [windowId] is the unique identifier of the window to capture.
+  /// 
+  /// Throws [PlatformException] with appropriate error codes:
+  /// - `UNSUPPORTED_MACOS_VERSION`: macOS version does not support ScreenCaptureKit (requires 12.3+)
+  /// - `SCREENCAPTUREKIT_NOT_AVAILABLE`: ScreenCaptureKit is not available
+  /// - `INVALID_WINDOW_ID`: Window with the specified ID was not found
+  /// - `CAPTURE_FAILED`: Window capture failed for other reasons
+  /// 
+  /// Example usage:
+  /// ```dart
+  /// try {
+  ///   final imageBytes = await toolkit.captureWindow(12345);
+  ///   // Use imageBytes to display or save the captured image
+  /// } catch (e) {
+  ///   if (e is PlatformException && e.code == 'UNSUPPORTED_MACOS_VERSION') {
+  ///     // Fall back to CGWindowListCreateImage method
+  ///   }
+  /// }
+  /// ```
+  Future<Uint8List> captureWindow(int windowId) {
+    throw UnimplementedError('captureWindow() has not been implemented.');
+  }
+
+  /// Gets list of capturable windows using ScreenCaptureKit.
+  /// 
+  /// Returns a list of [CapturableWindowInfo] objects that are specifically optimized
+  /// for window capture operations. This method only returns windows that can
+  /// actually be captured by ScreenCaptureKit, which may be a subset of windows
+  /// returned by [getAllWindows].
+  /// 
+  /// Throws [PlatformException] with appropriate error codes:
+  /// - `UNSUPPORTED_MACOS_VERSION`: macOS version does not support ScreenCaptureKit
+  /// - `SCREENCAPTUREKIT_NOT_AVAILABLE`: ScreenCaptureKit is not available
+  /// - `CAPTURE_FAILED`: Failed to retrieve capturable windows
+  Future<List<CapturableWindowInfo>> getCapturableWindows() {
+    throw UnimplementedError('getCapturableWindows() has not been implemented.');
   }
 }

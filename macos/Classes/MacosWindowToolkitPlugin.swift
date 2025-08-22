@@ -32,6 +32,10 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       openScreenRecordingSettings(result: result)
     case "getMacOSVersionInfo":
       getMacOSVersionInfo(result: result)
+    case "captureWindow":
+      captureWindow(call: call, result: result)
+    case "getCapturableWindows":
+      getCapturableWindows(result: result)
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -135,6 +139,71 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   private func getMacOSVersionInfo(result: @escaping FlutterResult) {
     let versionInfo = VersionUtil.getMacOSVersionInfo()
     result(versionInfo)
+  }
+
+  /// Captures a window using ScreenCaptureKit
+  private func captureWindow(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let arguments = call.arguments as? [String: Any],
+          let windowId = arguments["windowId"] as? Int else {
+      result(FlutterError(
+        code: "INVALID_ARGUMENTS",
+        message: "WindowId parameter is required",
+        details: nil))
+      return
+    }
+
+    if #available(macOS 12.3, *) {
+      Task {
+        do {
+          let imageData = try await CaptureHandler.captureWindow(windowId: windowId)
+          result(FlutterStandardTypedData(bytes: imageData))
+        } catch let error as CaptureHandler.CaptureError {
+          let errorInfo = CaptureHandler.handleCaptureError(error)
+          result(FlutterError(
+            code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
+            message: errorInfo["message"] as? String ?? "Unknown error",
+            details: errorInfo["details"]))
+        } catch {
+          result(FlutterError(
+            code: "CAPTURE_FAILED",
+            message: "Unexpected error occurred",
+            details: error.localizedDescription))
+        }
+      }
+    } else {
+      result(FlutterError(
+        code: "UNSUPPORTED_MACOS_VERSION",
+        message: "macOS version does not support ScreenCaptureKit",
+        details: "Current version: \(ProcessInfo.processInfo.operatingSystemVersionString), Required: 12.3+"))
+    }
+  }
+
+  /// Gets list of capturable windows using ScreenCaptureKit
+  private func getCapturableWindows(result: @escaping FlutterResult) {
+    if #available(macOS 12.3, *) {
+      Task {
+        do {
+          let windows = try await CaptureHandler.getCapturableWindows()
+          result(windows)
+        } catch let error as CaptureHandler.CaptureError {
+          let errorInfo = CaptureHandler.handleCaptureError(error)
+          result(FlutterError(
+            code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
+            message: errorInfo["message"] as? String ?? "Unknown error",
+            details: errorInfo["details"]))
+        } catch {
+          result(FlutterError(
+            code: "CAPTURE_FAILED",
+            message: "Unexpected error occurred",
+            details: error.localizedDescription))
+        }
+      }
+    } else {
+      result(FlutterError(
+        code: "UNSUPPORTED_MACOS_VERSION",
+        message: "macOS version does not support ScreenCaptureKit",
+        details: "Current version: \(ProcessInfo.processInfo.operatingSystemVersionString), Required: 12.3+"))
+    }
   }
 
   /// Helper method to handle window operation results

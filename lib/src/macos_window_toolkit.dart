@@ -1,11 +1,15 @@
 library;
 
+import 'dart:typed_data';
+
 import 'macos_window_toolkit_platform_interface.dart';
+import 'models/capturable_window_info.dart';
 import 'models/macos_window_info.dart';
 import 'models/macos_version_info.dart';
 
 export 'macos_window_toolkit_method_channel.dart';
 export 'macos_window_toolkit_platform_interface.dart';
+export 'models/capturable_window_info.dart';
 export 'models/macos_window_info.dart';
 export 'models/macos_version_info.dart';
 
@@ -235,5 +239,84 @@ class MacosWindowToolkit {
   Future<MacosVersionInfo> getMacOSVersionInfo() async {
     final versionMap = await MacosWindowToolkitPlatform.instance.getMacOSVersionInfo();
     return MacosVersionInfo.fromMap(versionMap);
+  }
+
+  /// Captures a window using ScreenCaptureKit.
+  /// 
+  /// Returns the captured image as bytes in PNG format.
+  /// 
+  /// [windowId] is the unique identifier of the window to capture, which can be
+  /// obtained from [getAllWindows], [getWindowById], or [getCapturableWindows].
+  /// 
+  /// This method uses ScreenCaptureKit (macOS 12.3+) which provides high-quality
+  /// window captures with better performance and more accurate color reproduction
+  /// compared to the legacy CGWindowListCreateImage method.
+  /// 
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  /// 
+  /// // First check if ScreenCaptureKit is available
+  /// final versionInfo = await toolkit.getMacOSVersionInfo();
+  /// if (versionInfo.isScreenCaptureKitAvailable) {
+  ///   try {
+  ///     final imageBytes = await toolkit.captureWindow(12345);
+  ///     // Convert bytes to image and display
+  ///     final image = Image.memory(imageBytes);
+  ///   } catch (e) {
+  ///     if (e is PlatformException && e.code == 'INVALID_WINDOW_ID') {
+  ///       print('Window not found');
+  ///     }
+  ///   }
+  /// } else {
+  ///   // Fall back to CGWindowListCreateImage method
+  /// }
+  /// ```
+  /// 
+  /// Throws [PlatformException] with the following error codes:
+  /// - `UNSUPPORTED_MACOS_VERSION`: Current macOS version doesn't support ScreenCaptureKit (requires 12.3+)
+  /// - `SCREENCAPTUREKIT_NOT_AVAILABLE`: ScreenCaptureKit framework is not available
+  /// - `INVALID_WINDOW_ID`: Window with the specified ID was not found or is not capturable
+  /// - `CAPTURE_NOT_SUPPORTED`: Window capture is not supported for this specific window
+  /// - `CAPTURE_FAILED`: Window capture failed due to system restrictions or other errors
+  Future<Uint8List> captureWindow(int windowId) async {
+    return await MacosWindowToolkitPlatform.instance.captureWindow(windowId);
+  }
+
+  /// Gets list of capturable windows using ScreenCaptureKit.
+  /// 
+  /// Returns a list of [CapturableWindowInfo] objects that are specifically optimized
+  /// for window capture operations. This method only returns windows that can
+  /// actually be captured by ScreenCaptureKit, which may be a subset of windows
+  /// returned by [getAllWindows].
+  /// 
+  /// This method is particularly useful when you want to present users with
+  /// a list of windows they can capture, as it filters out system windows
+  /// and other non-capturable elements.
+  /// 
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  /// 
+  /// try {
+  ///   final capturableWindows = await toolkit.getCapturableWindows();
+  ///   for (final window in capturableWindows) {
+  ///     print('Capturable window: ${window.title} (ID: ${window.windowId})');
+  ///     print('App: ${window.ownerName} (${window.bundleIdentifier})');
+  ///     print('Size: ${window.frame.width} x ${window.frame.height}');
+  ///   }
+  /// } catch (e) {
+  ///   if (e is PlatformException && e.code == 'UNSUPPORTED_MACOS_VERSION') {
+  ///     print('ScreenCaptureKit not available on this macOS version');
+  ///   }
+  /// }
+  /// ```
+  /// 
+  /// Throws [PlatformException] with the following error codes:
+  /// - `UNSUPPORTED_MACOS_VERSION`: Current macOS version doesn't support ScreenCaptureKit
+  /// - `SCREENCAPTUREKIT_NOT_AVAILABLE`: ScreenCaptureKit framework is not available
+  /// - `CAPTURE_FAILED`: Failed to retrieve capturable windows due to system restrictions
+  Future<List<CapturableWindowInfo>> getCapturableWindows() async {
+    return await MacosWindowToolkitPlatform.instance.getCapturableWindows();
   }
 }

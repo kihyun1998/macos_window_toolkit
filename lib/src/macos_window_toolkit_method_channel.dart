@@ -1,7 +1,10 @@
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'macos_window_toolkit_platform_interface.dart';
+import 'models/capturable_window_info.dart';
 
 /// An implementation of [MacosWindowToolkitPlatform] that uses method channels.
 class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
@@ -91,5 +94,33 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
       return {};
     }
     return Map<String, dynamic>.from(result);
+  }
+
+  @override
+  Future<Uint8List> captureWindow(int windowId) async {
+    final result = await methodChannel.invokeMethod<Uint8List>(
+      'captureWindow',
+      {'windowId': windowId},
+    );
+    if (result == null) {
+      throw PlatformException(
+        code: 'CAPTURE_FAILED',
+        message: 'Failed to capture window - no data returned',
+        details: null,
+      );
+    }
+    return result;
+  }
+
+  @override
+  Future<List<CapturableWindowInfo>> getCapturableWindows() async {
+    final result = await methodChannel.invokeMethod<List<dynamic>>('getCapturableWindows');
+    if (result == null) {
+      return [];
+    }
+    return result
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .map((map) => CapturableWindowInfo.fromMap(map))
+        .toList();
   }
 }

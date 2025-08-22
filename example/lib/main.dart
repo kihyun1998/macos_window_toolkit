@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:macos_window_toolkit/macos_window_toolkit.dart';
 
+import 'widgets/capturable_windows_tab.dart';
 import 'widgets/permission_card.dart';
 import 'widgets/search_controls.dart';
 import 'widgets/version_info_card.dart';
@@ -36,7 +37,44 @@ class MyApp extends StatelessWidget {
           brightness: Brightness.dark,
         ),
       ),
-      home: const WindowDemoPage(),
+      home: const MainTabView(),
+    );
+  }
+}
+
+class MainTabView extends StatelessWidget {
+  const MainTabView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('macOS Window Toolkit'),
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          foregroundColor: Theme.of(context).colorScheme.onSurface,
+          elevation: 0,
+          bottom: const TabBar(
+            tabs: [
+              Tab(
+                icon: Icon(Icons.window),
+                text: 'All Windows',
+              ),
+              Tab(
+                icon: Icon(Icons.camera_alt),
+                text: 'Capturable Windows',
+              ),
+            ],
+          ),
+        ),
+        body: const TabBarView(
+          children: [
+            WindowDemoPage(),
+            CapturableWindowsTab(),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -283,10 +321,11 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('macOS Window Toolkit'),
+        title: const Text('All Windows'),
         backgroundColor: colorScheme.surface,
         foregroundColor: colorScheme.onSurface,
         elevation: 0,
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: Icon(_autoRefresh ? Icons.pause : Icons.refresh),
