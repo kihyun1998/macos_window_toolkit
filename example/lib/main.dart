@@ -1,8 +1,13 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:macos_window_toolkit/macos_window_toolkit.dart';
+
+import 'widgets/permission_card.dart';
+import 'widgets/search_controls.dart';
+import 'widgets/window_detail_sheet.dart';
+import 'widgets/windows_list.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,9 +19,21 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'macOS Window Toolkit Demo',
+      title: 'macOS Window Toolkit',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.light,
+        ),
+      ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.dark,
+        ),
       ),
       home: const WindowDemoPage(),
     );
@@ -32,9 +49,51 @@ class WindowDemoPage extends StatefulWidget {
 
 class _WindowDemoPageState extends State<WindowDemoPage> {
   List<MacosWindowInfo> _windows = [];
+  List<MacosWindowInfo> _filteredWindows = [];
   bool _isLoading = false;
   bool? _hasPermission;
   final _macosWindowToolkitPlugin = MacosWindowToolkit();
+  final _searchController = TextEditingController();
+  Timer? _refreshTimer;
+  bool _autoRefresh = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkPermission();
+    _searchController.addListener(_filterWindows);
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterWindows() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredWindows = _windows.where((window) {
+        return window.name.toLowerCase().contains(query) ||
+            window.ownerName.toLowerCase().contains(query);
+      }).toList();
+    });
+  }
+
+  void _toggleAutoRefresh() {
+    setState(() {
+      _autoRefresh = !_autoRefresh;
+    });
+
+    if (_autoRefresh) {
+      _refreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+        if (!_isLoading) _getAllWindows();
+      });
+    } else {
+      _refreshTimer?.cancel();
+    }
+  }
 
   Future<void> _getAllWindows() async {
     setState(() {
@@ -47,13 +106,18 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
         _windows = windows;
         _isLoading = false;
       });
+      _filterWindows();
     } on PlatformException catch (e) {
       setState(() {
         _isLoading = false;
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.message}')),
+          SnackBar(
+            content: Text('Error: ${e.message}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     }
@@ -61,25 +125,19 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
 
   Future<void> _checkPermission() async {
     try {
-      final hasPermission = await _macosWindowToolkitPlugin.hasScreenRecordingPermission();
+      final hasPermission = await _macosWindowToolkitPlugin
+          .hasScreenRecordingPermission();
       setState(() {
         _hasPermission = hasPermission;
       });
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(hasPermission 
-                ? 'Screen recording permission is granted' 
-                : 'Screen recording permission is NOT granted'),
-            backgroundColor: hasPermission ? Colors.green : Colors.orange,
-          ),
-        );
-      }
     } on PlatformException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error checking permission: ${e.message}')),
+          SnackBar(
+            content: Text('Error checking permission: ${e.message}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     }
@@ -87,17 +145,20 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
 
   Future<void> _requestPermission() async {
     try {
-      final granted = await _macosWindowToolkitPlugin.requestScreenRecordingPermission();
+      final granted = await _macosWindowToolkitPlugin
+          .requestScreenRecordingPermission();
       setState(() {
         _hasPermission = granted;
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(granted 
-                ? 'Permission granted! You may need to restart the app to see full window names.'
-                : 'Permission denied. Window names may not be available.'),
+            content: Text(
+              granted
+                  ? 'Permission granted! You may need to restart the app to see full window names.'
+                  : 'Permission denied. Window names may not be available.',
+            ),
             backgroundColor: granted ? Colors.green : Colors.red,
             duration: const Duration(seconds: 4),
           ),
@@ -114,14 +175,17 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
 
   Future<void> _openSettings() async {
     try {
-      final success = await _macosWindowToolkitPlugin.openScreenRecordingSettings();
-      
+      final success = await _macosWindowToolkitPlugin
+          .openScreenRecordingSettings();
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(success 
-                ? 'System Preferences opened. Please enable screen recording permission and restart the app.'
-                : 'Failed to open System Preferences. Please open it manually.'),
+            content: Text(
+              success
+                  ? 'System Preferences opened. Please enable screen recording permission and restart the app.'
+                  : 'Failed to open System Preferences. Please open it manually.',
+            ),
             backgroundColor: success ? Colors.blue : Colors.red,
             duration: const Duration(seconds: 5),
           ),
@@ -138,8 +202,9 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
 
   Future<void> _checkPermissionAndOpenSettings() async {
     try {
-      final hasPermission = await _macosWindowToolkitPlugin.hasScreenRecordingPermission();
-      
+      final hasPermission = await _macosWindowToolkitPlugin
+          .hasScreenRecordingPermission();
+
       if (hasPermission) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -150,14 +215,17 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
           );
         }
       } else {
-        final success = await _macosWindowToolkitPlugin.openScreenRecordingSettings();
-        
+        final success = await _macosWindowToolkitPlugin
+            .openScreenRecordingSettings();
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(success 
-                  ? 'No permission detected. Opening System Preferences - please enable screen recording.'
-                  : 'No permission detected. Failed to open System Preferences. Please open it manually.'),
+              content: Text(
+                success
+                    ? 'No permission detected. Opening System Preferences - please enable screen recording.'
+                    : 'No permission detected. Failed to open System Preferences. Please open it manually.',
+              ),
               backgroundColor: success ? Colors.orange : Colors.red,
               duration: const Duration(seconds: 5),
             ),
@@ -166,9 +234,9 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
       }
     } on PlatformException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.message}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: ${e.message}')));
       }
     }
   }
@@ -189,150 +257,79 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
   String _formatBytes(int bytes) {
     if (bytes < 1024) return '${bytes}B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)}KB';
-    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
+    if (bytes < 1024 * 1024 * 1024)
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)}GB';
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('macOS Window Toolkit Demo'),
-      ),
-      body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Permission status indicator
-              if (_hasPermission != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: _hasPermission! ? Colors.green.shade100 : Colors.orange.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: _hasPermission! ? Colors.green : Colors.orange,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        _hasPermission! ? Icons.check_circle : Icons.warning,
-                        color: _hasPermission! ? Colors.green : Colors.orange,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _hasPermission! 
-                              ? 'Screen recording permission is granted'
-                              : 'Screen recording permission is required for full window names',
-                          style: TextStyle(
-                            color: _hasPermission! ? Colors.green.shade800 : Colors.orange.shade800,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-              
-              // Permission buttons
-              Wrap(
-                spacing: 12,
-                runSpacing: 8,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: _checkPermission,
-                    icon: const Icon(Icons.security),
-                    label: const Text('Check Permission'),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: _requestPermission,
-                    icon: const Icon(Icons.settings),
-                    label: const Text('Request Permission'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: _openSettings,
-                    icon: const Icon(Icons.open_in_new),
-                    label: const Text('Open Settings'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: _checkPermissionAndOpenSettings,
-                    icon: const Icon(Icons.verified_user),
-                    label: const Text('Check & Open Settings'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.purple,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              
-              // Get windows button
-              ElevatedButton.icon(
-                onPressed: _isLoading ? null : _getAllWindows,
-                icon: _isLoading 
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.window),
-                label: const Text('Get All Windows'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 20),
-              if (_windows.isNotEmpty) ...[
-                Text('Found ${_windows.length} windows:'),
-                const SizedBox(height: 10),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: _windows.length,
-                    itemBuilder: (context, index) {
-                      final window = _windows[index];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        child: ListTile(
-                          title: Text(window.name.isEmpty ? 'Untitled' : window.name),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('App: ${window.ownerName.isEmpty ? 'Unknown' : window.ownerName}'),
-                              Text('Window ID: ${window.windowId}'),
-                              Text('Process ID: ${window.processId}'),
-                              Text('Position: (${window.x.toStringAsFixed(1)}, ${window.y.toStringAsFixed(1)})'),
-                              Text('Size: ${window.width.toStringAsFixed(1)} x ${window.height.toStringAsFixed(1)}'),
-                              Text('Layer: ${window.layer}, On Screen: ${window.isOnScreen}'),
-                              if (window.alpha != null) Text('Alpha: ${window.alpha!.toStringAsFixed(2)}'),
-                              if (window.sharingState != null) Text('Sharing: ${_getSharingStateText(window.sharingState!)}'),
-                              if (window.memoryUsage != null) Text('Memory: ${_formatBytes(window.memoryUsage!)}'),
-                            ],
-                          ),
-                          isThreeLine: true,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ],
+        title: const Text('macOS Window Toolkit'),
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(_autoRefresh ? Icons.pause : Icons.refresh),
+            onPressed: _toggleAutoRefresh,
+            tooltip: _autoRefresh ? 'Stop Auto-refresh' : 'Start Auto-refresh',
           ),
-        ),
+          IconButton(
+            icon: const Icon(Icons.window),
+            onPressed: _isLoading ? null : _getAllWindows,
+            tooltip: 'Refresh Windows',
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Permission Status Card
+          PermissionCard(
+            hasPermission: _hasPermission,
+            onOpenSettings: _openSettings,
+          ),
+
+          // Search and Controls
+          SearchControls(
+            searchController: _searchController,
+            totalWindows: _windows.length,
+            filteredWindows: _filteredWindows.length,
+            autoRefresh: _autoRefresh,
+            onToggleAutoRefresh: _toggleAutoRefresh,
+          ),
+
+          // Windows List
+          Expanded(
+            child: WindowsList(
+              isLoading: _isLoading,
+              windows: _windows,
+              filteredWindows: _filteredWindows,
+              searchQuery: _searchController.text,
+              onRefresh: _getAllWindows,
+              onWindowTap: _showWindowDetails,
+              formatBytes: _formatBytes,
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: _hasPermission == false
+          ? FloatingActionButton.extended(
+              onPressed: _requestPermission,
+              icon: const Icon(Icons.security),
+              label: const Text('Enable Permissions'),
+              backgroundColor: colorScheme.error,
+              foregroundColor: colorScheme.onError,
+            )
+          : null,
     );
+  }
+
+  void _showWindowDetails(MacosWindowInfo window) {
+    WindowDetailSheet.show(context, window, _getSharingStateText, _formatBytes);
   }
 }
