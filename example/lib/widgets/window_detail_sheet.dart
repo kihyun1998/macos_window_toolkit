@@ -53,6 +53,8 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
   bool? _isWindowAlive;
   bool _isCheckingAlive = false;
   bool _isClosingWindow = false;
+  bool _isTerminatingApp = false;
+  bool _isTerminatingTree = false;
 
   @override
   void initState() {
@@ -194,6 +196,146 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
       if (mounted) {
         setState(() {
           _isClosingWindow = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _terminateApplication({bool force = false}) async {
+    setState(() {
+      _isTerminatingApp = true;
+    });
+
+    try {
+      final success = await _macosWindowToolkit.terminateApplicationByPID(
+        widget.window.processId,
+        force: force,
+      );
+      
+      if (success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Successfully ${force ? 'force ' : ''}terminated application: ${widget.window.ownerName}',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.of(context).pop();
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to ${force ? 'force ' : ''}terminate application: ${widget.window.ownerName}',
+              ),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        String errorMessage = 'Unknown error occurred';
+        if (e is PlatformException) {
+          switch (e.code) {
+            case 'PROCESS_NOT_FOUND':
+              errorMessage = 'Process not found';
+              break;
+            case 'TERMINATION_FAILED':
+              errorMessage = 'Termination failed';
+              break;
+            case 'TERMINATE_APP_ERROR':
+              errorMessage = 'Application termination error';
+              break;
+            default:
+              errorMessage = 'Error: ${e.message}';
+          }
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to terminate application: $errorMessage'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isTerminatingApp = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _terminateApplicationTree({bool force = false}) async {
+    setState(() {
+      _isTerminatingTree = true;
+    });
+
+    try {
+      final success = await _macosWindowToolkit.terminateApplicationTree(
+        widget.window.processId,
+        force: force,
+      );
+      
+      if (success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Successfully ${force ? 'force ' : ''}terminated application tree: ${widget.window.ownerName}',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.of(context).pop();
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to ${force ? 'force ' : ''}terminate application tree: ${widget.window.ownerName}',
+              ),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        String errorMessage = 'Unknown error occurred';
+        if (e is PlatformException) {
+          switch (e.code) {
+            case 'PROCESS_NOT_FOUND':
+              errorMessage = 'Process not found';
+              break;
+            case 'FAILED_TO_GET_PROCESS_LIST':
+              errorMessage = 'Failed to get process list';
+              break;
+            case 'TERMINATE_TREE_ERROR':
+              errorMessage = 'Process tree termination error';
+              break;
+            default:
+              errorMessage = 'Error: ${e.message}';
+          }
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to terminate application tree: $errorMessage'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isTerminatingTree = false;
         });
       }
     }
@@ -355,6 +497,147 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                         ),
                       ),
                     ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Process Termination Section
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colorScheme.errorContainer.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: colorScheme.error.withOpacity(0.5),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.warning_amber,
+                        color: colorScheme.error,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Process Termination',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.error,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'These actions terminate the entire application process, not just the window. '
+                    'No accessibility permissions required.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.onErrorContainer,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: (_isTerminatingApp || _isTerminatingTree) 
+                            ? null 
+                            : () => _terminateApplication(force: false),
+                        icon: _isTerminatingApp && !_isTerminatingTree
+                            ? SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Icon(Icons.stop, size: 16),
+                        label: Text('Terminate App'),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: Size(120, 36),
+                          backgroundColor: Colors.orange.withOpacity(0.1),
+                          foregroundColor: Colors.orange,
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: (_isTerminatingApp || _isTerminatingTree) 
+                            ? null 
+                            : () => _terminateApplication(force: true),
+                        icon: _isTerminatingApp && !_isTerminatingTree
+                            ? SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Icon(Icons.power_off, size: 16),
+                        label: Text('Force Terminate'),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: Size(130, 36),
+                          backgroundColor: Colors.red.withOpacity(0.1),
+                          foregroundColor: Colors.red,
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: (_isTerminatingApp || _isTerminatingTree) 
+                            ? null 
+                            : () => _terminateApplicationTree(force: false),
+                        icon: _isTerminatingTree
+                            ? SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Icon(Icons.account_tree, size: 16),
+                        label: Text('Terminate Tree'),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: Size(130, 36),
+                          backgroundColor: Colors.deepOrange.withOpacity(0.1),
+                          foregroundColor: Colors.deepOrange,
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: (_isTerminatingApp || _isTerminatingTree) 
+                            ? null 
+                            : () => _terminateApplicationTree(force: true),
+                        icon: _isTerminatingTree
+                            ? SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Icon(Icons.dangerous, size: 16),
+                        label: Text('Force Tree'),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: Size(110, 36),
+                          backgroundColor: Colors.red.withOpacity(0.2),
+                          foregroundColor: Colors.red.shade800,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Process ID: ${widget.window.processId}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: colorScheme.onErrorContainer.withOpacity(0.7),
+                      fontFamily: 'monospace',
+                    ),
                   ),
                 ],
               ),

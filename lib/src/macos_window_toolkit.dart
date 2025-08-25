@@ -675,4 +675,156 @@ class MacosWindowToolkit {
   Future<bool> closeWindow(int windowId) async {
     return await MacosWindowToolkitPlatform.instance.closeWindow(windowId);
   }
+
+  /// Terminates an application by its process ID.
+  /// 
+  /// This method will terminate the entire application, not just a specific window.
+  /// Unlike [closeWindow], this method works at the process level and does not
+  /// require accessibility permissions, making it suitable for security applications.
+  /// 
+  /// [processId] is the process ID of the application to terminate, which can be
+  /// obtained from window information returned by [getAllWindows] or other window
+  /// retrieval methods.
+  /// 
+  /// [force] determines the termination method:
+  /// - `false` (default): Graceful termination - allows the application to clean up
+  /// - `true`: Force termination - immediately kills the process
+  /// 
+  /// Returns `true` if the application was successfully terminated, `false` otherwise.
+  /// 
+  /// This method tries multiple approaches:
+  /// 1. NSRunningApplication API (preferred, more graceful)
+  /// 2. Signal-based termination (SIGTERM/SIGKILL) as fallback
+  /// 
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  /// 
+  /// // Get windows and find the process to terminate
+  /// final windows = await toolkit.getAllWindows();
+  /// final targetWindow = windows.firstWhere((w) => w.ownerName.contains('Safari'));
+  /// 
+  /// // Try graceful termination first
+  /// bool success = await toolkit.terminateApplicationByPID(targetWindow.processId);
+  /// 
+  /// if (!success) {
+  ///   // If graceful termination failed, try force termination
+  ///   success = await toolkit.terminateApplicationByPID(
+  ///     targetWindow.processId, 
+  ///     force: true
+  ///   );
+  /// }
+  /// 
+  /// print(success ? 'Application terminated' : 'Termination failed');
+  /// ```
+  /// 
+  /// Throws [PlatformException] with appropriate error codes:
+  /// - `TERMINATE_APP_ERROR`: Application termination failed
+  /// - `PROCESS_NOT_FOUND`: Process with the specified ID does not exist
+  /// - `TERMINATION_FAILED`: System call to terminate process failed
+  Future<bool> terminateApplicationByPID(int processId, {bool force = false}) async {
+    return await MacosWindowToolkitPlatform.instance.terminateApplicationByPID(processId, force: force);
+  }
+
+  /// Terminates an application and all its child processes.
+  /// 
+  /// This method provides comprehensive process termination by first identifying
+  /// all child processes spawned by the target application, then terminating them
+  /// in the correct order (children first, then parent).
+  /// 
+  /// This is particularly useful for security applications where you need to ensure
+  /// that all related processes are terminated, preventing potential security bypasses
+  /// where child processes might continue running after the parent is terminated.
+  /// 
+  /// [processId] is the process ID of the parent application to terminate.
+  /// [force] determines the termination method for all processes:
+  /// - `false` (default): Graceful termination for all processes
+  /// - `true`: Force termination for all processes
+  /// 
+  /// Returns `true` if all processes were successfully terminated, `false` if any failed.
+  /// 
+  /// The termination process:
+  /// 1. Discovers all child processes using system process list
+  /// 2. Terminates child processes first (bottom-up approach)
+  /// 3. Finally terminates the parent process
+  /// 
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  /// 
+  /// // Get process ID from a window
+  /// final windows = await toolkit.getAllWindows();
+  /// final targetWindow = windows.firstWhere((w) => w.ownerName.contains('Electron'));
+  /// 
+  /// // Terminate the entire process tree
+  /// final success = await toolkit.terminateApplicationTree(targetWindow.processId);
+  /// 
+  /// if (success) {
+  ///   print('Application and all child processes terminated');
+  /// } else {
+  ///   print('Some processes failed to terminate');
+  /// }
+  /// 
+  /// // For security applications, you might want to use force termination
+  /// await toolkit.terminateApplicationTree(processId, force: true);
+  /// ```
+  /// 
+  /// Throws [PlatformException] with appropriate error codes:
+  /// - `TERMINATE_TREE_ERROR`: Process tree termination failed
+  /// - `PROCESS_NOT_FOUND`: Parent process with the specified ID does not exist
+  /// - `FAILED_TO_GET_PROCESS_LIST`: Unable to retrieve system process list
+  Future<bool> terminateApplicationTree(int processId, {bool force = false}) async {
+    return await MacosWindowToolkitPlatform.instance.terminateApplicationTree(processId, force: force);
+  }
+
+  /// Gets all child process IDs for a given parent process ID.
+  /// 
+  /// This method searches through the system process list to identify all processes
+  /// that were spawned by the specified parent process. This is useful for understanding
+  /// process relationships and for implementing comprehensive process management.
+  /// 
+  /// [processId] is the process ID of the parent process to analyze.
+  /// 
+  /// Returns a list of process IDs that are direct children of the specified parent.
+  /// Returns an empty list if no child processes are found or if the parent process
+  /// doesn't exist.
+  /// 
+  /// This method is particularly useful in security applications for:
+  /// - Understanding application architecture
+  /// - Detecting process spawning patterns
+  /// - Implementing selective process termination
+  /// - Monitoring process relationships
+  /// 
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  /// 
+  /// // Get process ID from a window
+  /// final windows = await toolkit.getAllWindows();
+  /// final parentWindow = windows.firstWhere((w) => w.ownerName.contains('Browser'));
+  /// 
+  /// // Get all child processes
+  /// final childPIDs = await toolkit.getChildProcesses(parentWindow.processId);
+  /// 
+  /// print('Parent PID: ${parentWindow.processId}');
+  /// print('Child PIDs: $childPIDs');
+  /// 
+  /// // Selectively terminate child processes if needed
+  /// for (final childPID in childPIDs) {
+  ///   final windows = await toolkit.getWindowsByProcessId(childPID);
+  ///   if (windows.any((w) => w.name.contains('dangerous'))) {
+  ///     await toolkit.terminateApplicationByPID(childPID);
+  ///   }
+  /// }
+  /// ```
+  /// 
+  /// Note: This method does not require accessibility permissions and works
+  /// by querying the system process table directly.
+  /// 
+  /// Throws [PlatformException] with appropriate error codes:
+  /// - `GET_CHILD_PROCESSES_ERROR`: Failed to retrieve child processes
+  /// - `FAILED_TO_GET_PROCESS_LIST`: Unable to retrieve system process list
+  Future<List<int>> getChildProcesses(int processId) async {
+    return await MacosWindowToolkitPlatform.instance.getChildProcesses(processId);
+  }
 }

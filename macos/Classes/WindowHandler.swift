@@ -570,6 +570,123 @@ class WindowHandler {
             return .failure(error)
         }
     }
+    
+    /// Terminates an application by its process ID using system signals
+    /// This method will terminate the entire application, not just a specific window
+    func terminateApplicationByPID(_ processId: Int, force: Bool = false) -> Result<Bool, WindowError> {
+        NSLog("Attempting to terminate application with PID: \(processId), force: \(force)")
+        
+        // First verify the process exists
+        let existsResult = kill(Int32(processId), 0)
+        if existsResult == -1 {
+            NSLog("Process with PID \(processId) does not exist")
+            return .failure(.processNotFound)
+        }
+        
+        // Try NSRunningApplication approach first (more graceful)
+        let runningApps = NSWorkspace.shared.runningApplications
+        if let app = runningApps.first(where: { $0.processIdentifier == Int32(processId) }) {
+            NSLog("Found NSRunningApplication for PID \(processId): \(app.bundleIdentifier ?? "Unknown")")
+            
+            if force {
+                let success = app.forceTerminate()
+                NSLog("Force terminate result: \(success)")
+                return .success(success)
+            } else {
+                let success = app.terminate()
+                NSLog("Graceful terminate result: \(success)")
+                return .success(success)
+            }
+        }
+        
+        // Fallback to signal-based termination
+        NSLog("Falling back to signal-based termination")
+        let signal = force ? SIGKILL : SIGTERM
+        let result = kill(Int32(processId), signal)
+        
+        if result == 0 {
+            NSLog("Successfully sent \(force ? "SIGKILL" : "SIGTERM") to process \(processId)")
+            return .success(true)
+        } else {
+            let error = errno
+            NSLog("Failed to send signal to process \(processId), errno: \(error)")
+            return .failure(.terminationFailed)
+        }
+    }
+    
+    /// Gets all child process IDs for a given parent process ID
+    func getChildProcesses(of parentPID: Int32) -> Result<[Int32], WindowError> {
+        NSLog("Getting child processes for parent PID: \(parentPID)")
+        
+        var childPIDs: [Int32] = []
+        var size = 0
+        
+        // Get size needed for process list
+        var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0]
+        let result = sysctl(&mib, 4, nil, &size, nil, 0)
+        
+        if result != 0 {
+            NSLog("Failed to get process list size")
+            return .failure(.failedToGetProcessList)
+        }
+        
+        // Allocate buffer and get process list
+        let count = size / MemoryLayout<kinfo_proc>.size
+        let processes = UnsafeMutablePointer<kinfo_proc>.allocate(capacity: count)
+        defer { processes.deallocate() }
+        
+        let getProcessResult = sysctl(&mib, 4, processes, &size, nil, 0)
+        if getProcessResult != 0 {
+            NSLog("Failed to get process list")
+            return .failure(.failedToGetProcessList)
+        }
+        
+        // Find child processes
+        for i in 0..<count {
+            let process = processes[i]
+            if process.kp_eproc.e_ppid == parentPID {
+                childPIDs.append(process.kp_proc.p_pid)
+            }
+        }
+        
+        NSLog("Found \(childPIDs.count) child processes for PID \(parentPID)")
+        return .success(childPIDs)
+    }
+    
+    /// Terminates an application and all its child processes
+    func terminateApplicationTree(_ processId: Int, force: Bool = false) -> Result<Bool, WindowError> {
+        NSLog("Terminating application tree for PID: \(processId)")
+        
+        // First get all child processes
+        let childResult = getChildProcesses(of: Int32(processId))
+        var allTerminated = true
+        
+        switch childResult {
+        case .success(let childPIDs):
+            // Terminate children first (bottom-up approach)
+            for childPID in childPIDs {
+                let childResult = terminateApplicationByPID(Int(childPID), force: force)
+                if case .failure = childResult {
+                    allTerminated = false
+                    NSLog("Failed to terminate child process: \(childPID)")
+                }
+            }
+            
+        case .failure(let error):
+            NSLog("Failed to get child processes: \(error.localizedDescription)")
+            // Continue with parent termination even if we can't get children
+        }
+        
+        // Finally terminate the parent process
+        let parentResult = terminateApplicationByPID(processId, force: force)
+        
+        switch parentResult {
+        case .success(let success):
+            return .success(success && allTerminated)
+        case .failure(let error):
+            return .failure(error)
+        }
+    }
 }
 
 /// Enum representing window operation errors
@@ -581,6 +698,9 @@ enum WindowError: Error, LocalizedError {
     case accessibilityPermissionDenied
     case closeButtonNotFound
     case closeActionFailed
+    case processNotFound
+    case terminationFailed
+    case failedToGetProcessList
 
     var errorDescription: String? {
         switch self {
@@ -598,6 +718,12 @@ enum WindowError: Error, LocalizedError {
             return "Could not find close button for the specified window"
         case .closeActionFailed:
             return "Failed to perform close action on window"
+        case .processNotFound:
+            return "Process not found"
+        case .terminationFailed:
+            return "Failed to terminate process"
+        case .failedToGetProcessList:
+            return "Failed to retrieve process list"
         }
     }
 }

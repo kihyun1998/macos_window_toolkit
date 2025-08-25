@@ -266,4 +266,34 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
     );
     return result ?? false;
   }
+
+  @override
+  Future<bool> terminateApplicationByPID(int processId, {bool force = false}) async {
+    final result = await methodChannel.invokeMethod<bool>(
+      'terminateApplicationByPID',
+      {'processId': processId, 'force': force},
+    );
+    return result ?? false;
+  }
+
+  @override
+  Future<bool> terminateApplicationTree(int processId, {bool force = false}) async {
+    final result = await methodChannel.invokeMethod<bool>(
+      'terminateApplicationTree',
+      {'processId': processId, 'force': force},
+    );
+    return result ?? false;
+  }
+
+  @override
+  Future<List<int>> getChildProcesses(int processId) async {
+    final result = await methodChannel.invokeMethod<List<dynamic>>(
+      'getChildProcesses',
+      {'processId': processId},
+    );
+    if (result == null) {
+      return [];
+    }
+    return result.cast<int>();
+  }
 }

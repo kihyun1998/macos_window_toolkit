@@ -50,6 +50,12 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       isWindowAlive(call: call, result: result)
     case "closeWindow":
       closeWindow(call: call, result: result)
+    case "terminateApplicationByPID":
+      terminateApplicationByPID(call: call, result: result)
+    case "terminateApplicationTree":
+      terminateApplicationTree(call: call, result: result)
+    case "getChildProcesses":
+      getChildProcesses(call: call, result: result)
     case "hasAccessibilityPermission":
       hasAccessibilityPermission(result: result)
     case "requestAccessibilityPermission":
@@ -397,6 +403,79 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     case .failure(let error):
       result(FlutterError(
         code: "CLOSE_WINDOW_ERROR",
+        message: error.localizedDescription,
+        details: nil))
+    }
+  }
+
+  /// Terminates an application by its process ID
+  private func terminateApplicationByPID(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let args = call.arguments as? [String: Any],
+          let processId = args["processId"] as? Int else {
+      result(FlutterError(
+        code: "INVALID_ARGUMENTS",
+        message: "processId is required",
+        details: nil))
+      return
+    }
+
+    let force = args["force"] as? Bool ?? false
+    
+    let terminateResult = windowHandler.terminateApplicationByPID(processId, force: force)
+    switch terminateResult {
+    case .success(let success):
+      result(success)
+    case .failure(let error):
+      result(FlutterError(
+        code: "TERMINATE_APP_ERROR",
+        message: error.localizedDescription,
+        details: nil))
+    }
+  }
+
+  /// Terminates an application and all its child processes
+  private func terminateApplicationTree(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let args = call.arguments as? [String: Any],
+          let processId = args["processId"] as? Int else {
+      result(FlutterError(
+        code: "INVALID_ARGUMENTS",
+        message: "processId is required",
+        details: nil))
+      return
+    }
+
+    let force = args["force"] as? Bool ?? false
+    
+    let terminateResult = windowHandler.terminateApplicationTree(processId, force: force)
+    switch terminateResult {
+    case .success(let success):
+      result(success)
+    case .failure(let error):
+      result(FlutterError(
+        code: "TERMINATE_TREE_ERROR",
+        message: error.localizedDescription,
+        details: nil))
+    }
+  }
+
+  /// Gets all child process IDs for a given parent process ID
+  private func getChildProcesses(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let args = call.arguments as? [String: Any],
+          let processId = args["processId"] as? Int else {
+      result(FlutterError(
+        code: "INVALID_ARGUMENTS",
+        message: "processId is required",
+        details: nil))
+      return
+    }
+
+    let childResult = windowHandler.getChildProcesses(of: Int32(processId))
+    switch childResult {
+    case .success(let childPIDs):
+      result(childPIDs.map { Int($0) })
+    case .failure(let error):
+      result(FlutterError(
+        code: "GET_CHILD_PROCESSES_ERROR",
         message: error.localizedDescription,
         details: nil))
     }
