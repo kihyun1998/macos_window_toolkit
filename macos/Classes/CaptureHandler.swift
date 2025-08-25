@@ -14,7 +14,7 @@ class CaptureHandler {
         case requiresMacOS14
     }
 
-    static func captureWindow(windowId: Int, excludeTitlebar: Bool = false) async throws -> Data {
+    static func captureWindow(windowId: Int, excludeTitlebar: Bool = false, customTitlebarHeight: CGFloat? = nil) async throws -> Data {
         // macOS 버전 확인 - SCScreenshotManager는 macOS 14.0+에서만 사용 가능
         guard #available(macOS 14.0, *) else {
             throw CaptureError.requiresMacOS14
@@ -58,26 +58,21 @@ class CaptureHandler {
             // Titlebar 제외가 요청된 경우 이미지를 crop
             let finalImage: CGImage
             if excludeTitlebar {
-                // Get content bounds excluding titlebar
-                let contentBounds =
-                    CaptureUtil.getWindowContentBounds(
-                        windowId: windowId,
-                        windowBounds: targetWindow.frame
-                    )
-                    ?? CGRect(
-                        x: targetWindow.frame.origin.x,
-                        y: targetWindow.frame.origin.y + 28,
-                        width: targetWindow.frame.width,
-                        height: targetWindow.frame.height - 28
-                    )
-
-                // Calculate crop rectangle (titlebar height from top)
-                let titlebarHeight = targetWindow.frame.height - contentBounds.height
+                // 전체화면에서는 타이틀바가 없으므로 항상 0으로 설정
+                let titlebarHeight: CGFloat
+                if isFullscreenWindow(targetWindow.frame) {
+                    titlebarHeight = 0.0
+                } else {
+                    // 일반 윈도우에서는 custom 값 또는 기본값(28px) 사용
+                    let requestedHeight = customTitlebarHeight ?? 28.0
+                    titlebarHeight = max(0, min(requestedHeight, targetWindow.frame.height))
+                }
+                
                 let cropRect = CGRect(
                     x: 0,
                     y: titlebarHeight,
                     width: targetWindow.frame.width,
-                    height: contentBounds.height
+                    height: targetWindow.frame.height - titlebarHeight
                 )
 
                 guard let croppedImage = screenshot.cropping(to: cropRect) else {
@@ -105,6 +100,33 @@ class CaptureHandler {
     private static func convertCGImageToPNG(_ cgImage: CGImage) -> Data? {
         let bitmapRep = NSBitmapImageRep(cgImage: cgImage)
         return bitmapRep.representation(using: .png, properties: [:])
+    }
+    
+    /// 윈도우가 전체화면인지 확인
+    private static func isFullscreenWindow(_ windowFrame: CGRect) -> Bool {
+        // 메인 스크린과 비교
+        if let mainScreen = NSScreen.main {
+            let screenFrame = mainScreen.frame
+            if windowFrame.size.width == screenFrame.size.width &&
+               windowFrame.size.height == screenFrame.size.height &&
+               windowFrame.origin.x == screenFrame.origin.x &&
+               windowFrame.origin.y == screenFrame.origin.y {
+                return true
+            }
+        }
+        
+        // 멀티 디스플레이 환경에서 다른 스크린들과 비교
+        for screen in NSScreen.screens {
+            let screenFrame = screen.frame
+            if windowFrame.size.width == screenFrame.size.width &&
+               windowFrame.size.height == screenFrame.size.height &&
+               windowFrame.origin.x == screenFrame.origin.x &&
+               windowFrame.origin.y == screenFrame.origin.y {
+                return true
+            }
+        }
+        
+        return false
     }
 
     // 캡처 가능한 창 목록 반환

@@ -147,10 +147,19 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
   Future<Uint8List> captureWindow(
     int windowId, {
     bool excludeTitlebar = false,
+    double? customTitlebarHeight,
   }) async {
+    final arguments = <String, dynamic>{
+      'windowId': windowId, 
+      'excludeTitlebar': excludeTitlebar,
+    };
+    if (customTitlebarHeight != null) {
+      arguments['customTitlebarHeight'] = customTitlebarHeight;
+    }
+    
     final result = await methodChannel.invokeMethod<Uint8List>(
       'captureWindow',
-      {'windowId': windowId, 'excludeTitlebar': excludeTitlebar},
+      arguments,
     );
     if (result == null) {
       throw PlatformException(
@@ -210,10 +219,19 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
   Future<Uint8List> captureWindowAuto(
     int windowId, {
     bool excludeTitlebar = false,
+    double? customTitlebarHeight,
   }) async {
+    final arguments = <String, dynamic>{
+      'windowId': windowId, 
+      'excludeTitlebar': excludeTitlebar,
+    };
+    if (customTitlebarHeight != null) {
+      arguments['customTitlebarHeight'] = customTitlebarHeight;
+    }
+    
     final result = await methodChannel.invokeMethod<Uint8List>(
       'captureWindowAuto',
-      {'windowId': windowId, 'excludeTitlebar': excludeTitlebar},
+      arguments,
     );
     if (result == null) {
       throw PlatformException(

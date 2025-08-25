@@ -256,6 +256,10 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   /// Returns the captured image as bytes in PNG format.
   /// 
   /// [windowId] is the unique identifier of the window to capture.
+  /// [excludeTitlebar] if true, removes the titlebar from the captured image.
+  /// [customTitlebarHeight] specifies a custom titlebar height to remove (in points).
+  /// If null and excludeTitlebar is true, uses the default 28pt titlebar height.
+  /// Must be non-negative and not larger than the window height.
   /// 
   /// Throws [PlatformException] with appropriate error codes:
   /// - `UNSUPPORTED_MACOS_VERSION`: macOS version does not support ScreenCaptureKit (requires 12.3+)
@@ -266,15 +270,22 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   /// Example usage:
   /// ```dart
   /// try {
+  ///   // Basic window capture
   ///   final imageBytes = await toolkit.captureWindow(12345);
-  ///   // Use imageBytes to display or save the captured image
+  ///   
+  ///   // Capture without titlebar (28pt default)
+  ///   final noBarsImage = await toolkit.captureWindow(12345, excludeTitlebar: true);
+  ///   
+  ///   // Capture with custom titlebar height (e.g., Safari's 44pt)
+  ///   final customImage = await toolkit.captureWindow(12345, 
+  ///     excludeTitlebar: true, customTitlebarHeight: 44.0);
   /// } catch (e) {
   ///   if (e is PlatformException && e.code == 'UNSUPPORTED_MACOS_VERSION') {
   ///     // Fall back to CGWindowListCreateImage method
   ///   }
   /// }
   /// ```
-  Future<Uint8List> captureWindow(int windowId, {bool excludeTitlebar = false}) {
+  Future<Uint8List> captureWindow(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) {
     throw UnimplementedError('captureWindow() has not been implemented.');
   }
 
@@ -345,6 +356,10 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   /// Returns the captured image as bytes in PNG format.
   /// 
   /// [windowId] is the unique identifier of the window to capture.
+  /// [excludeTitlebar] if true, removes the titlebar from the captured image.
+  /// [customTitlebarHeight] specifies a custom titlebar height to remove (in points).
+  /// If null and excludeTitlebar is true, uses the default 28pt titlebar height.
+  /// Must be non-negative and not larger than the window height.
   /// 
   /// This is the recommended method for window capture as it provides the best
   /// experience across all macOS versions.
@@ -357,15 +372,22 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   /// Example usage:
   /// ```dart
   /// try {
+  ///   // Basic window capture with auto-selection
   ///   final imageBytes = await toolkit.captureWindowAuto(12345);
-  ///   // Use imageBytes to display or save the captured image
+  ///   
+  ///   // Capture without titlebar using default height
+  ///   final noBarsImage = await toolkit.captureWindowAuto(12345, excludeTitlebar: true);
+  ///   
+  ///   // Capture with custom titlebar height for Chrome (0pt)
+  ///   final chromeImage = await toolkit.captureWindowAuto(12345, 
+  ///     excludeTitlebar: true, customTitlebarHeight: 0.0);
   /// } catch (e) {
   ///   if (e is PlatformException && e.code == 'INVALID_WINDOW_ID') {
   ///     print('Window not found');
   ///   }
   /// }
   /// ```
-  Future<Uint8List> captureWindowAuto(int windowId, {bool excludeTitlebar = false}) {
+  Future<Uint8List> captureWindowAuto(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) {
     throw UnimplementedError('captureWindowAuto() has not been implemented.');
   }
 
