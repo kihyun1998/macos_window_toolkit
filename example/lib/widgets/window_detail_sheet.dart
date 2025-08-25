@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:macos_window_toolkit/macos_window_toolkit.dart';
@@ -80,7 +78,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
     });
 
     try {
-      final isAlive = await _macosWindowToolkit.isWindowAlive(widget.window.windowId);
+      final isAlive = await _macosWindowToolkit.isWindowAlive(
+        widget.window.windowId,
+      );
       print('Window ${widget.window.windowId} alive check result: $isAlive');
       setState(() {
         _isWindowAlive = isAlive;
@@ -144,13 +144,17 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
     });
 
     try {
-      final success = await _macosWindowToolkit.closeWindow(widget.window.windowId);
-      
+      final success = await _macosWindowToolkit.closeWindow(
+        widget.window.windowId,
+      );
+
       if (success) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Successfully closed window: ${widget.window.name}'),
+              content: Text(
+                'Successfully closed window: ${widget.window.name}',
+              ),
               backgroundColor: Colors.green,
             ),
           );
@@ -184,7 +188,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
               errorMessage = 'Error: ${e.message}';
           }
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to close window: $errorMessage'),
@@ -211,7 +215,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
         widget.window.processId,
         force: force,
       );
-      
+
       if (success) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -254,7 +258,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
               errorMessage = 'Error: ${e.message}';
           }
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to terminate application: $errorMessage'),
@@ -281,7 +285,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
         widget.window.processId,
         force: force,
       );
-      
+
       if (success) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -324,10 +328,12 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
               errorMessage = 'Error: ${e.message}';
           }
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to terminate application tree: $errorMessage'),
+            content: Text(
+              'Failed to terminate application tree: $errorMessage',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -346,14 +352,14 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.7,
+      initialChildSize: 0.5,
       minChildSize: 0.5,
-      maxChildSize: 0.9,
+      maxChildSize: 1,
       expand: false,
       builder: (context, scrollController) => Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView(
+          controller: scrollController,
           children: [
             // Handle
             Center(
@@ -383,11 +389,11 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: _isWindowAlive == true 
+                color: _isWindowAlive == true
                     ? Colors.green.withOpacity(0.1)
-                    : _isWindowAlive == false 
-                        ? Colors.red.withOpacity(0.1)
-                        : colorScheme.surfaceVariant,
+                    : _isWindowAlive == false
+                    ? Colors.red.withOpacity(0.1)
+                    : colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12),
                 border: _isWindowAlive != null
                     ? Border.all(
@@ -402,16 +408,16 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                   Row(
                     children: [
                       Icon(
-                        _isWindowAlive == true 
-                            ? Icons.check_circle 
-                            : _isWindowAlive == false 
-                                ? Icons.cancel 
-                                : Icons.help_outline,
-                        color: _isWindowAlive == true 
-                            ? Colors.green 
-                            : _isWindowAlive == false 
-                                ? Colors.red 
-                                : colorScheme.primary,
+                        _isWindowAlive == true
+                            ? Icons.check_circle
+                            : _isWindowAlive == false
+                            ? Icons.cancel
+                            : Icons.help_outline,
+                        color: _isWindowAlive == true
+                            ? Colors.green
+                            : _isWindowAlive == false
+                            ? Colors.red
+                            : colorScheme.primary,
                         size: 20,
                       ),
                       const SizedBox(width: 8),
@@ -427,7 +433,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           ElevatedButton.icon(
-                            onPressed: _isCheckingAlive ? null : _checkWindowAlive,
+                            onPressed: _isCheckingAlive
+                                ? null
+                                : _checkWindowAlive,
                             icon: _isCheckingAlive
                                 ? SizedBox(
                                     width: 16,
@@ -440,13 +448,17 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                             label: Text('Check'),
                             style: ElevatedButton.styleFrom(
                               minimumSize: Size(80, 32),
-                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 8),
                           ElevatedButton.icon(
-                            onPressed: (_isClosingWindow || _isWindowAlive == false) 
-                                ? null 
+                            onPressed:
+                                (_isClosingWindow || _isWindowAlive == false)
+                                ? null
                                 : _closeWindow,
                             icon: _isClosingWindow
                                 ? SizedBox(
@@ -460,7 +472,10 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                             label: Text('Close'),
                             style: ElevatedButton.styleFrom(
                               minimumSize: Size(80, 32),
-                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
+                              ),
                               backgroundColor: Colors.red.withOpacity(0.1),
                               foregroundColor: Colors.red,
                             ),
@@ -483,16 +498,16 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                         _isCheckingAlive
                             ? 'Checking...'
                             : _isWindowAlive == true
-                                ? 'Window is alive'
-                                : _isWindowAlive == false
-                                    ? 'Window not found'
-                                    : 'Unknown',
+                            ? 'Window is alive'
+                            : _isWindowAlive == false
+                            ? 'Window not found'
+                            : 'Unknown',
                         style: TextStyle(
-                          color: _isWindowAlive == true 
-                              ? Colors.green 
-                              : _isWindowAlive == false 
-                                  ? Colors.red 
-                                  : colorScheme.onSurface,
+                          color: _isWindowAlive == true
+                              ? Colors.green
+                              : _isWindowAlive == false
+                              ? Colors.red
+                              : colorScheme.onSurface,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -549,8 +564,8 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                     runSpacing: 8,
                     children: [
                       ElevatedButton.icon(
-                        onPressed: (_isTerminatingApp || _isTerminatingTree) 
-                            ? null 
+                        onPressed: (_isTerminatingApp || _isTerminatingTree)
+                            ? null
                             : () => _terminateApplication(force: false),
                         icon: _isTerminatingApp && !_isTerminatingTree
                             ? SizedBox(
@@ -569,8 +584,8 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                         ),
                       ),
                       ElevatedButton.icon(
-                        onPressed: (_isTerminatingApp || _isTerminatingTree) 
-                            ? null 
+                        onPressed: (_isTerminatingApp || _isTerminatingTree)
+                            ? null
                             : () => _terminateApplication(force: true),
                         icon: _isTerminatingApp && !_isTerminatingTree
                             ? SizedBox(
@@ -589,8 +604,8 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                         ),
                       ),
                       ElevatedButton.icon(
-                        onPressed: (_isTerminatingApp || _isTerminatingTree) 
-                            ? null 
+                        onPressed: (_isTerminatingApp || _isTerminatingTree)
+                            ? null
                             : () => _terminateApplicationTree(force: false),
                         icon: _isTerminatingTree
                             ? SizedBox(
@@ -609,8 +624,8 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                         ),
                       ),
                       ElevatedButton.icon(
-                        onPressed: (_isTerminatingApp || _isTerminatingTree) 
-                            ? null 
+                        onPressed: (_isTerminatingApp || _isTerminatingTree)
+                            ? null
                             : () => _terminateApplicationTree(force: true),
                         icon: _isTerminatingTree
                             ? SizedBox(
@@ -649,7 +664,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceVariant,
+                  color: colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -702,11 +717,13 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                             children: [
                               Switch(
                                 value: _excludeTitlebar,
-                                onChanged: _isCapturing ? null : (value) {
-                                  setState(() {
-                                    _excludeTitlebar = value;
-                                  });
-                                },
+                                onChanged: _isCapturing
+                                    ? null
+                                    : (value) {
+                                        setState(() {
+                                          _excludeTitlebar = value;
+                                        });
+                                      },
                               ),
                               const SizedBox(width: 8),
                               Text(
@@ -802,65 +819,58 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
             ],
 
             // Details List
-            Expanded(
-              child: ListView(
-                controller: scrollController,
-                children: [
-                  _DetailItem(
-                    label: 'Window Name',
-                    value: widget.window.name.isEmpty
-                        ? 'Untitled'
-                        : widget.window.name,
-                  ),
-                  _DetailItem(
-                    label: 'Application',
-                    value: widget.window.ownerName.isEmpty
-                        ? 'Unknown'
-                        : widget.window.ownerName,
-                  ),
-                  _DetailItem(
-                    label: 'Window ID',
-                    value: '${widget.window.windowId}',
-                  ),
-                  _DetailItem(
-                    label: 'Process ID',
-                    value: '${widget.window.processId}',
-                  ),
-                  _DetailItem(
-                    label: 'Position',
-                    value:
-                        '(${widget.window.x.toStringAsFixed(1)}, ${widget.window.y.toStringAsFixed(1)})',
-                  ),
-                  _DetailItem(
-                    label: 'Size',
-                    value:
-                        '${widget.window.width.toStringAsFixed(1)} × ${widget.window.height.toStringAsFixed(1)}',
-                  ),
-                  _DetailItem(label: 'Layer', value: '${widget.window.layer}'),
-                  _DetailItem(
-                    label: 'On Screen',
-                    value: widget.window.isOnScreen ? 'Yes' : 'No',
-                  ),
-                  if (widget.window.alpha != null)
-                    _DetailItem(
-                      label: 'Alpha',
-                      value: widget.window.alpha!.toStringAsFixed(2),
-                    ),
-                  if (widget.window.sharingState != null)
-                    _DetailItem(
-                      label: 'Sharing State',
-                      value: widget.getSharingStateText(
-                        widget.window.sharingState!,
-                      ),
-                    ),
-                  if (widget.window.memoryUsage != null)
-                    _DetailItem(
-                      label: 'Memory Usage',
-                      value: widget.formatBytes(widget.window.memoryUsage!),
-                    ),
-                ],
-              ),
+            _DetailItem(
+              label: 'Window Name',
+              value: widget.window.name.isEmpty
+                  ? 'Untitled'
+                  : widget.window.name,
             ),
+            _DetailItem(
+              label: 'Application',
+              value: widget.window.ownerName.isEmpty
+                  ? 'Unknown'
+                  : widget.window.ownerName,
+            ),
+            _DetailItem(
+              label: 'Window ID',
+              value: '${widget.window.windowId}',
+            ),
+            _DetailItem(
+              label: 'Process ID',
+              value: '${widget.window.processId}',
+            ),
+            _DetailItem(
+              label: 'Position',
+              value:
+                  '(${widget.window.x.toStringAsFixed(1)}, ${widget.window.y.toStringAsFixed(1)})',
+            ),
+            _DetailItem(
+              label: 'Size',
+              value:
+                  '${widget.window.width.toStringAsFixed(1)} × ${widget.window.height.toStringAsFixed(1)}',
+            ),
+            _DetailItem(label: 'Layer', value: '${widget.window.layer}'),
+            _DetailItem(
+              label: 'On Screen',
+              value: widget.window.isOnScreen ? 'Yes' : 'No',
+            ),
+            if (widget.window.alpha != null)
+              _DetailItem(
+                label: 'Alpha',
+                value: widget.window.alpha!.toStringAsFixed(2),
+              ),
+            if (widget.window.sharingState != null)
+              _DetailItem(
+                label: 'Sharing State',
+                value: widget.getSharingStateText(
+                  widget.window.sharingState!,
+                ),
+              ),
+            if (widget.window.memoryUsage != null)
+              _DetailItem(
+                label: 'Memory Usage',
+                value: widget.formatBytes(widget.window.memoryUsage!),
+              ),
           ],
         ),
       ),
