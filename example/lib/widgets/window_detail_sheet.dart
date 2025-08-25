@@ -41,13 +41,17 @@ class WindowDetailSheet extends StatefulWidget {
   State<WindowDetailSheet> createState() => _WindowDetailSheetState();
 }
 
+enum CaptureType { screenCaptureKit, legacy, smart }
+
 class _WindowDetailSheetState extends State<WindowDetailSheet> {
   final _macosWindowToolkit = MacosWindowToolkit();
+  final _titlebarHeightController = TextEditingController();
+  
   bool _isCapturing = false;
-  Uint8List? _capturedImage;
   String? _captureError;
   MacosVersionInfo? _versionInfo;
   bool _excludeTitlebar = false;
+  CaptureType _captureType = CaptureType.smart;
   bool? _isWindowAlive;
   bool _isCheckingAlive = false;
   bool _isClosingWindow = false;
@@ -59,6 +63,12 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
     super.initState();
     _checkVersionInfo();
     _checkWindowAlive();
+  }
+
+  @override
+  void dispose() {
+    _titlebarHeightController.dispose();
+    super.dispose();
   }
 
   Future<void> _checkVersionInfo() async {
@@ -102,27 +112,61 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
     });
 
     try {
-      final imageBytes = await _macosWindowToolkit.captureWindow(
-        widget.window.windowId,
-        excludeTitlebar: _excludeTitlebar,
-      );
+      double? customHeight;
+      if (_excludeTitlebar && _titlebarHeightController.text.isNotEmpty) {
+        customHeight = double.tryParse(_titlebarHeightController.text);
+      }
+
+      Uint8List imageBytes;
+      
+      switch (_captureType) {
+        case CaptureType.screenCaptureKit:
+          imageBytes = await _macosWindowToolkit.captureWindow(
+            widget.window.windowId,
+            excludeTitlebar: _excludeTitlebar,
+            customTitlebarHeight: customHeight,
+          );
+          break;
+        case CaptureType.legacy:
+          imageBytes = await _macosWindowToolkit.captureWindowLegacy(
+            widget.window.windowId,
+            excludeTitlebar: _excludeTitlebar,
+            customTitlebarHeight: customHeight,
+          );
+          break;
+        case CaptureType.smart:
+          imageBytes = await _macosWindowToolkit.captureWindowAuto(
+            widget.window.windowId,
+            excludeTitlebar: _excludeTitlebar,
+            customTitlebarHeight: customHeight,
+          );
+          break;
+      }
+      
       setState(() {
-        _capturedImage = imageBytes;
         _isCapturing = false;
       });
+      
+      // Show captured image in dialog
+      if (mounted) {
+        _showCaptureResultDialog(imageBytes);
+      }
     } catch (e) {
       setState(() {
         _isCapturing = false;
         if (e is PlatformException) {
           switch (e.code) {
             case 'UNSUPPORTED_MACOS_VERSION':
-              _captureError = 'macOS 12.3+ required for ScreenCaptureKit';
+              _captureError = 'macOS version not supported for this capture method';
               break;
             case 'INVALID_WINDOW_ID':
               _captureError = 'Window not found or not capturable';
               break;
             case 'CAPTURE_FAILED':
               _captureError = 'Capture failed: ${e.message}';
+              break;
+            case 'NO_COMPATIBLE_CAPTURE_METHOD':
+              _captureError = 'No compatible capture method available';
               break;
             default:
               _captureError = 'Capture error: ${e.message}';
@@ -135,7 +179,21 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
   }
 
   bool get _canCapture {
-    return _versionInfo?.isScreenCaptureKitAvailable ?? false;
+    switch (_captureType) {
+      case CaptureType.screenCaptureKit:
+        return _versionInfo?.isScreenCaptureKitAvailable ?? false;
+      case CaptureType.legacy:
+        return true; // Legacy method works on all versions
+      case CaptureType.smart:
+        return true; // Smart method handles version compatibility
+    }
+  }
+
+  void _showCaptureResultDialog(Uint8List imageBytes) {
+    showDialog(
+      context: context,
+      builder: (context) => CaptureResultDialog(imageBytes: imageBytes),
+    );
   }
 
   Future<void> _closeWindow() async {
@@ -659,161 +717,206 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
             ),
             const SizedBox(height: 16),
 
-            // Capture Section
+            // Advanced Capture Section
             if (_versionInfo != null) ...[
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              ExpansionTile(
+                title: Row(
                   children: [
-                    Row(
+                    Icon(
+                      Icons.camera_alt,
+                      color: colorScheme.primary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Advanced Window Capture',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+                initiallyExpanded: false,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.camera_alt,
-                          color: colorScheme.primary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
+                        // Capture Type Selection
                         Text(
-                          'Window Capture',
+                          'Capture Method',
                           style: TextStyle(
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w500,
                             color: colorScheme.onSurfaceVariant,
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    if (!_canCapture) ...[
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.warning_amber,
-                            color: Colors.orange,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'ScreenCaptureKit not available (requires macOS 12.3+)',
+                        const SizedBox(height: 8),
+                        Column(
+                          children: [
+                            RadioListTile<CaptureType>(
+                              title: const Text('Smart (Auto)'),
+                              subtitle: const Text('Automatically selects best method'),
+                              value: CaptureType.smart,
+                              groupValue: _captureType,
+                              onChanged: _isCapturing ? null : (value) {
+                                setState(() {
+                                  _captureType = value!;
+                                });
+                              },
+                              dense: true,
+                            ),
+                            RadioListTile<CaptureType>(
+                              title: const Text('ScreenCaptureKit'),
+                              subtitle: Text(
+                                _versionInfo?.isScreenCaptureKitAvailable == true
+                                    ? 'High quality (macOS 12.3+)'
+                                    : 'Not available on this system'
+                              ),
+                              value: CaptureType.screenCaptureKit,
+                              groupValue: _captureType,
+                              onChanged: _isCapturing ? null : (value) {
+                                setState(() {
+                                  _captureType = value!;
+                                });
+                              },
+                              dense: true,
+                            ),
+                            RadioListTile<CaptureType>(
+                              title: const Text('Legacy'),
+                              subtitle: const Text('Compatible with all macOS versions'),
+                              value: CaptureType.legacy,
+                              groupValue: _captureType,
+                              onChanged: _isCapturing ? null : (value) {
+                                setState(() {
+                                  _captureType = value!;
+                                });
+                              },
+                              dense: true,
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        const Divider(),
+                        const SizedBox(height: 16),
+                        
+                        // Titlebar Options
+                        Row(
+                          children: [
+                            Switch(
+                              value: _excludeTitlebar,
+                              onChanged: _isCapturing ? null : (value) {
+                                setState(() {
+                                  _excludeTitlebar = value;
+                                });
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Exclude Titlebar',
                               style: TextStyle(
-                                color: Colors.orange,
-                                fontSize: 12,
+                                color: _isCapturing ? Colors.grey : null,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
+                          ],
+                        ),
+                        
+                        if (_excludeTitlebar) ...[
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: _titlebarHeightController,
+                            decoration: InputDecoration(
+                              labelText: 'Custom Titlebar Height (points)',
+                              hintText: 'Leave empty for default (28pt)',
+                              helperText: 'Common values: Safari 44pt, Chrome 0pt',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            keyboardType: TextInputType.number,
+                            enabled: !_isCapturing,
                           ),
                         ],
-                      ),
-                    ] else ...[
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+                        
+                        const SizedBox(height: 16),
+                        
+                        // Capture Button and Status
+                        if (!_canCapture) ...[
                           Row(
                             children: [
-                              Switch(
-                                value: _excludeTitlebar,
-                                onChanged: _isCapturing
-                                    ? null
-                                    : (value) {
-                                        setState(() {
-                                          _excludeTitlebar = value;
-                                        });
-                                      },
+                              Icon(
+                                Icons.warning_amber,
+                                color: Colors.orange,
+                                size: 16,
                               ),
                               const SizedBox(width: 8),
-                              Text(
-                                'Exclude Titlebar',
-                                style: TextStyle(
-                                  color: _isCapturing ? Colors.grey : null,
+                              Expanded(
+                                child: Text(
+                                  _captureType == CaptureType.screenCaptureKit
+                                      ? 'ScreenCaptureKit not available (requires macOS 12.3+)'
+                                      : 'Capture method not available',
+                                  style: TextStyle(
+                                    color: Colors.orange,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
-                          ElevatedButton.icon(
-                            onPressed: _isCapturing ? null : _captureWindow,
-                            icon: _isCapturing
-                                ? SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
+                          const SizedBox(height: 12),
+                        ],
+                        
+                        ElevatedButton.icon(
+                          onPressed: (_isCapturing || !_canCapture) ? null : _captureWindow,
+                          icon: _isCapturing
+                              ? SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Icon(Icons.camera_alt),
+                          label: Text(
+                            _isCapturing ? 'Capturing...' : 'Capture Window',
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: Size(double.infinity, 44),
+                          ),
+                        ),
+
+                        if (_captureError != null) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.red.withOpacity(0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.error, color: Colors.red, size: 16),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _captureError!,
+                                    style: TextStyle(
+                                      color: Colors.red,
+                                      fontSize: 12,
                                     ),
-                                  )
-                                : Icon(Icons.camera_alt),
-                            label: Text(
-                              _isCapturing ? 'Capturing...' : 'Capture Window',
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
-                      ),
-                      if (_capturedImage != null) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.check_circle,
-                              color: Colors.green,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Captured!',
-                              style: TextStyle(
-                                color: Colors.green,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
                       ],
-
-                      if (_captureError != null) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(Icons.error, color: Colors.red, size: 16),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _captureError!,
-                                style: TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-
-                      if (_capturedImage != null) ...[
-                        const SizedBox(height: 12),
-                        Container(
-                          height: 150,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: colorScheme.outline),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.memory(
-                              _capturedImage!,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ],
-                ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
             ],
@@ -907,6 +1010,85 @@ class _DetailItem extends StatelessWidget {
             child: Text(value, style: TextStyle(color: colorScheme.onSurface)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class CaptureResultDialog extends StatelessWidget {
+  final Uint8List imageBytes;
+
+  const CaptureResultDialog({
+    super.key,
+    required this.imageBytes,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Dialog.fullscreen(
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          title: const Text('Captured Window'),
+          backgroundColor: colorScheme.surface.withOpacity(0.9),
+          foregroundColor: colorScheme.onSurface,
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ),
+        body: Center(
+          child: InteractiveViewer(
+            child: Container(
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 20,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: Image.memory(
+                imageBytes,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ),
+        bottomNavigationBar: Container(
+          padding: const EdgeInsets.all(16),
+          color: colorScheme.surface.withOpacity(0.9),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton.icon(
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: 'Image copied to clipboard'));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Image size copied to clipboard'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.copy),
+                label: const Text('Copy Info'),
+              ),
+              ElevatedButton.icon(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close),
+                label: const Text('Close'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

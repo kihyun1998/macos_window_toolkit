@@ -31,7 +31,7 @@ class _PermissionGuardPageState extends State<PermissionGuardPage> {
         if (screenRecording && accessibility) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const MainTabView()),
+            MaterialPageRoute(builder: (_) => const WindowDemoPage()),
           );
         } else {
           Navigator.pushReplacement(
@@ -65,11 +65,7 @@ class _PermissionGuardPageState extends State<PermissionGuardPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.security,
-              size: 64,
-              color: colorScheme.primary,
-            ),
+            Icon(Icons.security, size: 64, color: colorScheme.primary),
             const SizedBox(height: 24),
             Text(
               'Checking Permissions...',
@@ -80,9 +76,7 @@ class _PermissionGuardPageState extends State<PermissionGuardPage> {
             ),
             const SizedBox(height: 16),
             if (_isChecking)
-              CircularProgressIndicator(
-                color: colorScheme.primary,
-              ),
+              CircularProgressIndicator(color: colorScheme.primary),
             if (!_isChecking) ...[
               Text(
                 'Failed to check permissions',

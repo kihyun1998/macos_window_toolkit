@@ -9,11 +9,8 @@ import 'services/notification_service.dart';
 import 'services/permission_service.dart';
 import 'services/version_service.dart';
 import 'services/window_service.dart';
-import 'widgets/capturable_windows_tab.dart';
-import 'widgets/legacy_windows_tab.dart';
 import 'widgets/permissions_status_card.dart';
 import 'widgets/search_controls.dart';
-import 'widgets/smart_capture_tab.dart';
 import 'widgets/version_info_card.dart';
 import 'widgets/window_detail_sheet.dart';
 import 'widgets/windows_list.dart';
@@ -62,47 +59,13 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: hasInitialPermissions ? '/main' : '/permission',
       routes: {
-        '/main': (context) => const MainTabView(),
+        '/main': (context) => const WindowDemoPage(),
         '/permission': (context) => const PermissionSetupPage(),
       },
     );
   }
 }
 
-class MainTabView extends StatelessWidget {
-  const MainTabView({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 4,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('macOS Window Toolkit'),
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          foregroundColor: Theme.of(context).colorScheme.onSurface,
-          elevation: 0,
-          bottom: const TabBar(
-            tabs: [
-              Tab(icon: Icon(Icons.window), text: 'All Windows'),
-              Tab(icon: Icon(Icons.auto_awesome), text: 'Smart Capture'),
-              Tab(icon: Icon(Icons.camera_alt), text: 'ScreenCaptureKit'),
-              Tab(icon: Icon(Icons.camera), text: 'Legacy Capture'),
-            ],
-          ),
-        ),
-        body: const TabBarView(
-          children: [
-            WindowDemoPage(),
-            SmartCaptureTab(),
-            CapturableWindowsTab(),
-            LegacyWindowsTab(),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class WindowDemoPage extends StatefulWidget {
   const WindowDemoPage({super.key});
@@ -339,7 +302,7 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('All Windows'),
+        title: const Text('macOS Window Toolkit'),
         backgroundColor: colorScheme.surface,
         foregroundColor: colorScheme.onSurface,
         elevation: 0,
