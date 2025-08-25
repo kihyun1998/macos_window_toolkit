@@ -1,19 +1,19 @@
+import ApplicationServices  // Import for Accessibility API
 import Cocoa
 import Foundation
-import ApplicationServices  // Import for Accessibility API
 
 /// Handler class responsible for permission-related operations
 class PermissionHandler {
-    
+
     /// Checks if the app has screen recording permission
     /// Returns true if permission is granted, false otherwise
     func hasScreenRecordingPermission() -> Bool {
         if #available(macOS 10.15, *) {
             return CGPreflightScreenCaptureAccess()
         }
-        return true // Pre-Catalina doesn't require permission
+        return true  // Pre-Catalina doesn't require permission
     }
-    
+
     /// Requests screen recording permission
     /// Returns true if permission is granted, false otherwise
     /// Note: This will show a system dialog if permission hasn't been requested before
@@ -30,87 +30,94 @@ class PermissionHandler {
                 return result
             }
         }
-        return true // Pre-Catalina doesn't require permission
+        return true  // Pre-Catalina doesn't require permission
     }
-    
+
     /// Opens System Preferences to the Screen Recording section
     /// Returns true if the settings were opened successfully, false otherwise
     func openScreenRecordingSettings() -> Bool {
         // Try opening the specific Screen Recording settings page
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
+        if let url = URL(
+            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")
+        {
             if NSWorkspace.shared.open(url) {
                 return true
             }
         }
-        
+
         // Fallback: open general Privacy & Security settings
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security") {
             if NSWorkspace.shared.open(url) {
                 return true
             }
         }
-        
+
         // Last resort: open System Preferences
         if let url = URL(string: "x-apple.systempreferences:") {
             return NSWorkspace.shared.open(url)
         }
-        
+
         return false
     }
-    
+
     // MARK: - Accessibility Permissions
-    
+
     /// Checks if the app has accessibility permission
     /// Returns false if permission is not granted
     func hasAccessibilityPermission() -> Bool {
         return AXIsProcessTrusted()
     }
-    
+
     /// Requests accessibility permission (with prompt)
     /// Shows system dialog if permission is not granted and returns current permission status
     func requestAccessibilityPermission() -> Bool {
         // Use kAXTrustedCheckOptionPrompt option to show permission request dialog
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
         let hasPermission = AXIsProcessTrustedWithOptions(options as CFDictionary)
-        
+
         if !hasPermission {
             NSLog("Accessibility permission not granted. System dialog shown.")
         }
-        
+
         return hasPermission
     }
-    
+
     /// Opens the Accessibility settings page
     /// Allows user to manually grant permission
     func openAccessibilitySettings() -> Bool {
         // Use new Settings app URL for macOS Ventura and later
         if #available(macOS 13.0, *) {
-            if let url = URL(string: "x-apple.systempreferences:com.apple.Settings.PrivacySecurity.extension?Privacy_Accessibility") {
+            if let url = URL(
+                string:
+                    "x-apple.systempreferences:com.apple.Settings.PrivacySecurity.extension?Privacy_Accessibility"
+            ) {
                 if NSWorkspace.shared.open(url) {
                     return true
                 }
             }
         }
-        
+
         // System Preferences URL for previous versions
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+        if let url = URL(
+            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+        {
             if NSWorkspace.shared.open(url) {
                 return true
             }
         }
-        
+
         // Fallback: General Privacy & Security settings
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security") {
             if NSWorkspace.shared.open(url) {
                 return true
             }
         }
-        
+
         // Last resort: System Preferences main page
         if let url = URL(string: "x-apple.systempreferences:") {
             return NSWorkspace.shared.open(url)
         }
-        
+
         return false
     }
 }
