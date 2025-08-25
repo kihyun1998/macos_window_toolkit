@@ -52,6 +52,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
   bool _excludeTitlebar = false;
   bool? _isWindowAlive;
   bool _isCheckingAlive = false;
+  bool _isClosingWindow = false;
 
   @override
   void initState() {
@@ -133,6 +134,69 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
 
   bool get _canCapture {
     return _versionInfo?.isScreenCaptureKitAvailable ?? false;
+  }
+
+  Future<void> _closeWindow() async {
+    setState(() {
+      _isClosingWindow = true;
+    });
+
+    try {
+      final success = await _macosWindowToolkit.closeWindow(widget.window.windowId);
+      
+      if (success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Successfully closed window: ${widget.window.name}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.of(context).pop();
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to close window: ${widget.window.name}'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        String errorMessage = 'Unknown error occurred';
+        if (e is PlatformException) {
+          switch (e.code) {
+            case 'WINDOW_NOT_FOUND':
+              errorMessage = 'Window not found';
+              break;
+            case 'INSUFFICIENT_WINDOW_INFO':
+              errorMessage = 'Not enough window information';
+              break;
+            case 'APPLESCRIPT_EXECUTION_FAILED':
+              errorMessage = 'AppleScript execution failed';
+              break;
+            default:
+              errorMessage = 'Error: ${e.message}';
+          }
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to close window: $errorMessage'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isClosingWindow = false;
+        });
+      }
+    }
   }
 
   @override
@@ -217,22 +281,49 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                         ),
                       ),
                       const Spacer(),
-                      ElevatedButton.icon(
-                        onPressed: _isCheckingAlive ? null : _checkWindowAlive,
-                        icon: _isCheckingAlive
-                            ? SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Icon(Icons.refresh, size: 16),
-                        label: Text('Check'),
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: Size(80, 32),
-                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: _isCheckingAlive ? null : _checkWindowAlive,
+                            icon: _isCheckingAlive
+                                ? SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Icon(Icons.refresh, size: 16),
+                            label: Text('Check'),
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: Size(80, 32),
+                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton.icon(
+                            onPressed: (_isClosingWindow || _isWindowAlive == false) 
+                                ? null 
+                                : _closeWindow,
+                            icon: _isClosingWindow
+                                ? SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Icon(Icons.close, size: 16),
+                            label: Text('Close'),
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: Size(80, 32),
+                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              backgroundColor: Colors.red.withOpacity(0.1),
+                              foregroundColor: Colors.red,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

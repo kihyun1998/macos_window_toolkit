@@ -341,4 +341,44 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   Future<bool> isWindowAlive(int windowId) {
     throw UnimplementedError('isWindowAlive() has not been implemented.');
   }
+
+  /// Closes a window by its window ID using AppleScript.
+  /// 
+  /// Returns `true` if the window was successfully closed, `false` otherwise.
+  /// 
+  /// [windowId] is the unique identifier of the window to close.
+  /// 
+  /// This method uses AppleScript to interact with the application's window
+  /// close button. It first retrieves the window information to get the
+  /// application name and window title, then executes an AppleScript to
+  /// click the close button.
+  /// 
+  /// Note: This method requires accessibility permissions on some systems
+  /// and may not work with all applications depending on their AppleScript
+  /// support and window structure.
+  /// 
+  /// Throws [PlatformException] with appropriate error codes:
+  /// - `CLOSE_WINDOW_ERROR`: General window closing error
+  /// - `WINDOW_NOT_FOUND`: Window with the specified ID was not found
+  /// - `INSUFFICIENT_WINDOW_INFO`: Not enough window information to close the window
+  /// - `APPLESCRIPT_EXECUTION_FAILED`: AppleScript execution failed
+  /// 
+  /// Example usage:
+  /// ```dart
+  /// try {
+  ///   final success = await toolkit.closeWindow(12345);
+  ///   if (success) {
+  ///     print('Window closed successfully');
+  ///   } else {
+  ///     print('Failed to close window');
+  ///   }
+  /// } catch (e) {
+  ///   if (e is PlatformException) {
+  ///     print('Error: ${e.code} - ${e.message}');
+  ///   }
+  /// }
+  /// ```
+  Future<bool> closeWindow(int windowId) {
+    throw UnimplementedError('closeWindow() has not been implemented.');
+  }
 }

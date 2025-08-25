@@ -48,6 +48,8 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       getCaptureMethodInfo(result: result)
     case "isWindowAlive":
       isWindowAlive(call: call, result: result)
+    case "closeWindow":
+      closeWindow(call: call, result: result)
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -351,6 +353,29 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
 
     let isAlive = windowHandler.isWindowAlive(windowId)
     result(isAlive)
+  }
+
+  /// Closes a window by its window ID using AppleScript
+  private func closeWindow(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let arguments = call.arguments as? [String: Any],
+          let windowId = arguments["windowId"] as? Int else {
+      result(FlutterError(
+        code: "INVALID_ARGUMENTS",
+        message: "WindowId parameter is required",
+        details: nil))
+      return
+    }
+
+    let closeResult = windowHandler.closeWindow(windowId)
+    switch closeResult {
+    case .success(let success):
+      result(success)
+    case .failure(let error):
+      result(FlutterError(
+        code: "CLOSE_WINDOW_ERROR",
+        message: error.localizedDescription,
+        details: nil))
+    }
   }
 
   /// Helper method to handle window operation results

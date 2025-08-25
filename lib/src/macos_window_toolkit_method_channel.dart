@@ -233,4 +233,13 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
     );
     return result ?? false;
   }
+
+  @override
+  Future<bool> closeWindow(int windowId) async {
+    final result = await methodChannel.invokeMethod<bool>(
+      'closeWindow',
+      {'windowId': windowId},
+    );
+    return result ?? false;
+  }
 }

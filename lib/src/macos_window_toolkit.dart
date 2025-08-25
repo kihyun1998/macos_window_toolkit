@@ -535,4 +535,54 @@ class MacosWindowToolkit {
   Future<bool> isWindowAlive(int windowId) async {
     return await MacosWindowToolkitPlatform.instance.isWindowAlive(windowId);
   }
+
+  /// Closes a window by its window ID using AppleScript.
+  /// 
+  /// Returns `true` if the window was successfully closed, `false` otherwise.
+  /// 
+  /// [windowId] is the unique identifier of the window to close, which can be
+  /// obtained from [getAllWindows], [getWindowsByName], or other window listing methods.
+  /// 
+  /// This method uses AppleScript to interact with the application's window
+  /// close button. It first retrieves the window information to get the
+  /// application name and window title, then executes an AppleScript to
+  /// click the close button.
+  /// 
+  /// **Important Notes:**
+  /// - This method may require accessibility permissions on some systems
+  /// - It may not work with all applications depending on their AppleScript support
+  /// - The success depends on the application's window structure and close button availability
+  /// - Some applications may show confirmation dialogs before closing
+  /// 
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  /// final windows = await toolkit.getAllWindows();
+  /// 
+  /// for (final window in windows) {
+  ///   if (window.name.contains('Untitled')) {
+  ///     try {
+  ///       final success = await toolkit.closeWindow(window.windowId);
+  ///       if (success) {
+  ///         print('Successfully closed window: ${window.name}');
+  ///       } else {
+  ///         print('Failed to close window: ${window.name}');
+  ///       }
+  ///     } catch (e) {
+  ///       if (e is PlatformException) {
+  ///         print('Error closing window: ${e.code} - ${e.message}');
+  ///       }
+  ///     }
+  ///   }
+  /// }
+  /// ```
+  /// 
+  /// Throws [PlatformException] with the following error codes:
+  /// - `CLOSE_WINDOW_ERROR`: General window closing error
+  /// - `WINDOW_NOT_FOUND`: Window with the specified ID was not found
+  /// - `INSUFFICIENT_WINDOW_INFO`: Not enough window information to close the window
+  /// - `APPLESCRIPT_EXECUTION_FAILED`: AppleScript execution failed
+  Future<bool> closeWindow(int windowId) async {
+    return await MacosWindowToolkitPlatform.instance.closeWindow(windowId);
+  }
 }
