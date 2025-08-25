@@ -4,8 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:macos_window_toolkit/macos_window_toolkit.dart';
 
+import 'services/notification_service.dart';
+import 'services/permission_service.dart';
+import 'services/version_service.dart';
+import 'services/window_service.dart';
 import 'widgets/capturable_windows_tab.dart';
 import 'widgets/legacy_windows_tab.dart';
+import 'widgets/permission_guard_page.dart';
 import 'widgets/permissions_status_card.dart';
 import 'widgets/search_controls.dart';
 import 'widgets/smart_capture_tab.dart';
@@ -39,7 +44,7 @@ class MyApp extends StatelessWidget {
           brightness: Brightness.dark,
         ),
       ),
-      home: const MainTabView(),
+      home: const PermissionGuardPage(),
     );
   }
 }
@@ -88,10 +93,7 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
   bool? _hasScreenRecordingPermission;
   bool? _hasAccessibilityPermission;
   MacosVersionInfo? _versionInfo;
-  final _macosWindowToolkitPlugin = MacosWindowToolkit();
   final _searchController = TextEditingController();
-  Timer? _refreshTimer;
-  bool _autoRefresh = false;
 
   @override
   void initState() {
@@ -104,33 +106,27 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
 
   @override
   void dispose() {
-    _refreshTimer?.cancel();
+    WindowService.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
   void _filterWindows() {
-    final query = _searchController.text.toLowerCase();
     setState(() {
-      _filteredWindows = _windows.where((window) {
-        return window.name.toLowerCase().contains(query) ||
-            window.ownerName.toLowerCase().contains(query);
-      }).toList();
+      _filteredWindows = WindowService.filterWindows(
+        _windows,
+        _searchController.text,
+      );
     });
   }
 
   void _toggleAutoRefresh() {
-    setState(() {
-      _autoRefresh = !_autoRefresh;
-    });
-
-    if (_autoRefresh) {
-      _refreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+    WindowService.toggleAutoRefresh(
+      onRefresh: () {
         if (!_isLoading) _getAllWindows();
-      });
-    } else {
-      _refreshTimer?.cancel();
-    }
+      },
+    );
+    setState(() {}); // Trigger rebuild to update UI
   }
 
   Future<void> _getAllWindows() async {
@@ -139,7 +135,7 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
     });
 
     try {
-      final windows = await _macosWindowToolkitPlugin.getAllWindows();
+      final windows = await WindowService.getAllWindows();
       setState(() {
         _windows = windows;
         _isLoading = false;
@@ -150,211 +146,154 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
         _isLoading = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.message}'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
+        NotificationService.handlePlatformException(
+          context,
+          e,
+          'getting windows',
         );
       }
     }
   }
 
   Future<void> _checkScreenRecordingPermission() async {
-    try {
-      final hasPermission = await _macosWindowToolkitPlugin
-          .hasScreenRecordingPermission();
-      setState(() {
-        _hasScreenRecordingPermission = hasPermission;
-      });
-    } on PlatformException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error checking screen recording permission: ${e.message}'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+    final hasPermission = await PermissionService.checkScreenRecordingPermission();
+    setState(() {
+      _hasScreenRecordingPermission = hasPermission;
+    });
+
+    if (hasPermission == null && mounted) {
+      NotificationService.showError(
+        context,
+        'Error checking screen recording permission',
+      );
     }
   }
 
   Future<void> _checkAccessibilityPermission() async {
-    try {
-      final hasPermission = await _macosWindowToolkitPlugin
-          .hasAccessibilityPermission();
-      setState(() {
-        _hasAccessibilityPermission = hasPermission;
-      });
-    } on PlatformException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error checking accessibility permission: ${e.message}'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+    final hasPermission = await PermissionService.checkAccessibilityPermission();
+    setState(() {
+      _hasAccessibilityPermission = hasPermission;
+    });
+
+    if (hasPermission == null && mounted) {
+      NotificationService.showError(
+        context,
+        'Error checking accessibility permission',
+      );
     }
   }
 
   Future<void> _getVersionInfo() async {
-    try {
-      final versionInfo = await _macosWindowToolkitPlugin.getMacOSVersionInfo();
-      setState(() {
-        _versionInfo = versionInfo;
-      });
-    } on PlatformException catch (e) {
-      print('Error getting version info: ${e.message}');
-    }
+    final versionInfo = await VersionService.getMacOSVersionInfo();
+    setState(() {
+      _versionInfo = versionInfo;
+    });
   }
 
   Future<void> _requestScreenRecordingPermission() async {
-    try {
-      final granted = await _macosWindowToolkitPlugin
-          .requestScreenRecordingPermission();
+    final granted = await PermissionService.requestScreenRecordingPermission();
+    
+    if (granted != null) {
       setState(() {
         _hasScreenRecordingPermission = granted;
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              granted
-                  ? 'Screen recording permission granted! You may need to restart the app.'
-                  : 'Screen recording permission denied. Window names may not be available.',
-            ),
-            backgroundColor: granted ? Colors.green : Colors.red,
-            duration: const Duration(seconds: 4),
-          ),
+        NotificationService.showPermissionResult(
+          context,
+          granted: granted,
+          permissionName: 'Screen recording',
+          additionalInfo: granted
+              ? 'You may need to restart the app.'
+              : 'Window names may not be available.',
         );
       }
-    } on PlatformException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error requesting screen recording permission: ${e.message}')),
-        );
-      }
+    } else if (mounted) {
+      NotificationService.showError(
+        context,
+        'Error requesting screen recording permission',
+      );
     }
   }
 
   Future<void> _requestAccessibilityPermission() async {
-    try {
-      final granted = await _macosWindowToolkitPlugin
-          .requestAccessibilityPermission();
+    final granted = await PermissionService.requestAccessibilityPermission();
+    
+    if (granted != null) {
       setState(() {
         _hasAccessibilityPermission = granted;
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              granted
-                  ? 'Accessibility permission granted!'
-                  : 'Accessibility permission not granted. Please enable it in System Preferences.',
-            ),
-            backgroundColor: granted ? Colors.green : Colors.orange,
-            duration: const Duration(seconds: 4),
-          ),
+        NotificationService.showPermissionResult(
+          context,
+          granted: granted,
+          permissionName: 'Accessibility',
+          additionalInfo: granted
+              ? null
+              : 'Please enable it in System Preferences.',
         );
       }
-    } on PlatformException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error requesting accessibility permission: ${e.message}')),
-        );
-      }
+    } else if (mounted) {
+      NotificationService.showError(
+        context,
+        'Error requesting accessibility permission',
+      );
     }
   }
 
   Future<void> _openScreenRecordingSettings() async {
-    try {
-      final success = await _macosWindowToolkitPlugin
-          .openScreenRecordingSettings();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              success
-                  ? 'Opening System Preferences - please enable screen recording.'
-                  : 'Failed to open System Preferences. Please open it manually.',
-            ),
-            backgroundColor: success ? Colors.orange : Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    } on PlatformException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error opening settings: ${e.message}')),
-        );
-      }
+    final success = await PermissionService.openScreenRecordingSettings();
+    
+    if (success != null && mounted) {
+      NotificationService.showSettingsResult(
+        context,
+        success: success,
+        settingsType: 'screen recording',
+      );
+    } else if (mounted) {
+      NotificationService.showError(
+        context,
+        'Error opening screen recording settings',
+      );
     }
   }
 
   Future<void> _openAccessibilitySettings() async {
-    try {
-      final success = await _macosWindowToolkitPlugin
-          .openAccessibilitySettings();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              success
-                  ? 'Opening System Preferences - please enable accessibility.'
-                  : 'Failed to open System Preferences. Please open it manually.',
-            ),
-            backgroundColor: success ? Colors.orange : Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    } on PlatformException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error opening accessibility settings: ${e.message}')),
-        );
-      }
+    final success = await PermissionService.openAccessibilitySettings();
+    
+    if (success != null && mounted) {
+      NotificationService.showSettingsResult(
+        context,
+        success: success,
+        settingsType: 'accessibility',
+      );
+    } else if (mounted) {
+      NotificationService.showError(
+        context,
+        'Error opening accessibility settings',
+      );
     }
   }
 
   void _requestMostCriticalPermission() {
-    // Prioritize screen recording permission as it's needed for basic functionality
-    if (_hasScreenRecordingPermission == false) {
-      _requestScreenRecordingPermission();
-    } else if (_hasAccessibilityPermission == false) {
-      _requestAccessibilityPermission();
+    final criticalPermission = PermissionService.getMostCriticalMissingPermission(
+      hasScreenRecording: _hasScreenRecordingPermission,
+      hasAccessibility: _hasAccessibilityPermission,
+    );
+    
+    switch (criticalPermission) {
+      case PermissionType.screenRecording:
+        _requestScreenRecordingPermission();
+        break;
+      case PermissionType.accessibility:
+        _requestAccessibilityPermission();
+        break;
+      case null:
+        break;
     }
   }
 
-  String _getSharingStateText(int sharingState) {
-    switch (sharingState) {
-      case 0:
-        return 'None';
-      case 1:
-        return 'ReadOnly';
-      case 2:
-        return 'ReadWrite';
-      default:
-        return 'Unknown($sharingState)';
-    }
-  }
-
-  String _formatBytes(int bytes) {
-    if (bytes < 1024) return '${bytes}B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)}KB';
-    if (bytes < 1024 * 1024 * 1024)
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)}GB';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -370,9 +309,9 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            icon: Icon(_autoRefresh ? Icons.pause : Icons.refresh),
+            icon: Icon(WindowService.isAutoRefreshEnabled ? Icons.pause : Icons.refresh),
             onPressed: _toggleAutoRefresh,
-            tooltip: _autoRefresh ? 'Stop Auto-refresh' : 'Start Auto-refresh',
+            tooltip: WindowService.isAutoRefreshEnabled ? 'Stop Auto-refresh' : 'Start Auto-refresh',
           ),
           IconButton(
             icon: const Icon(Icons.window),
@@ -402,7 +341,7 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
               searchController: _searchController,
               totalWindows: _windows.length,
               filteredWindows: _filteredWindows.length,
-              autoRefresh: _autoRefresh,
+              autoRefresh: WindowService.isAutoRefreshEnabled,
               onToggleAutoRefresh: _toggleAutoRefresh,
             ),
 
@@ -418,13 +357,16 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
                 searchQuery: _searchController.text,
                 onRefresh: _getAllWindows,
                 onWindowTap: _showWindowDetails,
-                formatBytes: _formatBytes,
+                formatBytes: WindowService.formatBytes,
               ),
             ),
           ],
         ),
       ),
-      floatingActionButton: (_hasScreenRecordingPermission == false || _hasAccessibilityPermission == false)
+      floatingActionButton: PermissionService.hasAnyMissingPermission(
+          hasScreenRecording: _hasScreenRecordingPermission,
+          hasAccessibility: _hasAccessibilityPermission,
+        )
           ? FloatingActionButton.extended(
               onPressed: _requestMostCriticalPermission,
               icon: const Icon(Icons.security),
@@ -437,6 +379,11 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
   }
 
   void _showWindowDetails(MacosWindowInfo window) {
-    WindowDetailSheet.show(context, window, _getSharingStateText, _formatBytes);
+    WindowDetailSheet.show(
+      context,
+      window,
+      WindowService.getSharingStateText,
+      WindowService.formatBytes,
+    );
   }
 }
