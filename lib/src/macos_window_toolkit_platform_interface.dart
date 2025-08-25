@@ -309,6 +309,10 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   /// Returns the captured image as bytes in PNG format.
   /// 
   /// [windowId] is the unique identifier of the window to capture.
+  /// [excludeTitlebar] if true, removes the titlebar from the captured image.
+  /// [customTitlebarHeight] specifies a custom titlebar height to remove (in points).
+  /// If null and excludeTitlebar is true, uses the default 28pt titlebar height.
+  /// Must be non-negative and not larger than the window height.
   /// 
   /// This method uses the legacy CGWindowListCreateImage API which is available
   /// on all macOS versions (10.5+) but may have lower quality or performance
@@ -321,15 +325,22 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   /// Example usage:
   /// ```dart
   /// try {
+  ///   // Basic legacy capture
   ///   final imageBytes = await toolkit.captureWindowLegacy(12345);
-  ///   // Use imageBytes to display or save the captured image
+  ///   
+  ///   // Legacy capture without titlebar (28pt default)
+  ///   final noBarsImage = await toolkit.captureWindowLegacy(12345, excludeTitlebar: true);
+  ///   
+  ///   // Legacy capture with custom titlebar height
+  ///   final customImage = await toolkit.captureWindowLegacy(12345, 
+  ///     excludeTitlebar: true, customTitlebarHeight: 44.0);
   /// } catch (e) {
   ///   if (e is PlatformException && e.code == 'INVALID_WINDOW_ID') {
   ///     print('Window not found');
   ///   }
   /// }
   /// ```
-  Future<Uint8List> captureWindowLegacy(int windowId) {
+  Future<Uint8List> captureWindowLegacy(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) {
     throw UnimplementedError('captureWindowLegacy() has not been implemented.');
   }
 

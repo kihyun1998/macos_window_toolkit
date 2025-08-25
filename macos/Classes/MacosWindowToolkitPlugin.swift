@@ -69,7 +69,8 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
 
   /// Retrieves information about all windows currently open on the system
   private func getAllWindows(result: @escaping FlutterResult) {
-    getAllWindows(call: FlutterMethodCall(methodName: "getAllWindows", arguments: nil), result: result)
+    getAllWindows(
+      call: FlutterMethodCall(methodName: "getAllWindows", arguments: nil), result: result)
   }
 
   /// Retrieves information about all windows with optional parameters
@@ -134,11 +135,13 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   /// Retrieves windows filtered by name (window title)
   private func getWindowsByName(call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let arguments = call.arguments as? [String: Any],
-          let name = arguments["name"] as? String else {
-      result(FlutterError(
-        code: "INVALID_ARGUMENTS",
-        message: "Name parameter is required",
-        details: nil))
+      let name = arguments["name"] as? String
+    else {
+      result(
+        FlutterError(
+          code: "INVALID_ARGUMENTS",
+          message: "Name parameter is required",
+          details: nil))
       return
     }
 
@@ -149,11 +152,13 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   /// Retrieves windows filtered by owner name (application name)
   private func getWindowsByOwnerName(call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let arguments = call.arguments as? [String: Any],
-          let ownerName = arguments["ownerName"] as? String else {
-      result(FlutterError(
-        code: "INVALID_ARGUMENTS",
-        message: "OwnerName parameter is required",
-        details: nil))
+      let ownerName = arguments["ownerName"] as? String
+    else {
+      result(
+        FlutterError(
+          code: "INVALID_ARGUMENTS",
+          message: "OwnerName parameter is required",
+          details: nil))
       return
     }
 
@@ -164,11 +169,13 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   /// Retrieves a specific window by its window ID
   private func getWindowById(call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let arguments = call.arguments as? [String: Any],
-          let windowId = arguments["windowId"] as? Int else {
-      result(FlutterError(
-        code: "INVALID_ARGUMENTS",
-        message: "WindowId parameter is required",
-        details: nil))
+      let windowId = arguments["windowId"] as? Int
+    else {
+      result(
+        FlutterError(
+          code: "INVALID_ARGUMENTS",
+          message: "WindowId parameter is required",
+          details: nil))
       return
     }
 
@@ -179,11 +186,13 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   /// Retrieves windows filtered by process ID
   private func getWindowsByProcessId(call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let arguments = call.arguments as? [String: Any],
-          let processId = arguments["processId"] as? Int else {
-      result(FlutterError(
-        code: "INVALID_ARGUMENTS",
-        message: "ProcessId parameter is required",
-        details: nil))
+      let processId = arguments["processId"] as? Int
+    else {
+      result(
+        FlutterError(
+          code: "INVALID_ARGUMENTS",
+          message: "ProcessId parameter is required",
+          details: nil))
       return
     }
 
@@ -200,39 +209,47 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   /// Captures a window using ScreenCaptureKit
   private func captureWindow(call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let arguments = call.arguments as? [String: Any],
-          let windowId = arguments["windowId"] as? Int else {
-      result(FlutterError(
-        code: "INVALID_ARGUMENTS",
-        message: "WindowId parameter is required",
-        details: nil))
+      let windowId = arguments["windowId"] as? Int
+    else {
+      result(
+        FlutterError(
+          code: "INVALID_ARGUMENTS",
+          message: "WindowId parameter is required",
+          details: nil))
       return
     }
-    
+
     let excludeTitlebar = arguments["excludeTitlebar"] as? Bool ?? false
 
     if #available(macOS 12.3, *) {
       Task {
         do {
-          let imageData = try await CaptureHandler.captureWindow(windowId: windowId, excludeTitlebar: excludeTitlebar)
+          let imageData = try await CaptureHandler.captureWindow(
+            windowId: windowId, excludeTitlebar: excludeTitlebar)
           result(FlutterStandardTypedData(bytes: imageData))
         } catch let error as CaptureHandler.CaptureError {
           let errorInfo = CaptureHandler.handleCaptureError(error)
-          result(FlutterError(
-            code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
-            message: errorInfo["message"] as? String ?? "Unknown error",
-            details: errorInfo["details"]))
+          result(
+            FlutterError(
+              code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
+              message: errorInfo["message"] as? String ?? "Unknown error",
+              details: errorInfo["details"]))
         } catch {
-          result(FlutterError(
-            code: "CAPTURE_FAILED",
-            message: "Unexpected error occurred",
-            details: error.localizedDescription))
+          result(
+            FlutterError(
+              code: "CAPTURE_FAILED",
+              message: "Unexpected error occurred",
+              details: error.localizedDescription))
         }
       }
     } else {
-      result(FlutterError(
-        code: "UNSUPPORTED_MACOS_VERSION",
-        message: "macOS version does not support ScreenCaptureKit",
-        details: "Current version: \(ProcessInfo.processInfo.operatingSystemVersionString), Required: 12.3+"))
+      result(
+        FlutterError(
+          code: "UNSUPPORTED_MACOS_VERSION",
+          message: "macOS version does not support ScreenCaptureKit",
+          details:
+            "Current version: \(ProcessInfo.processInfo.operatingSystemVersionString), Required: 12.3+"
+        ))
     }
   }
 
@@ -245,33 +262,40 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
           result(windows)
         } catch let error as CaptureHandler.CaptureError {
           let errorInfo = CaptureHandler.handleCaptureError(error)
-          result(FlutterError(
-            code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
-            message: errorInfo["message"] as? String ?? "Unknown error",
-            details: errorInfo["details"]))
+          result(
+            FlutterError(
+              code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
+              message: errorInfo["message"] as? String ?? "Unknown error",
+              details: errorInfo["details"]))
         } catch {
-          result(FlutterError(
-            code: "CAPTURE_FAILED",
-            message: "Unexpected error occurred",
-            details: error.localizedDescription))
+          result(
+            FlutterError(
+              code: "CAPTURE_FAILED",
+              message: "Unexpected error occurred",
+              details: error.localizedDescription))
         }
       }
     } else {
-      result(FlutterError(
-        code: "UNSUPPORTED_MACOS_VERSION",
-        message: "macOS version does not support ScreenCaptureKit",
-        details: "Current version: \(ProcessInfo.processInfo.operatingSystemVersionString), Required: 12.3+"))
+      result(
+        FlutterError(
+          code: "UNSUPPORTED_MACOS_VERSION",
+          message: "macOS version does not support ScreenCaptureKit",
+          details:
+            "Current version: \(ProcessInfo.processInfo.operatingSystemVersionString), Required: 12.3+"
+        ))
     }
   }
 
   /// Captures a window using CGWindowListCreateImage (legacy method)
   private func captureWindowLegacy(call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let arguments = call.arguments as? [String: Any],
-          let windowId = arguments["windowId"] as? Int else {
-      result(FlutterError(
-        code: "INVALID_ARGUMENTS",
-        message: "WindowId parameter is required",
-        details: nil))
+      let windowId = arguments["windowId"] as? Int
+    else {
+      result(
+        FlutterError(
+          code: "INVALID_ARGUMENTS",
+          message: "WindowId parameter is required",
+          details: nil))
       return
     }
 
@@ -280,15 +304,17 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       result(FlutterStandardTypedData(bytes: imageData))
     } catch let error as LegacyCaptureHandler.LegacyCaptureError {
       let errorInfo = LegacyCaptureHandler.handleLegacyCaptureError(error)
-      result(FlutterError(
-        code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
-        message: errorInfo["message"] as? String ?? "Unknown error",
-        details: errorInfo["details"]))
+      result(
+        FlutterError(
+          code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
+          message: errorInfo["message"] as? String ?? "Unknown error",
+          details: errorInfo["details"]))
     } catch {
-      result(FlutterError(
-        code: "CAPTURE_FAILED",
-        message: "Unexpected error occurred",
-        details: error.localizedDescription))
+      result(
+        FlutterError(
+          code: "CAPTURE_FAILED",
+          message: "Unexpected error occurred",
+          details: error.localizedDescription))
     }
   }
 
@@ -301,32 +327,37 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   /// Captures a window using the best available method (auto-selection)
   private func captureWindowAuto(call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let arguments = call.arguments as? [String: Any],
-          let windowId = arguments["windowId"] as? Int else {
-      result(FlutterError(
-        code: "INVALID_ARGUMENTS",
-        message: "WindowId parameter is required",
-        details: nil))
+      let windowId = arguments["windowId"] as? Int
+    else {
+      result(
+        FlutterError(
+          code: "INVALID_ARGUMENTS",
+          message: "WindowId parameter is required",
+          details: nil))
       return
     }
-    
+
     let excludeTitlebar = arguments["excludeTitlebar"] as? Bool ?? false
 
     if #available(macOS 10.15, *) {
       Task {
         do {
-          let imageData = try await SmartCaptureHandler.captureWindowAuto(windowId: windowId, excludeTitlebar: excludeTitlebar)
+          let imageData = try await SmartCaptureHandler.captureWindowAuto(
+            windowId: windowId, excludeTitlebar: excludeTitlebar)
           result(FlutterStandardTypedData(bytes: imageData))
         } catch let error as SmartCaptureHandler.SmartCaptureError {
           let errorInfo = SmartCaptureHandler.handleSmartCaptureError(error)
-          result(FlutterError(
-            code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
-            message: errorInfo["message"] as? String ?? "Unknown error",
-            details: errorInfo["details"]))
+          result(
+            FlutterError(
+              code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
+              message: errorInfo["message"] as? String ?? "Unknown error",
+              details: errorInfo["details"]))
         } catch {
-          result(FlutterError(
-            code: "CAPTURE_FAILED",
-            message: "Unexpected error occurred",
-            details: error.localizedDescription))
+          result(
+            FlutterError(
+              code: "CAPTURE_FAILED",
+              message: "Unexpected error occurred",
+              details: error.localizedDescription))
         }
       }
     } else {
@@ -336,15 +367,17 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
         result(FlutterStandardTypedData(bytes: imageData))
       } catch let error as LegacyCaptureHandler.LegacyCaptureError {
         let errorInfo = LegacyCaptureHandler.handleLegacyCaptureError(error)
-        result(FlutterError(
-          code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
-          message: errorInfo["message"] as? String ?? "Unknown error",
-          details: errorInfo["details"]))
+        result(
+          FlutterError(
+            code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
+            message: errorInfo["message"] as? String ?? "Unknown error",
+            details: errorInfo["details"]))
       } catch {
-        result(FlutterError(
-          code: "CAPTURE_FAILED",
-          message: "Unexpected error occurred",
-          details: error.localizedDescription))
+        result(
+          FlutterError(
+            code: "CAPTURE_FAILED",
+            message: "Unexpected error occurred",
+            details: error.localizedDescription))
       }
     }
   }
@@ -358,15 +391,17 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
           result(windows)
         } catch let error as SmartCaptureHandler.SmartCaptureError {
           let errorInfo = SmartCaptureHandler.handleSmartCaptureError(error)
-          result(FlutterError(
-            code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
-            message: errorInfo["message"] as? String ?? "Unknown error",
-            details: errorInfo["details"]))
+          result(
+            FlutterError(
+              code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
+              message: errorInfo["message"] as? String ?? "Unknown error",
+              details: errorInfo["details"]))
         } catch {
-          result(FlutterError(
-            code: "CAPTURE_FAILED",
-            message: "Unexpected error occurred",
-            details: error.localizedDescription))
+          result(
+            FlutterError(
+              code: "CAPTURE_FAILED",
+              message: "Unexpected error occurred",
+              details: error.localizedDescription))
         }
       }
     } else {
@@ -385,11 +420,13 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   /// Checks if a window with the specified ID is currently alive/exists
   private func isWindowAlive(call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let arguments = call.arguments as? [String: Any],
-          let windowId = arguments["windowId"] as? Int else {
-      result(FlutterError(
-        code: "INVALID_ARGUMENTS",
-        message: "WindowId parameter is required",
-        details: nil))
+      let windowId = arguments["windowId"] as? Int
+    else {
+      result(
+        FlutterError(
+          code: "INVALID_ARGUMENTS",
+          message: "WindowId parameter is required",
+          details: nil))
       return
     }
 
@@ -400,11 +437,13 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   /// Closes a window by its window ID using AppleScript
   private func closeWindow(call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let arguments = call.arguments as? [String: Any],
-          let windowId = arguments["windowId"] as? Int else {
-      result(FlutterError(
-        code: "INVALID_ARGUMENTS",
-        message: "WindowId parameter is required",
-        details: nil))
+      let windowId = arguments["windowId"] as? Int
+    else {
+      result(
+        FlutterError(
+          code: "INVALID_ARGUMENTS",
+          message: "WindowId parameter is required",
+          details: nil))
       return
     }
 
@@ -413,71 +452,80 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     case .success(let success):
       result(success)
     case .failure(let error):
-      result(FlutterError(
-        code: "CLOSE_WINDOW_ERROR",
-        message: error.localizedDescription,
-        details: nil))
+      result(
+        FlutterError(
+          code: "CLOSE_WINDOW_ERROR",
+          message: error.localizedDescription,
+          details: nil))
     }
   }
 
   /// Terminates an application by its process ID
   private func terminateApplicationByPID(call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let args = call.arguments as? [String: Any],
-          let processId = args["processId"] as? Int else {
-      result(FlutterError(
-        code: "INVALID_ARGUMENTS",
-        message: "processId is required",
-        details: nil))
+      let processId = args["processId"] as? Int
+    else {
+      result(
+        FlutterError(
+          code: "INVALID_ARGUMENTS",
+          message: "processId is required",
+          details: nil))
       return
     }
 
     let force = args["force"] as? Bool ?? false
-    
+
     let terminateResult = windowHandler.terminateApplicationByPID(processId, force: force)
     switch terminateResult {
     case .success(let success):
       result(success)
     case .failure(let error):
-      result(FlutterError(
-        code: "TERMINATE_APP_ERROR",
-        message: error.localizedDescription,
-        details: nil))
+      result(
+        FlutterError(
+          code: "TERMINATE_APP_ERROR",
+          message: error.localizedDescription,
+          details: nil))
     }
   }
 
   /// Terminates an application and all its child processes
   private func terminateApplicationTree(call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let args = call.arguments as? [String: Any],
-          let processId = args["processId"] as? Int else {
-      result(FlutterError(
-        code: "INVALID_ARGUMENTS",
-        message: "processId is required",
-        details: nil))
+      let processId = args["processId"] as? Int
+    else {
+      result(
+        FlutterError(
+          code: "INVALID_ARGUMENTS",
+          message: "processId is required",
+          details: nil))
       return
     }
 
     let force = args["force"] as? Bool ?? false
-    
+
     let terminateResult = windowHandler.terminateApplicationTree(processId, force: force)
     switch terminateResult {
     case .success(let success):
       result(success)
     case .failure(let error):
-      result(FlutterError(
-        code: "TERMINATE_TREE_ERROR",
-        message: error.localizedDescription,
-        details: nil))
+      result(
+        FlutterError(
+          code: "TERMINATE_TREE_ERROR",
+          message: error.localizedDescription,
+          details: nil))
     }
   }
 
   /// Gets all child process IDs for a given parent process ID
   private func getChildProcesses(call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let args = call.arguments as? [String: Any],
-          let processId = args["processId"] as? Int else {
-      result(FlutterError(
-        code: "INVALID_ARGUMENTS",
-        message: "processId is required",
-        details: nil))
+      let processId = args["processId"] as? Int
+    else {
+      result(
+        FlutterError(
+          code: "INVALID_ARGUMENTS",
+          message: "processId is required",
+          details: nil))
       return
     }
 
@@ -486,23 +534,27 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     case .success(let childPIDs):
       result(childPIDs.map { Int($0) })
     case .failure(let error):
-      result(FlutterError(
-        code: "GET_CHILD_PROCESSES_ERROR",
-        message: error.localizedDescription,
-        details: nil))
+      result(
+        FlutterError(
+          code: "GET_CHILD_PROCESSES_ERROR",
+          message: error.localizedDescription,
+          details: nil))
     }
   }
 
   /// Helper method to handle window operation results
-  private func handleWindowResult(_ windowResult: Result<[[String: Any]], WindowError>, result: @escaping FlutterResult) {
+  private func handleWindowResult(
+    _ windowResult: Result<[[String: Any]], WindowError>, result: @escaping FlutterResult
+  ) {
     switch windowResult {
     case .success(let windows):
       result(windows)
     case .failure(let error):
-      result(FlutterError(
-        code: "WINDOW_LIST_ERROR",
-        message: error.localizedDescription,
-        details: nil))
+      result(
+        FlutterError(
+          code: "WINDOW_LIST_ERROR",
+          message: error.localizedDescription,
+          details: nil))
     }
   }
 }

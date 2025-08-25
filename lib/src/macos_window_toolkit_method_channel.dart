@@ -186,10 +186,18 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
   }
 
   @override
-  Future<Uint8List> captureWindowLegacy(int windowId) async {
+  Future<Uint8List> captureWindowLegacy(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) async {
+    final arguments = <String, dynamic>{
+      'windowId': windowId, 
+      'excludeTitlebar': excludeTitlebar,
+    };
+    if (customTitlebarHeight != null) {
+      arguments['customTitlebarHeight'] = customTitlebarHeight;
+    }
+    
     final result = await methodChannel.invokeMethod<Uint8List>(
       'captureWindowLegacy',
-      {'windowId': windowId},
+      arguments,
     );
     if (result == null) {
       throw PlatformException(

@@ -446,6 +446,12 @@ class MacosWindowToolkit {
   /// [windowId] is the unique identifier of the window to capture, which can be
   /// obtained from [getAllWindows], [getWindowById], or [getCapturableWindowsLegacy].
   /// 
+  /// [excludeTitlebar] if true, removes the titlebar from the captured image.
+  /// 
+  /// [customTitlebarHeight] specifies a custom titlebar height to remove (in points).
+  /// If null and excludeTitlebar is true, uses the default 28pt titlebar height.
+  /// Must be non-negative and not larger than the window height.
+  /// 
   /// This method uses the legacy CGWindowListCreateImage API which is available
   /// on all macOS versions (10.5+) but may have lower quality or performance
   /// compared to ScreenCaptureKit. Use this method when you need compatibility
@@ -456,7 +462,20 @@ class MacosWindowToolkit {
   /// final toolkit = MacosWindowToolkit();
   /// 
   /// try {
+  ///   // Basic legacy window capture
   ///   final imageBytes = await toolkit.captureWindowLegacy(12345);
+  ///   
+  ///   // Legacy capture without titlebar (28pt default)
+  ///   final noBarsImage = await toolkit.captureWindowLegacy(12345, excludeTitlebar: true);
+  ///   
+  ///   // Legacy capture with custom titlebar height (e.g., Safari's 44pt)
+  ///   final safariImage = await toolkit.captureWindowLegacy(12345, 
+  ///     excludeTitlebar: true, customTitlebarHeight: 44.0);
+  ///     
+  ///   // Legacy capture Chrome (no titlebar)
+  ///   final chromeImage = await toolkit.captureWindowLegacy(12345, 
+  ///     excludeTitlebar: true, customTitlebarHeight: 0.0);
+  ///   
   ///   // Convert bytes to image and display
   ///   final image = Image.memory(imageBytes);
   /// } catch (e) {
@@ -470,8 +489,8 @@ class MacosWindowToolkit {
   /// - `INVALID_WINDOW_ID`: Window with the specified ID was not found or is not capturable
   /// - `CAPTURE_NOT_SUPPORTED`: Window capture is not supported for this specific window
   /// - `CAPTURE_FAILED`: Window capture failed due to system restrictions or other errors
-  Future<Uint8List> captureWindowLegacy(int windowId) async {
-    return await MacosWindowToolkitPlatform.instance.captureWindowLegacy(windowId);
+  Future<Uint8List> captureWindowLegacy(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) async {
+    return await MacosWindowToolkitPlatform.instance.captureWindowLegacy(windowId, excludeTitlebar: excludeTitlebar, customTitlebarHeight: customTitlebarHeight);
   }
 
   /// Gets list of capturable windows using CGWindowListCopyWindowInfo (legacy method).
