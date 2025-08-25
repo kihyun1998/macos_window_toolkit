@@ -115,6 +115,7 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
   List<MacosWindowInfo> _windows = [];
   List<MacosWindowInfo> _filteredWindows = [];
   bool _isLoading = false;
+  bool _excludeEmptyNames = false;
   bool? _hasScreenRecordingPermission;
   bool? _hasAccessibilityPermission;
   MacosVersionInfo? _versionInfo;
@@ -160,7 +161,9 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
     });
 
     try {
-      final windows = await WindowService.getAllWindows();
+      final windows = _excludeEmptyNames 
+          ? await WindowService.getNamedWindows()
+          : await WindowService.getAllWindows();
       setState(() {
         _windows = windows;
         _isLoading = false;
@@ -178,6 +181,13 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
         );
       }
     }
+  }
+
+  void _toggleExcludeEmptyNames() {
+    setState(() {
+      _excludeEmptyNames = !_excludeEmptyNames;
+    });
+    _getAllWindows();
   }
 
   Future<void> _checkScreenRecordingPermission() async {
@@ -343,6 +353,13 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
             tooltip: WindowService.isAutoRefreshEnabled
                 ? 'Stop Auto-refresh'
                 : 'Start Auto-refresh',
+          ),
+          IconButton(
+            icon: Icon(_excludeEmptyNames ? Icons.filter_alt : Icons.filter_alt_off),
+            onPressed: _toggleExcludeEmptyNames,
+            tooltip: _excludeEmptyNames 
+                ? 'Show all windows (including unnamed)'
+                : 'Show only named windows',
           ),
           IconButton(
             icon: const Icon(Icons.window),

@@ -28,6 +28,10 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
 
   /// Retrieves information about all windows currently open on the system.
   /// 
+  /// [excludeEmptyNames] if true, windows with empty or missing names will be
+  /// filtered out from the results. This is useful when you only want windows
+  /// that have actual titles.
+  /// 
   /// Returns a list of maps containing window properties:
   /// - `windowId`: Unique identifier for the window (int)
   /// - `name`: Window title/name (String)
@@ -38,7 +42,7 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   /// - `processId`: Process ID of the application that owns the window (int)
   /// 
   /// Throws [PlatformException] if unable to retrieve window information.
-  Future<List<Map<String, dynamic>>> getAllWindows() {
+  Future<List<Map<String, dynamic>>> getAllWindows({bool excludeEmptyNames = false}) {
     throw UnimplementedError('getAllWindows() has not been implemented.');
   }
 

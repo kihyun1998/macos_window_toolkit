@@ -14,7 +14,8 @@ class WindowHandler {
     /// - layer: Window layer level
     /// - isOnScreen: Whether the window is currently visible on screen
     /// - processId: Process ID of the application that owns the window
-    func getAllWindows() -> Result<[[String: Any]], WindowError> {
+    /// - excludeEmptyNames: If true, windows with empty/missing names will be filtered out
+    func getAllWindows(excludeEmptyNames: Bool = false) -> Result<[[String: Any]], WindowError> {
         // Get window list with all available options (including windows from other spaces)
         let windowListInfo = CGWindowListCopyWindowInfo(
             [.excludeDesktopElements], kCGNullWindowID)
@@ -34,11 +35,19 @@ class WindowHandler {
             }
 
             // Extract window name/title
+            let windowName: String
             if let name = windowInfo[kCGWindowName as String] as? String {
-                window["name"] = name
+                windowName = name
             } else {
-                window["name"] = ""
+                windowName = ""
             }
+            
+            // Skip windows with empty names if excludeEmptyNames option is enabled
+            if excludeEmptyNames && windowName.isEmpty {
+                continue
+            }
+            
+            window["name"] = windowName
 
             // Extract owner name (application name)
             if let ownerName = windowInfo[kCGWindowOwnerName as String] as? String {

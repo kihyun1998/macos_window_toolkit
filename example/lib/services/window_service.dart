@@ -14,6 +14,11 @@ class WindowService {
     return await _plugin.getAllWindows();
   }
   
+  /// Get all windows with named titles only (excludes empty names)
+  static Future<List<MacosWindowInfo>> getNamedWindows() async {
+    return await _plugin.getAllWindows(excludeEmptyNames: true);
+  }
+  
   /// Filter windows based on search query
   static List<MacosWindowInfo> filterWindows(
     List<MacosWindowInfo> windows,

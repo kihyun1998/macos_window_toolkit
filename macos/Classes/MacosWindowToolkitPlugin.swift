@@ -15,7 +15,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     switch call.method {
     case "getAllWindows":
-      getAllWindows(result: result)
+      getAllWindows(call: call, result: result)
     case "getWindowsByName":
       getWindowsByName(call: call, result: result)
     case "getWindowsByOwnerName":
@@ -69,7 +69,19 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
 
   /// Retrieves information about all windows currently open on the system
   private func getAllWindows(result: @escaping FlutterResult) {
-    let windowResult = windowHandler.getAllWindows()
+    getAllWindows(call: FlutterMethodCall(methodName: "getAllWindows", arguments: nil), result: result)
+  }
+
+  /// Retrieves information about all windows with optional parameters
+  private func getAllWindows(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    let excludeEmptyNames: Bool
+    if let arguments = call.arguments as? [String: Any] {
+      excludeEmptyNames = arguments["excludeEmptyNames"] as? Bool ?? false
+    } else {
+      excludeEmptyNames = false
+    }
+
+    let windowResult = windowHandler.getAllWindows(excludeEmptyNames: excludeEmptyNames)
 
     switch windowResult {
     case .success(let windows):

@@ -21,11 +21,21 @@ class MacosWindowToolkit {
   /// Each window includes basic properties like position, size, title, and
   /// additional properties like transparency, workspace, and memory usage.
   ///
+  /// [excludeEmptyNames] if true, windows with empty or missing names will be
+  /// filtered out from the results. This is useful when you only want windows
+  /// that have actual titles.
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
-  /// final windows = await toolkit.getAllWindows();
-  /// for (final window in windows) {
+  /// 
+  /// // Get all windows including those with empty names
+  /// final allWindows = await toolkit.getAllWindows();
+  /// 
+  /// // Get only windows with non-empty names
+  /// final namedWindows = await toolkit.getAllWindows(excludeEmptyNames: true);
+  /// 
+  /// for (final window in namedWindows) {
   ///   print('Window: ${window.name} (ID: ${window.windowId})');
   ///   print('App: ${window.ownerName}');
   ///   print('Position: (${window.x}, ${window.y})');
@@ -37,9 +47,9 @@ class MacosWindowToolkit {
   /// ```
   ///
   /// Throws [PlatformException] if unable to retrieve window information.
-  Future<List<MacosWindowInfo>> getAllWindows() async {
+  Future<List<MacosWindowInfo>> getAllWindows({bool excludeEmptyNames = false}) async {
     final List<Map<String, dynamic>> windowMaps = 
-        await MacosWindowToolkitPlatform.instance.getAllWindows();
+        await MacosWindowToolkitPlatform.instance.getAllWindows(excludeEmptyNames: excludeEmptyNames);
     return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
   }
 

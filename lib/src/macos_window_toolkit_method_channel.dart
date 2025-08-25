@@ -11,9 +11,10 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
   final methodChannel = const MethodChannel('macos_window_toolkit');
 
   @override
-  Future<List<Map<String, dynamic>>> getAllWindows() async {
+  Future<List<Map<String, dynamic>>> getAllWindows({bool excludeEmptyNames = false}) async {
     final result = await methodChannel.invokeMethod<List<dynamic>>(
       'getAllWindows',
+      excludeEmptyNames ? {'excludeEmptyNames': excludeEmptyNames} : null,
     );
     if (result == null) {
       return [];
