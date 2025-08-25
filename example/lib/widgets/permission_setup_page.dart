@@ -48,10 +48,7 @@ class _PermissionSetupPageState extends State<PermissionSetupPage>
       });
 
       if (screenRecording && accessibility && mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const MainTabView()),
-        );
+        Navigator.pushReplacementNamed(context, '/main');
       }
     } on PlatformException catch (e) {
       if (mounted) {

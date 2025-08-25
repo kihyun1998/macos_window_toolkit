@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:macos_window_toolkit/macos_window_toolkit.dart';
+import 'package:macos_window_toolkit_example/widgets/permission_setup_page.dart';
 
 import 'services/notification_service.dart';
 import 'services/permission_service.dart';
@@ -10,7 +11,6 @@ import 'services/version_service.dart';
 import 'services/window_service.dart';
 import 'widgets/capturable_windows_tab.dart';
 import 'widgets/legacy_windows_tab.dart';
-import 'widgets/permission_guard_page.dart';
 import 'widgets/permissions_status_card.dart';
 import 'widgets/search_controls.dart';
 import 'widgets/smart_capture_tab.dart';
@@ -18,12 +18,28 @@ import 'widgets/version_info_card.dart';
 import 'widgets/window_detail_sheet.dart';
 import 'widgets/windows_list.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final plugin = MacosWindowToolkit();
+  bool hasPermissions = false;
+
+  try {
+    final screenRecording = await plugin.hasScreenRecordingPermission();
+    final accessibility = await plugin.hasAccessibilityPermission();
+    hasPermissions = screenRecording && accessibility;
+  } catch (e) {
+    // 권한 확인 실패시 기본값 false로 권한 설정 페이지로 이동
+    hasPermissions = false;
+  }
+
+  runApp(MyApp(hasInitialPermissions: hasPermissions));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool hasInitialPermissions;
+
+  const MyApp({super.key, required this.hasInitialPermissions});
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +60,11 @@ class MyApp extends StatelessWidget {
           brightness: Brightness.dark,
         ),
       ),
-      home: const PermissionGuardPage(),
+      initialRoute: hasInitialPermissions ? '/main' : '/permission',
+      routes: {
+        '/main': (context) => const MainTabView(),
+        '/permission': (context) => const PermissionSetupPage(),
+      },
     );
   }
 }
@@ -72,7 +92,12 @@ class MainTabView extends StatelessWidget {
           ),
         ),
         body: const TabBarView(
-          children: [WindowDemoPage(), SmartCaptureTab(), CapturableWindowsTab(), LegacyWindowsTab()],
+          children: [
+            WindowDemoPage(),
+            SmartCaptureTab(),
+            CapturableWindowsTab(),
+            LegacyWindowsTab(),
+          ],
         ),
       ),
     );
@@ -156,7 +181,8 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
   }
 
   Future<void> _checkScreenRecordingPermission() async {
-    final hasPermission = await PermissionService.checkScreenRecordingPermission();
+    final hasPermission =
+        await PermissionService.checkScreenRecordingPermission();
     setState(() {
       _hasScreenRecordingPermission = hasPermission;
     });
@@ -170,7 +196,8 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
   }
 
   Future<void> _checkAccessibilityPermission() async {
-    final hasPermission = await PermissionService.checkAccessibilityPermission();
+    final hasPermission =
+        await PermissionService.checkAccessibilityPermission();
     setState(() {
       _hasAccessibilityPermission = hasPermission;
     });
@@ -192,7 +219,7 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
 
   Future<void> _requestScreenRecordingPermission() async {
     final granted = await PermissionService.requestScreenRecordingPermission();
-    
+
     if (granted != null) {
       setState(() {
         _hasScreenRecordingPermission = granted;
@@ -218,7 +245,7 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
 
   Future<void> _requestAccessibilityPermission() async {
     final granted = await PermissionService.requestAccessibilityPermission();
-    
+
     if (granted != null) {
       setState(() {
         _hasAccessibilityPermission = granted;
@@ -244,7 +271,7 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
 
   Future<void> _openScreenRecordingSettings() async {
     final success = await PermissionService.openScreenRecordingSettings();
-    
+
     if (success != null && mounted) {
       NotificationService.showSettingsResult(
         context,
@@ -261,7 +288,7 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
 
   Future<void> _openAccessibilitySettings() async {
     final success = await PermissionService.openAccessibilitySettings();
-    
+
     if (success != null && mounted) {
       NotificationService.showSettingsResult(
         context,
@@ -277,11 +304,12 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
   }
 
   void _requestMostCriticalPermission() {
-    final criticalPermission = PermissionService.getMostCriticalMissingPermission(
-      hasScreenRecording: _hasScreenRecordingPermission,
-      hasAccessibility: _hasAccessibilityPermission,
-    );
-    
+    final criticalPermission =
+        PermissionService.getMostCriticalMissingPermission(
+          hasScreenRecording: _hasScreenRecordingPermission,
+          hasAccessibility: _hasAccessibilityPermission,
+        );
+
     switch (criticalPermission) {
       case PermissionType.screenRecording:
         _requestScreenRecordingPermission();
@@ -293,7 +321,6 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
         break;
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -309,9 +336,13 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            icon: Icon(WindowService.isAutoRefreshEnabled ? Icons.pause : Icons.refresh),
+            icon: Icon(
+              WindowService.isAutoRefreshEnabled ? Icons.pause : Icons.refresh,
+            ),
             onPressed: _toggleAutoRefresh,
-            tooltip: WindowService.isAutoRefreshEnabled ? 'Stop Auto-refresh' : 'Start Auto-refresh',
+            tooltip: WindowService.isAutoRefreshEnabled
+                ? 'Stop Auto-refresh'
+                : 'Start Auto-refresh',
           ),
           IconButton(
             icon: const Icon(Icons.window),
@@ -329,7 +360,8 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
               hasAccessibilityPermission: _hasAccessibilityPermission,
               onOpenScreenRecordingSettings: _openScreenRecordingSettings,
               onOpenAccessibilitySettings: _openAccessibilitySettings,
-              onRequestScreenRecordingPermission: _requestScreenRecordingPermission,
+              onRequestScreenRecordingPermission:
+                  _requestScreenRecordingPermission,
               onRequestAccessibilityPermission: _requestAccessibilityPermission,
             ),
 
@@ -363,10 +395,11 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
           ],
         ),
       ),
-      floatingActionButton: PermissionService.hasAnyMissingPermission(
-          hasScreenRecording: _hasScreenRecordingPermission,
-          hasAccessibility: _hasAccessibilityPermission,
-        )
+      floatingActionButton:
+          PermissionService.hasAnyMissingPermission(
+            hasScreenRecording: _hasScreenRecordingPermission,
+            hasAccessibility: _hasAccessibilityPermission,
+          )
           ? FloatingActionButton.extended(
               onPressed: _requestMostCriticalPermission,
               icon: const Icon(Icons.security),
