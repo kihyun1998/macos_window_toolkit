@@ -351,49 +351,55 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Permissions Status Card
-            PermissionsStatusCard(
-              hasScreenRecordingPermission: _hasScreenRecordingPermission,
-              hasAccessibilityPermission: _hasAccessibilityPermission,
-              onOpenScreenRecordingSettings: _openScreenRecordingSettings,
-              onOpenAccessibilitySettings: _openAccessibilitySettings,
-              onRequestScreenRecordingPermission:
-                  _requestScreenRecordingPermission,
-              onRequestAccessibilityPermission: _requestAccessibilityPermission,
-            ),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Permissions Status Card
+                  PermissionsStatusCard(
+                    hasScreenRecordingPermission: _hasScreenRecordingPermission,
+                    hasAccessibilityPermission: _hasAccessibilityPermission,
+                    onOpenScreenRecordingSettings: _openScreenRecordingSettings,
+                    onOpenAccessibilitySettings: _openAccessibilitySettings,
+                    onRequestScreenRecordingPermission:
+                        _requestScreenRecordingPermission,
+                    onRequestAccessibilityPermission:
+                        _requestAccessibilityPermission,
+                  ),
 
-            // Version Info Card
-            VersionInfoCard(versionInfo: _versionInfo),
+                  // Version Info Card
+                  VersionInfoCard(versionInfo: _versionInfo),
 
-            // Search and Controls
-            SearchControls(
-              searchController: _searchController,
-              totalWindows: _windows.length,
-              filteredWindows: _filteredWindows.length,
-              autoRefresh: WindowService.isAutoRefreshEnabled,
-              onToggleAutoRefresh: _toggleAutoRefresh,
-            ),
+                  // Search and Controls
+                  SearchControls(
+                    searchController: _searchController,
+                    totalWindows: _windows.length,
+                    filteredWindows: _filteredWindows.length,
+                    autoRefresh: WindowService.isAutoRefreshEnabled,
+                    onToggleAutoRefresh: _toggleAutoRefresh,
+                  ),
 
-            // Windows List
-            SizedBox(
-              height:
-                  MediaQuery.of(context).size.height -
-                  400, // Adjust based on other widgets
-              child: WindowsList(
-                isLoading: _isLoading,
-                windows: _windows,
-                filteredWindows: _filteredWindows,
-                searchQuery: _searchController.text,
-                onRefresh: _getAllWindows,
-                onWindowTap: _showWindowDetails,
-                formatBytes: WindowService.formatBytes,
+                  // Windows List
+                  SizedBox(
+                    height: 500,
+                    child: WindowsList(
+                      isLoading: _isLoading,
+                      windows: _windows,
+                      filteredWindows: _filteredWindows,
+                      searchQuery: _searchController.text,
+                      onRefresh: _getAllWindows,
+                      onWindowTap: _showWindowDetails,
+                      formatBytes: WindowService.formatBytes,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       floatingActionButton:
           PermissionService.hasAnyMissingPermission(
