@@ -495,4 +495,44 @@ class MacosWindowToolkit {
   Future<Map<String, dynamic>> getCaptureMethodInfo() async {
     return await MacosWindowToolkitPlatform.instance.getCaptureMethodInfo();
   }
+
+  /// Checks if a window with the specified ID is currently alive/exists.
+  /// 
+  /// Returns `true` if the window exists and is currently available on the system,
+  /// `false` otherwise.
+  /// 
+  /// [windowId] is the unique identifier of the window to check, which can be
+  /// obtained from [getAllWindows], [getWindowsByName], or other window listing methods.
+  /// 
+  /// This method is useful for verifying if a window is still valid before
+  /// attempting operations like capture or other window manipulations. It's 
+  /// particularly important for long-running applications where windows may
+  /// be closed by users or applications.
+  /// 
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  /// final windows = await toolkit.getAllWindows();
+  /// 
+  /// for (final window in windows) {
+  ///   // Check if window is still alive before capturing
+  ///   final isAlive = await toolkit.isWindowAlive(window.windowId);
+  ///   if (isAlive) {
+  ///     try {
+  ///       final imageBytes = await toolkit.captureWindow(window.windowId);
+  ///       // Process captured image
+  ///     } catch (e) {
+  ///       print('Failed to capture window: ${window.name}');
+  ///     }
+  ///   } else {
+  ///     print('Window ${window.name} is no longer available');
+  ///   }
+  /// }
+  /// ```
+  /// 
+  /// This method is lightweight and fast as it performs a simple existence check
+  /// without retrieving full window information.
+  Future<bool> isWindowAlive(int windowId) async {
+    return await MacosWindowToolkitPlatform.instance.isWindowAlive(windowId);
+  }
 }

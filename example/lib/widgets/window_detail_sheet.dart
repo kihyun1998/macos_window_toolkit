@@ -50,11 +50,14 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
   String? _captureError;
   MacosVersionInfo? _versionInfo;
   bool _excludeTitlebar = false;
+  bool? _isWindowAlive;
+  bool _isCheckingAlive = false;
 
   @override
   void initState() {
     super.initState();
     _checkVersionInfo();
+    _checkWindowAlive();
   }
 
   Future<void> _checkVersionInfo() async {
@@ -65,6 +68,27 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
       });
     } catch (e) {
       // Version info not critical for capture functionality
+    }
+  }
+
+  Future<void> _checkWindowAlive() async {
+    setState(() {
+      _isCheckingAlive = true;
+    });
+
+    try {
+      final isAlive = await _macosWindowToolkit.isWindowAlive(widget.window.windowId);
+      print('Window ${widget.window.windowId} alive check result: $isAlive');
+      setState(() {
+        _isWindowAlive = isAlive;
+        _isCheckingAlive = false;
+      });
+    } catch (e) {
+      print('Error checking window alive: $e');
+      setState(() {
+        _isWindowAlive = null;
+        _isCheckingAlive = false;
+      });
     }
   }
 
@@ -145,6 +169,103 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Window Status Section
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: _isWindowAlive == true 
+                    ? Colors.green.withOpacity(0.1)
+                    : _isWindowAlive == false 
+                        ? Colors.red.withOpacity(0.1)
+                        : colorScheme.surfaceVariant,
+                borderRadius: BorderRadius.circular(12),
+                border: _isWindowAlive != null
+                    ? Border.all(
+                        color: _isWindowAlive! ? Colors.green : Colors.red,
+                        width: 1,
+                      )
+                    : null,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        _isWindowAlive == true 
+                            ? Icons.check_circle 
+                            : _isWindowAlive == false 
+                                ? Icons.cancel 
+                                : Icons.help_outline,
+                        color: _isWindowAlive == true 
+                            ? Colors.green 
+                            : _isWindowAlive == false 
+                                ? Colors.red 
+                                : colorScheme.primary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Window Status',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const Spacer(),
+                      ElevatedButton.icon(
+                        onPressed: _isCheckingAlive ? null : _checkWindowAlive,
+                        icon: _isCheckingAlive
+                            ? SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Icon(Icons.refresh, size: 16),
+                        label: Text('Check'),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: Size(80, 32),
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Text(
+                        'Status: ',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      Text(
+                        _isCheckingAlive
+                            ? 'Checking...'
+                            : _isWindowAlive == true
+                                ? 'Window is alive'
+                                : _isWindowAlive == false
+                                    ? 'Window not found'
+                                    : 'Unknown',
+                        style: TextStyle(
+                          color: _isWindowAlive == true 
+                              ? Colors.green 
+                              : _isWindowAlive == false 
+                                  ? Colors.red 
+                                  : colorScheme.onSurface,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),

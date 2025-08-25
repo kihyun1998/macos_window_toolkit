@@ -317,4 +317,28 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   Future<Map<String, dynamic>> getCaptureMethodInfo() {
     throw UnimplementedError('getCaptureMethodInfo() has not been implemented.');
   }
+
+  /// Checks if a window with the specified ID is currently alive/exists.
+  /// 
+  /// Returns `true` if the window exists and is currently available on the system,
+  /// `false` otherwise.
+  /// 
+  /// [windowId] is the unique identifier of the window to check.
+  /// 
+  /// This method is useful for verifying if a window is still valid before
+  /// attempting operations like capture or manipulation.
+  /// 
+  /// Example usage:
+  /// ```dart
+  /// final isAlive = await toolkit.isWindowAlive(12345);
+  /// if (isAlive) {
+  ///   // Window exists, safe to perform operations
+  ///   final imageBytes = await toolkit.captureWindow(12345);
+  /// } else {
+  ///   print('Window no longer exists');
+  /// }
+  /// ```
+  Future<bool> isWindowAlive(int windowId) {
+    throw UnimplementedError('isWindowAlive() has not been implemented.');
+  }
 }

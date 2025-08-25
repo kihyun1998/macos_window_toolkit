@@ -246,6 +246,18 @@ class WindowHandler {
         
         return .success(windows)
     }
+    
+    /// Checks if a window with the specified ID is currently alive/exists
+    /// Returns true if the window exists, false otherwise
+    func isWindowAlive(_ windowId: Int) -> Bool {
+        let result = getWindowById(windowId)
+        switch result {
+        case .success(let windows):
+            return !windows.isEmpty
+        case .failure(_):
+            return false
+        }
+    }
 }
 
 /// Enum representing window operation errors

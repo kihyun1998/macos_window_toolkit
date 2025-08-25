@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -14,28 +12,38 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
 
   @override
   Future<List<Map<String, dynamic>>> getAllWindows() async {
-    final result = await methodChannel.invokeMethod<List<dynamic>>('getAllWindows');
+    final result = await methodChannel.invokeMethod<List<dynamic>>(
+      'getAllWindows',
+    );
     if (result == null) {
       return [];
     }
-    return result.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+    return result
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
   }
 
   @override
   Future<bool> hasScreenRecordingPermission() async {
-    final result = await methodChannel.invokeMethod<bool>('hasScreenRecordingPermission');
+    final result = await methodChannel.invokeMethod<bool>(
+      'hasScreenRecordingPermission',
+    );
     return result ?? false;
   }
 
   @override
   Future<bool> requestScreenRecordingPermission() async {
-    final result = await methodChannel.invokeMethod<bool>('requestScreenRecordingPermission');
+    final result = await methodChannel.invokeMethod<bool>(
+      'requestScreenRecordingPermission',
+    );
     return result ?? false;
   }
 
   @override
   Future<bool> openScreenRecordingSettings() async {
-    final result = await methodChannel.invokeMethod<bool>('openScreenRecordingSettings');
+    final result = await methodChannel.invokeMethod<bool>(
+      'openScreenRecordingSettings',
+    );
     return result ?? false;
   }
 
@@ -48,11 +56,15 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
     if (result == null) {
       return [];
     }
-    return result.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+    return result
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getWindowsByOwnerName(String ownerName) async {
+  Future<List<Map<String, dynamic>>> getWindowsByOwnerName(
+    String ownerName,
+  ) async {
     final result = await methodChannel.invokeMethod<List<dynamic>>(
       'getWindowsByOwnerName',
       {'ownerName': ownerName},
@@ -60,7 +72,9 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
     if (result == null) {
       return [];
     }
-    return result.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+    return result
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
   }
 
   @override
@@ -72,11 +86,15 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
     if (result == null) {
       return [];
     }
-    return result.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+    return result
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getWindowsByProcessId(int processId) async {
+  Future<List<Map<String, dynamic>>> getWindowsByProcessId(
+    int processId,
+  ) async {
     final result = await methodChannel.invokeMethod<List<dynamic>>(
       'getWindowsByProcessId',
       {'processId': processId},
@@ -84,12 +102,16 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
     if (result == null) {
       return [];
     }
-    return result.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+    return result
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
   }
 
   @override
   Future<Map<String, dynamic>> getMacOSVersionInfo() async {
-    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>('getMacOSVersionInfo');
+    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
+      'getMacOSVersionInfo',
+    );
     if (result == null) {
       return {};
     }
@@ -97,13 +119,13 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
   }
 
   @override
-  Future<Uint8List> captureWindow(int windowId, {bool excludeTitlebar = false}) async {
+  Future<Uint8List> captureWindow(
+    int windowId, {
+    bool excludeTitlebar = false,
+  }) async {
     final result = await methodChannel.invokeMethod<Uint8List>(
       'captureWindow',
-      {
-        'windowId': windowId,
-        'excludeTitlebar': excludeTitlebar,
-      },
+      {'windowId': windowId, 'excludeTitlebar': excludeTitlebar},
     );
     if (result == null) {
       throw PlatformException(
@@ -117,7 +139,9 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
 
   @override
   Future<List<CapturableWindowInfo>> getCapturableWindows() async {
-    final result = await methodChannel.invokeMethod<List<dynamic>>('getCapturableWindows');
+    final result = await methodChannel.invokeMethod<List<dynamic>>(
+      'getCapturableWindows',
+    );
     if (result == null) {
       return [];
     }
@@ -145,7 +169,9 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
 
   @override
   Future<List<CapturableWindowInfo>> getCapturableWindowsLegacy() async {
-    final result = await methodChannel.invokeMethod<List<dynamic>>('getCapturableWindowsLegacy');
+    final result = await methodChannel.invokeMethod<List<dynamic>>(
+      'getCapturableWindowsLegacy',
+    );
     if (result == null) {
       return [];
     }
@@ -156,13 +182,13 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
   }
 
   @override
-  Future<Uint8List> captureWindowAuto(int windowId, {bool excludeTitlebar = false}) async {
+  Future<Uint8List> captureWindowAuto(
+    int windowId, {
+    bool excludeTitlebar = false,
+  }) async {
     final result = await methodChannel.invokeMethod<Uint8List>(
       'captureWindowAuto',
-      {
-        'windowId': windowId,
-        'excludeTitlebar': excludeTitlebar,
-      },
+      {'windowId': windowId, 'excludeTitlebar': excludeTitlebar},
     );
     if (result == null) {
       throw PlatformException(
@@ -176,7 +202,9 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
 
   @override
   Future<List<CapturableWindowInfo>> getCapturableWindowsAuto() async {
-    final result = await methodChannel.invokeMethod<List<dynamic>>('getCapturableWindowsAuto');
+    final result = await methodChannel.invokeMethod<List<dynamic>>(
+      'getCapturableWindowsAuto',
+    );
     if (result == null) {
       return [];
     }
@@ -188,10 +216,21 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
 
   @override
   Future<Map<String, dynamic>> getCaptureMethodInfo() async {
-    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>('getCaptureMethodInfo');
+    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
+      'getCaptureMethodInfo',
+    );
     if (result == null) {
       return {};
     }
     return Map<String, dynamic>.from(result);
+  }
+
+  @override
+  Future<bool> isWindowAlive(int windowId) async {
+    final result = await methodChannel.invokeMethod<bool>(
+      'isWindowAlive',
+      {'windowId': windowId},
+    );
+    return result ?? false;
   }
 }

@@ -59,16 +59,18 @@ class CaptureHandler {
             let finalImage: CGImage
             if excludeTitlebar {
                 // Get content bounds excluding titlebar
-                let contentBounds = CaptureUtil.getWindowContentBounds(
-                    windowId: windowId, 
-                    windowBounds: targetWindow.frame
-                ) ?? CGRect(
-                    x: targetWindow.frame.origin.x,
-                    y: targetWindow.frame.origin.y + 28,
-                    width: targetWindow.frame.width,
-                    height: targetWindow.frame.height - 28
-                )
-                
+                let contentBounds =
+                    CaptureUtil.getWindowContentBounds(
+                        windowId: windowId,
+                        windowBounds: targetWindow.frame
+                    )
+                    ?? CGRect(
+                        x: targetWindow.frame.origin.x,
+                        y: targetWindow.frame.origin.y + 28,
+                        width: targetWindow.frame.width,
+                        height: targetWindow.frame.height - 28
+                    )
+
                 // Calculate crop rectangle (titlebar height from top)
                 let titlebarHeight = targetWindow.frame.height - contentBounds.height
                 let cropRect = CGRect(
@@ -77,7 +79,7 @@ class CaptureHandler {
                     width: targetWindow.frame.width,
                     height: contentBounds.height
                 )
-                
+
                 guard let croppedImage = screenshot.cropping(to: cropRect) else {
                     throw CaptureError.captureFailed("Failed to crop titlebar from image")
                 }

@@ -46,6 +46,8 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       getCapturableWindowsAuto(result: result)
     case "getCaptureMethodInfo":
       getCaptureMethodInfo(result: result)
+    case "isWindowAlive":
+      isWindowAlive(call: call, result: result)
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -334,6 +336,21 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   private func getCaptureMethodInfo(result: @escaping FlutterResult) {
     let methodInfo = SmartCaptureHandler.getCaptureMethodInfo()
     result(methodInfo)
+  }
+
+  /// Checks if a window with the specified ID is currently alive/exists
+  private func isWindowAlive(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let arguments = call.arguments as? [String: Any],
+          let windowId = arguments["windowId"] as? Int else {
+      result(FlutterError(
+        code: "INVALID_ARGUMENTS",
+        message: "WindowId parameter is required",
+        details: nil))
+      return
+    }
+
+    let isAlive = windowHandler.isWindowAlive(windowId)
+    result(isAlive)
   }
 
   /// Helper method to handle window operation results
