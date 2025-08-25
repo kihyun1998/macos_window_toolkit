@@ -48,6 +48,30 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
   }
 
   @override
+  Future<bool> hasAccessibilityPermission() async {
+    final result = await methodChannel.invokeMethod<bool>(
+      'hasAccessibilityPermission',
+    );
+    return result ?? false;
+  }
+
+  @override
+  Future<bool> requestAccessibilityPermission() async {
+    final result = await methodChannel.invokeMethod<bool>(
+      'requestAccessibilityPermission',
+    );
+    return result ?? false;
+  }
+
+  @override
+  Future<bool> openAccessibilitySettings() async {
+    final result = await methodChannel.invokeMethod<bool>(
+      'openAccessibilitySettings',
+    );
+    return result ?? false;
+  }
+
+  @override
   Future<List<Map<String, dynamic>>> getWindowsByName(String name) async {
     final result = await methodChannel.invokeMethod<List<dynamic>>(
       'getWindowsByName',

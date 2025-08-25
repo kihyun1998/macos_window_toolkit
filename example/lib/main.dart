@@ -6,7 +6,7 @@ import 'package:macos_window_toolkit/macos_window_toolkit.dart';
 
 import 'widgets/capturable_windows_tab.dart';
 import 'widgets/legacy_windows_tab.dart';
-import 'widgets/permission_card.dart';
+import 'widgets/permissions_status_card.dart';
 import 'widgets/search_controls.dart';
 import 'widgets/smart_capture_tab.dart';
 import 'widgets/version_info_card.dart';
@@ -85,7 +85,8 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
   List<MacosWindowInfo> _windows = [];
   List<MacosWindowInfo> _filteredWindows = [];
   bool _isLoading = false;
-  bool? _hasPermission;
+  bool? _hasScreenRecordingPermission;
+  bool? _hasAccessibilityPermission;
   MacosVersionInfo? _versionInfo;
   final _macosWindowToolkitPlugin = MacosWindowToolkit();
   final _searchController = TextEditingController();
@@ -95,7 +96,8 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
   @override
   void initState() {
     super.initState();
-    _checkPermission();
+    _checkScreenRecordingPermission();
+    _checkAccessibilityPermission();
     _getVersionInfo();
     _searchController.addListener(_filterWindows);
   }
@@ -159,18 +161,38 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
     }
   }
 
-  Future<void> _checkPermission() async {
+  Future<void> _checkScreenRecordingPermission() async {
     try {
       final hasPermission = await _macosWindowToolkitPlugin
           .hasScreenRecordingPermission();
       setState(() {
-        _hasPermission = hasPermission;
+        _hasScreenRecordingPermission = hasPermission;
       });
     } on PlatformException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error checking permission: ${e.message}'),
+            content: Text('Error checking screen recording permission: ${e.message}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _checkAccessibilityPermission() async {
+    try {
+      final hasPermission = await _macosWindowToolkitPlugin
+          .hasAccessibilityPermission();
+      setState(() {
+        _hasAccessibilityPermission = hasPermission;
+      });
+    } on PlatformException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error checking accessibility permission: ${e.message}'),
             backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -190,12 +212,12 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
     }
   }
 
-  Future<void> _requestPermission() async {
+  Future<void> _requestScreenRecordingPermission() async {
     try {
       final granted = await _macosWindowToolkitPlugin
           .requestScreenRecordingPermission();
       setState(() {
-        _hasPermission = granted;
+        _hasScreenRecordingPermission = granted;
       });
 
       if (mounted) {
@@ -203,8 +225,8 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
           SnackBar(
             content: Text(
               granted
-                  ? 'Permission granted! You may need to restart the app to see full window names.'
-                  : 'Permission denied. Window names may not be available.',
+                  ? 'Screen recording permission granted! You may need to restart the app.'
+                  : 'Screen recording permission denied. Window names may not be available.',
             ),
             backgroundColor: granted ? Colors.green : Colors.red,
             duration: const Duration(seconds: 4),
@@ -214,50 +236,102 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
     } on PlatformException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error requesting permission: ${e.message}')),
+          SnackBar(content: Text('Error requesting screen recording permission: ${e.message}')),
         );
       }
     }
   }
 
-  Future<void> _checkPermissionAndOpenSettings() async {
+  Future<void> _requestAccessibilityPermission() async {
     try {
-      final hasPermission = await _macosWindowToolkitPlugin
-          .hasScreenRecordingPermission();
+      final granted = await _macosWindowToolkitPlugin
+          .requestAccessibilityPermission();
+      setState(() {
+        _hasAccessibilityPermission = granted;
+      });
 
-      if (hasPermission) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Screen recording permission is already granted!'),
-              backgroundColor: Colors.green,
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              granted
+                  ? 'Accessibility permission granted!'
+                  : 'Accessibility permission not granted. Please enable it in System Preferences.',
             ),
-          );
-        }
-      } else {
-        final success = await _macosWindowToolkitPlugin
-            .openScreenRecordingSettings();
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                success
-                    ? 'No permission detected. Opening System Preferences - please enable screen recording.'
-                    : 'No permission detected. Failed to open System Preferences. Please open it manually.',
-              ),
-              backgroundColor: success ? Colors.orange : Colors.red,
-              duration: const Duration(seconds: 5),
-            ),
-          );
-        }
+            backgroundColor: granted ? Colors.green : Colors.orange,
+            duration: const Duration(seconds: 4),
+          ),
+        );
       }
     } on PlatformException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: ${e.message}')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error requesting accessibility permission: ${e.message}')),
+        );
       }
+    }
+  }
+
+  Future<void> _openScreenRecordingSettings() async {
+    try {
+      final success = await _macosWindowToolkitPlugin
+          .openScreenRecordingSettings();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success
+                  ? 'Opening System Preferences - please enable screen recording.'
+                  : 'Failed to open System Preferences. Please open it manually.',
+            ),
+            backgroundColor: success ? Colors.orange : Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } on PlatformException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error opening settings: ${e.message}')),
+        );
+      }
+    }
+  }
+
+  Future<void> _openAccessibilitySettings() async {
+    try {
+      final success = await _macosWindowToolkitPlugin
+          .openAccessibilitySettings();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success
+                  ? 'Opening System Preferences - please enable accessibility.'
+                  : 'Failed to open System Preferences. Please open it manually.',
+            ),
+            backgroundColor: success ? Colors.orange : Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } on PlatformException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error opening accessibility settings: ${e.message}')),
+        );
+      }
+    }
+  }
+
+  void _requestMostCriticalPermission() {
+    // Prioritize screen recording permission as it's needed for basic functionality
+    if (_hasScreenRecordingPermission == false) {
+      _requestScreenRecordingPermission();
+    } else if (_hasAccessibilityPermission == false) {
+      _requestAccessibilityPermission();
     }
   }
 
@@ -310,10 +384,14 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Permission Status Card
-            PermissionCard(
-              hasPermission: _hasPermission,
-              onOpenSettings: _checkPermissionAndOpenSettings,
+            // Permissions Status Card
+            PermissionsStatusCard(
+              hasScreenRecordingPermission: _hasScreenRecordingPermission,
+              hasAccessibilityPermission: _hasAccessibilityPermission,
+              onOpenScreenRecordingSettings: _openScreenRecordingSettings,
+              onOpenAccessibilitySettings: _openAccessibilitySettings,
+              onRequestScreenRecordingPermission: _requestScreenRecordingPermission,
+              onRequestAccessibilityPermission: _requestAccessibilityPermission,
             ),
 
             // Version Info Card
@@ -346,9 +424,9 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
           ],
         ),
       ),
-      floatingActionButton: _hasPermission == false
+      floatingActionButton: (_hasScreenRecordingPermission == false || _hasAccessibilityPermission == false)
           ? FloatingActionButton.extended(
-              onPressed: _requestPermission,
+              onPressed: _requestMostCriticalPermission,
               icon: const Icon(Icons.security),
               label: const Text('Enable Permissions'),
               backgroundColor: colorScheme.error,

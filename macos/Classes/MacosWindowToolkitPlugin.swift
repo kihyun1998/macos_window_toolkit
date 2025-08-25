@@ -50,6 +50,12 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       isWindowAlive(call: call, result: result)
     case "closeWindow":
       closeWindow(call: call, result: result)
+    case "hasAccessibilityPermission":
+      hasAccessibilityPermission(result: result)
+    case "requestAccessibilityPermission":
+      requestAccessibilityPermission(result: result)
+    case "openAccessibilitySettings":
+      openAccessibilitySettings(result: result)
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -86,6 +92,24 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   /// Opens screen recording settings in System Preferences
   private func openScreenRecordingSettings(result: @escaping FlutterResult) {
     let success = permissionHandler.openScreenRecordingSettings()
+    result(success)
+  }
+
+  /// Checks if the app has accessibility permission
+  private func hasAccessibilityPermission(result: @escaping FlutterResult) {
+    let hasPermission = permissionHandler.hasAccessibilityPermission()
+    result(hasPermission)
+  }
+
+  /// Requests accessibility permission
+  private func requestAccessibilityPermission(result: @escaping FlutterResult) {
+    let granted = permissionHandler.requestAccessibilityPermission()
+    result(granted)
+  }
+
+  /// Opens accessibility settings in System Preferences
+  private func openAccessibilitySettings(result: @escaping FlutterResult) {
+    let success = permissionHandler.openAccessibilitySettings()
     result(success)
   }
 
