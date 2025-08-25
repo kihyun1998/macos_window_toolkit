@@ -15,9 +15,9 @@ class WindowHandler {
     /// - isOnScreen: Whether the window is currently visible on screen
     /// - processId: Process ID of the application that owns the window
     func getAllWindows() -> Result<[[String: Any]], WindowError> {
-        // Get window list with all available options
+        // Get window list with all available options (including windows from other spaces)
         let windowListInfo = CGWindowListCopyWindowInfo(
-            [.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
+            [.excludeDesktopElements], kCGNullWindowID)
 
         guard let windowList = windowListInfo as? [[String: Any]] else {
             return .failure(.failedToRetrieveWindowList)
@@ -155,7 +155,7 @@ class WindowHandler {
         [[String: Any]], WindowError
     > {
         let windowListInfo = CGWindowListCopyWindowInfo(
-            [.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
+            [.excludeDesktopElements], kCGNullWindowID)
 
         guard let windowList = windowListInfo as? [[String: Any]] else {
             return .failure(.failedToRetrieveWindowList)
