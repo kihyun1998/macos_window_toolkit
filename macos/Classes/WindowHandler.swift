@@ -291,7 +291,6 @@ class WindowHandler {
         guard result == .success,
             let windowsArray = windowsRef as? [AXUIElement]
         else {
-            NSLog("Failed to get windows for process \(processId)")
             return nil
         }
 
@@ -304,7 +303,6 @@ class WindowHandler {
             if titleResult == .success,
                 let title = titleRef as? String
             {
-                NSLog("Found window with title: '\(title)' (looking for: '\(windowName)')")
 
                 // If window name is empty or matches, return this window element
                 if windowName.isEmpty || title == windowName {
@@ -313,7 +311,6 @@ class WindowHandler {
             }
         }
 
-        NSLog("Window not found with title: '\(windowName)' in process \(processId)")
         return nil
     }
 
@@ -377,11 +374,8 @@ class WindowHandler {
             windowElement, kAXCloseButtonAttribute as CFString, &closeButtonRef)
 
         if result == .success, let closeButton = closeButtonRef {
-            NSLog("Found close button using kAXCloseButtonAttribute as CFString")
             return (closeButton as! AXUIElement)
         }
-
-        NSLog("kAXCloseButtonAttribute as CFString not available, trying alternative methods")
 
         // Method 2: Search through child elements
         return findCloseButtonInChildren(windowElement)
@@ -397,11 +391,8 @@ class WindowHandler {
         guard childrenResult == .success,
             let children = childrenRef as? [AXUIElement]
         else {
-            NSLog("Failed to get children of window element")
             return nil
         }
-
-        NSLog("Searching through \(children.count) child elements")
 
         // Look for close button by role and subrole
         for child in children {
@@ -435,10 +426,8 @@ class WindowHandler {
                     element, kAXSubroleAttribute as CFString, &subroleRef)
 
                 if subroleResult == .success, let subrole = subroleRef as? String {
-                    NSLog("Found button with subrole: \(subrole)")
                     // Close button typically has "AXCloseButton" subrole
                     if subrole == kAXCloseButtonSubrole {
-                        NSLog("Found close button by subrole")
                         return element
                     }
                 }
@@ -449,10 +438,8 @@ class WindowHandler {
                     element, kAXDescriptionAttribute as CFString, &descRef)
 
                 if descResult == .success, let description = descRef as? String {
-                    NSLog("Button description: \(description)")
                     // Look for close-related descriptions
                     if description.lowercased().contains("close") {
-                        NSLog("Found close button by description")
                         return element
                     }
                 }
@@ -484,10 +471,8 @@ class WindowHandler {
         let result = AXUIElementPerformAction(closeButton, kAXPressAction as CFString)
 
         if result == .success {
-            NSLog("Successfully clicked close button")
             return true
         } else {
-            NSLog("Failed to click close button, error code: \(result.rawValue)")
             return false
         }
     }
@@ -497,8 +482,6 @@ class WindowHandler {
     private func closeWindowWithAccessibilityAPI(processId: Int, windowName: String) -> Result<
         Bool, WindowError
     > {
-        NSLog("Attempting to close window using Accessibility API")
-        NSLog("Process ID: \(processId), Window Name: '\(windowName)'")
 
         // Step 1: Find the window element
         var windowElement: AXUIElement?
@@ -512,29 +495,21 @@ class WindowHandler {
         }
 
         guard let window = windowElement else {
-            NSLog(
-                "Could not find window element for process \(processId) with name '\(windowName)'")
+
             return .failure(.windowNotFound)
         }
 
-        NSLog("Successfully found window element")
-
         // Step 2: Find the close button
         guard let closeButton = findCloseButton(for: window) else {
-            NSLog("Could not find close button for window")
             return .failure(.closeButtonNotFound)
         }
-
-        NSLog("Successfully found close button")
 
         // Step 3: Click the close button
         let clickSuccess = clickCloseButton(closeButton)
 
         if clickSuccess {
-            NSLog("Window close operation completed successfully")
             return .success(true)
         } else {
-            NSLog("Failed to click close button")
             return .failure(.closeActionFailed)
         }
     }
@@ -543,12 +518,10 @@ class WindowHandler {
     /// This method uses modern Accessibility API instead of AppleScript for better reliability
     /// Returns a Result indicating success or failure
     func closeWindow(_ windowId: Int) -> Result<Bool, WindowError> {
-        NSLog("Starting closeWindow operation for window ID: \(windowId)")
 
         // Step 1: Check accessibility permissions
         let permissionHandler = PermissionHandler()
         guard permissionHandler.hasAccessibilityPermission() else {
-            NSLog("Accessibility permission not granted")
             return .failure(.accessibilityPermissionDenied)
         }
 
@@ -558,22 +531,15 @@ class WindowHandler {
         switch windowResult {
         case .success(let windows):
             guard let window = windows.first else {
-                NSLog("Window with ID \(windowId) not found")
                 return .failure(.windowNotFound)
             }
 
             // Extract process ID and window name
             guard let processId = window["processId"] as? Int else {
-                NSLog("Could not extract process ID from window data")
                 return .failure(.insufficientWindowInfo)
             }
 
             let windowName = window["name"] as? String ?? ""
-            let ownerName = window["ownerName"] as? String ?? "Unknown"
-
-            NSLog(
-                "Found window - Process ID: \(processId), Owner: '\(ownerName)', Name: '\(windowName)'"
-            )
 
             // Step 3: Try Accessibility API approach
             let accessibilityResult = closeWindowWithAccessibilityAPI(
@@ -584,15 +550,12 @@ class WindowHandler {
             switch accessibilityResult {
             case .success(let success):
                 if success {
-                    NSLog("Successfully closed window using Accessibility API")
                     return .success(true)
                 } else {
-                    NSLog("Accessibility API reported failure")
                     return .failure(.closeActionFailed)
                 }
 
             case .failure(let error):
-                NSLog("Accessibility API failed: \(error.localizedDescription)")
 
                 // Step 4: Fallback to alternative methods if needed
                 // For now, we'll just return the error, but we could add AppleScript fallback here
@@ -600,7 +563,6 @@ class WindowHandler {
             }
 
         case .failure(let error):
-            NSLog("Failed to retrieve window information: \(error.localizedDescription)")
             return .failure(error)
         }
     }
@@ -610,51 +572,39 @@ class WindowHandler {
     func terminateApplicationByPID(_ processId: Int, force: Bool = false) -> Result<
         Bool, WindowError
     > {
-        NSLog("Attempting to terminate application with PID: \(processId), force: \(force)")
 
         // First verify the process exists
         let existsResult = kill(Int32(processId), 0)
         if existsResult == -1 {
-            NSLog("Process with PID \(processId) does not exist")
             return .failure(.processNotFound)
         }
 
         // Try NSRunningApplication approach first (more graceful)
         let runningApps = NSWorkspace.shared.runningApplications
         if let app = runningApps.first(where: { $0.processIdentifier == Int32(processId) }) {
-            NSLog(
-                "Found NSRunningApplication for PID \(processId): \(app.bundleIdentifier ?? "Unknown")"
-            )
 
             if force {
                 let success = app.forceTerminate()
-                NSLog("Force terminate result: \(success)")
                 return .success(success)
             } else {
                 let success = app.terminate()
-                NSLog("Graceful terminate result: \(success)")
                 return .success(success)
             }
         }
 
         // Fallback to signal-based termination
-        NSLog("Falling back to signal-based termination")
         let signal = force ? SIGKILL : SIGTERM
         let result = kill(Int32(processId), signal)
 
         if result == 0 {
-            NSLog("Successfully sent \(force ? "SIGKILL" : "SIGTERM") to process \(processId)")
             return .success(true)
         } else {
-            let error = errno
-            NSLog("Failed to send signal to process \(processId), errno: \(error)")
             return .failure(.terminationFailed)
         }
     }
 
     /// Gets all child process IDs for a given parent process ID
     func getChildProcesses(of parentPID: Int32) -> Result<[Int32], WindowError> {
-        NSLog("Getting child processes for parent PID: \(parentPID)")
 
         var childPIDs: [Int32] = []
         var size = 0
@@ -664,7 +614,6 @@ class WindowHandler {
         let result = sysctl(&mib, 4, nil, &size, nil, 0)
 
         if result != 0 {
-            NSLog("Failed to get process list size")
             return .failure(.failedToGetProcessList)
         }
 
@@ -675,7 +624,6 @@ class WindowHandler {
 
         let getProcessResult = sysctl(&mib, 4, processes, &size, nil, 0)
         if getProcessResult != 0 {
-            NSLog("Failed to get process list")
             return .failure(.failedToGetProcessList)
         }
 
@@ -687,7 +635,6 @@ class WindowHandler {
             }
         }
 
-        NSLog("Found \(childPIDs.count) child processes for PID \(parentPID)")
         return .success(childPIDs)
     }
 
@@ -695,7 +642,6 @@ class WindowHandler {
     func terminateApplicationTree(_ processId: Int, force: Bool = false) -> Result<
         Bool, WindowError
     > {
-        NSLog("Terminating application tree for PID: \(processId)")
 
         // First get all child processes
         let childResult = getChildProcesses(of: Int32(processId))
@@ -708,13 +654,12 @@ class WindowHandler {
                 let childResult = terminateApplicationByPID(Int(childPID), force: force)
                 if case .failure = childResult {
                     allTerminated = false
-                    NSLog("Failed to terminate child process: \(childPID)")
                 }
             }
 
-        case .failure(let error):
-            NSLog("Failed to get child processes: \(error.localizedDescription)")
-        // Continue with parent termination even if we can't get children
+        case .failure(_):
+            // Continue with parent termination even if we can't get children
+            break
         }
 
         // Finally terminate the parent process

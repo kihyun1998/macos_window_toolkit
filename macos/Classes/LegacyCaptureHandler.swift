@@ -18,6 +18,13 @@ class LegacyCaptureHandler {
         // CGWindowID로 변환
         let cgWindowId = CGWindowID(windowId)
 
+        // 캡처 전에 윈도우 존재 여부 및 최소화 상태 확인
+        if !isWindowExists(windowId: windowId) {
+            throw LegacyCaptureError.invalidWindowId
+        } else if isWindowMinimized(windowId: windowId) {
+            throw LegacyCaptureError.windowMinimized
+        }
+
         // 윈도우 캡쳐 옵션 설정
         let imageOption: CGWindowImageOption = [
             .nominalResolution,  // 표준 해상도
@@ -39,14 +46,7 @@ class LegacyCaptureHandler {
                 imageOption
             )
         else {
-            // 캡쳐 실패 시 윈도우 존재 여부 및 최소화 상태 확인
-            if !isWindowExists(windowId: windowId) {
-                throw LegacyCaptureError.invalidWindowId
-            } else if isWindowMinimized(windowId: windowId) {
-                throw LegacyCaptureError.windowMinimized
-            } else {
-                throw LegacyCaptureError.captureFailed("Failed to create window image")
-            }
+            throw LegacyCaptureError.captureFailed("Failed to create window image")
         }
 
         // Titlebar 제외가 요청된 경우 이미지를 crop
@@ -102,25 +102,19 @@ class LegacyCaptureHandler {
 
     // 윈도우 최소화 상태 확인
     private static func isWindowMinimized(windowId: Int) -> Bool {
-        let windowList = CGWindowListCopyWindowInfo(.optionAll, kCGNullWindowID) as? [[String: Any]]
+        // optionOnScreenOnly 옵션으로 화면에 보이는 윈도우만 가져오기
+        let onScreenWindows =
+            CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]]
+            ?? []
 
-        guard
-            let windowInfo = windowList?.first(where: { window in
-                guard let wid = window[kCGWindowNumber as String] as? Int else { return false }
-                return wid == windowId
-            })
-        else {
-            return false
+        // 해당 윈도우 ID가 화면에 보이는 윈도우 목록에 없으면 최소화된 것
+        let isOnScreenList = onScreenWindows.contains { window in
+            guard let wid = window[kCGWindowNumber as String] as? Int else { return false }
+            return wid == windowId
         }
 
-        // isOnScreen이 false이면 최소화된 것으로 간주
-        if let isOnScreen = windowInfo[kCGWindowIsOnscreen as String] as? NSNumber {
-            let minimized = !isOnScreen.boolValue
-
-            return minimized
-        }
-
-        return false
+        // 화면에 보이는 윈도우 목록에 없으면 최소화된 것으로 간주
+        return !isOnScreenList
     }
 
     // 윈도우 정보를 가져와서 frame 반환

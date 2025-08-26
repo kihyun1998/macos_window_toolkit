@@ -75,10 +75,6 @@ class PermissionHandler {
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
         let hasPermission = AXIsProcessTrustedWithOptions(options as CFDictionary)
 
-        if !hasPermission {
-            NSLog("Accessibility permission not granted. System dialog shown.")
-        }
-
         return hasPermission
     }
 

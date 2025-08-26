@@ -28,17 +28,6 @@ class CaptureHandler {
         }
 
         do {
-            // 먼저 윈도우가 최소화되어 있는지 확인
-            if let windowInfo = getWindowInfo(windowId: windowId) {
-                if let isOnScreen = windowInfo[kCGWindowIsOnscreen as String] as? NSNumber,
-                    !isOnScreen.boolValue
-                {
-                    throw CaptureError.windowMinimized
-                }
-            } else {
-                throw CaptureError.invalidWindowId
-            }
-
             // 캡처 가능한 콘텐츠 가져오기
             let availableContent = try await SCShareableContent.current
 

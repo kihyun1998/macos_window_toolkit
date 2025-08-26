@@ -226,7 +226,8 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       Task {
         do {
           let imageData = try await CaptureHandler.captureWindow(
-            windowId: windowId, excludeTitlebar: excludeTitlebar, customTitlebarHeight: customTitlebarHeight)
+            windowId: windowId, excludeTitlebar: excludeTitlebar,
+            customTitlebarHeight: customTitlebarHeight)
           result(FlutterStandardTypedData(bytes: imageData))
         } catch let error as CaptureHandler.CaptureError {
           let errorInfo = CaptureHandler.handleCaptureError(error)
@@ -305,7 +306,8 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
 
     do {
       let imageData = try LegacyCaptureHandler.captureWindow(
-        windowId: windowId, excludeTitlebar: excludeTitlebar, customTitlebarHeight: customTitlebarHeight)
+        windowId: windowId, excludeTitlebar: excludeTitlebar,
+        customTitlebarHeight: customTitlebarHeight)
       result(FlutterStandardTypedData(bytes: imageData))
     } catch let error as LegacyCaptureHandler.LegacyCaptureError {
       let errorInfo = LegacyCaptureHandler.handleLegacyCaptureError(error)
