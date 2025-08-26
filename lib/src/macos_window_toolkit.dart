@@ -1,15 +1,15 @@
 library;
 
-import 'dart:typed_data';
-
 import 'macos_window_toolkit_platform_interface.dart';
 import 'models/capturable_window_info.dart';
+import 'models/capture_result.dart';
 import 'models/macos_window_info.dart';
 import 'models/macos_version_info.dart';
 
 export 'macos_window_toolkit_method_channel.dart';
 export 'macos_window_toolkit_platform_interface.dart';
 export 'models/capturable_window_info.dart';
+export 'models/capture_result.dart';
 export 'models/macos_window_info.dart';
 export 'models/macos_version_info.dart';
 
@@ -343,7 +343,7 @@ class MacosWindowToolkit {
 
   /// Captures a window using ScreenCaptureKit.
   /// 
-  /// Returns the captured image as bytes in PNG format.
+  /// Returns a [CaptureResult] indicating success with image data or failure with reason.
   /// 
   /// [windowId] is the unique identifier of the window to capture, which can be
   /// obtained from [getAllWindows], [getWindowById], or [getCapturableWindows].
@@ -365,40 +365,26 @@ class MacosWindowToolkit {
   /// // First check if ScreenCaptureKit is available
   /// final versionInfo = await toolkit.getMacOSVersionInfo();
   /// if (versionInfo.isScreenCaptureKitAvailable) {
-  ///   try {
-  ///     // Basic window capture
-  ///     final imageBytes = await toolkit.captureWindow(12345);
-  ///     
-  ///     // Capture without titlebar (28pt default)
-  ///     final noBarsImage = await toolkit.captureWindow(12345, excludeTitlebar: true);
-  ///     
-  ///     // Capture with custom titlebar height (e.g., Safari's 44pt)
-  ///     final safariImage = await toolkit.captureWindow(12345, 
-  ///       excludeTitlebar: true, customTitlebarHeight: 44.0);
-  ///       
-  ///     // Capture Chrome (no titlebar)
-  ///     final chromeImage = await toolkit.captureWindow(12345, 
-  ///       excludeTitlebar: true, customTitlebarHeight: 0.0);
-  ///     
-  ///     // Convert bytes to image and display
-  ///     final image = Image.memory(imageBytes);
-  ///   } catch (e) {
-  ///     if (e is PlatformException && e.code == 'INVALID_WINDOW_ID') {
-  ///       print('Window not found');
-  ///     }
+  ///   final result = await toolkit.captureWindow(12345);
+  ///   switch (result) {
+  ///     case CaptureSuccess(imageData: final data):
+  ///       // Convert bytes to image and display
+  ///       final image = Image.memory(data);
+  ///       break;
+  ///     case CaptureFailure(reason: CaptureFailureReason.windowMinimized):
+  ///       print('Window is minimized');
+  ///       break;
+  ///     case CaptureFailure(reason: CaptureFailureReason.permissionDenied):
+  ///       print('Permission denied');
+  ///       break;
   ///   }
   /// } else {
   ///   // Fall back to CGWindowListCreateImage method
   /// }
   /// ```
   /// 
-  /// Throws [PlatformException] with the following error codes:
-  /// - `UNSUPPORTED_MACOS_VERSION`: Current macOS version doesn't support ScreenCaptureKit (requires 12.3+)
-  /// - `SCREENCAPTUREKIT_NOT_AVAILABLE`: ScreenCaptureKit framework is not available
-  /// - `INVALID_WINDOW_ID`: Window with the specified ID was not found or is not capturable
-  /// - `CAPTURE_NOT_SUPPORTED`: Window capture is not supported for this specific window
-  /// - `CAPTURE_FAILED`: Window capture failed due to system restrictions or other errors
-  Future<Uint8List> captureWindow(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) async {
+  /// Throws [PlatformException] only for system errors (invalid arguments, system failures).
+  Future<CaptureResult> captureWindow(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) async {
     return await MacosWindowToolkitPlatform.instance.captureWindow(windowId, excludeTitlebar: excludeTitlebar, customTitlebarHeight: customTitlebarHeight);
   }
 
@@ -441,7 +427,7 @@ class MacosWindowToolkit {
 
   /// Captures a window using CGWindowListCreateImage (legacy method).
   /// 
-  /// Returns the captured image as bytes in PNG format.
+  /// Returns a [CaptureResult] indicating success with image data or failure with reason.
   /// 
   /// [windowId] is the unique identifier of the window to capture, which can be
   /// obtained from [getAllWindows], [getWindowById], or [getCapturableWindowsLegacy].
@@ -461,35 +447,23 @@ class MacosWindowToolkit {
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
   /// 
-  /// try {
-  ///   // Basic legacy window capture
-  ///   final imageBytes = await toolkit.captureWindowLegacy(12345);
-  ///   
-  ///   // Legacy capture without titlebar (28pt default)
-  ///   final noBarsImage = await toolkit.captureWindowLegacy(12345, excludeTitlebar: true);
-  ///   
-  ///   // Legacy capture with custom titlebar height (e.g., Safari's 44pt)
-  ///   final safariImage = await toolkit.captureWindowLegacy(12345, 
-  ///     excludeTitlebar: true, customTitlebarHeight: 44.0);
-  ///     
-  ///   // Legacy capture Chrome (no titlebar)
-  ///   final chromeImage = await toolkit.captureWindowLegacy(12345, 
-  ///     excludeTitlebar: true, customTitlebarHeight: 0.0);
-  ///   
-  ///   // Convert bytes to image and display
-  ///   final image = Image.memory(imageBytes);
-  /// } catch (e) {
-  ///   if (e is PlatformException && e.code == 'INVALID_WINDOW_ID') {
+  /// final result = await toolkit.captureWindowLegacy(12345);
+  /// switch (result) {
+  ///   case CaptureSuccess(imageData: final data):
+  ///     // Convert bytes to image and display
+  ///     final image = Image.memory(data);
+  ///     break;
+  ///   case CaptureFailure(reason: CaptureFailureReason.windowNotFound):
   ///     print('Window not found');
-  ///   }
+  ///     break;
+  ///   case CaptureFailure(reason: CaptureFailureReason.windowMinimized):
+  ///     print('Window is minimized');
+  ///     break;
   /// }
   /// ```
   /// 
-  /// Throws [PlatformException] with the following error codes:
-  /// - `INVALID_WINDOW_ID`: Window with the specified ID was not found or is not capturable
-  /// - `CAPTURE_NOT_SUPPORTED`: Window capture is not supported for this specific window
-  /// - `CAPTURE_FAILED`: Window capture failed due to system restrictions or other errors
-  Future<Uint8List> captureWindowLegacy(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) async {
+  /// Throws [PlatformException] only for system errors (invalid arguments, system failures).
+  Future<CaptureResult> captureWindowLegacy(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) async {
     return await MacosWindowToolkitPlatform.instance.captureWindowLegacy(windowId, excludeTitlebar: excludeTitlebar, customTitlebarHeight: customTitlebarHeight);
   }
 
@@ -524,7 +498,7 @@ class MacosWindowToolkit {
 
   /// Captures a window using the best available method (auto-selection).
   /// 
-  /// Returns the captured image as bytes in PNG format.
+  /// Returns a [CaptureResult] indicating success with image data or failure with reason.
   /// 
   /// [windowId] is the unique identifier of the window to capture, which can be
   /// obtained from [getAllWindows], [getWindowById], or [getCapturableWindowsAuto].
@@ -546,37 +520,26 @@ class MacosWindowToolkit {
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
   /// 
-  /// try {
-  ///   // Basic window capture with auto-selection
-  ///   final imageBytes = await toolkit.captureWindowAuto(12345);
-  ///   
-  ///   // Capture without titlebar using default height
-  ///   final noBarsImage = await toolkit.captureWindowAuto(12345, excludeTitlebar: true);
-  ///   
-  ///   // Capture with custom titlebar height for Safari
-  ///   final safariImage = await toolkit.captureWindowAuto(12345, 
-  ///     excludeTitlebar: true, customTitlebarHeight: 44.0);
-  ///   
-  ///   // Capture Chrome (no titlebar needed)
-  ///   final chromeImage = await toolkit.captureWindowAuto(12345, 
-  ///     excludeTitlebar: true, customTitlebarHeight: 0.0);
-  ///   
-  ///   // Convert bytes to image and display
-  ///   final image = Image.memory(imageBytes);
-  /// } catch (e) {
-  ///   if (e is PlatformException && e.code == 'INVALID_WINDOW_ID') {
+  /// final result = await toolkit.captureWindowAuto(12345);
+  /// switch (result) {
+  ///   case CaptureSuccess(imageData: final data):
+  ///     // Convert bytes to image and display
+  ///     final image = Image.memory(data);
+  ///     break;
+  ///   case CaptureFailure(reason: CaptureFailureReason.windowNotFound):
   ///     print('Window not found');
-  ///   } else if (e is PlatformException && e.code == 'NO_COMPATIBLE_CAPTURE_METHOD') {
-  ///     print('No capture method available on this system');
-  ///   }
+  ///     break;
+  ///   case CaptureFailure(reason: CaptureFailureReason.windowMinimized):
+  ///     print('Window is minimized');
+  ///     break;
+  ///   case CaptureFailure(reason: CaptureFailureReason.permissionDenied):
+  ///     print('Permission denied');
+  ///     break;
   /// }
   /// ```
   /// 
-  /// Throws [PlatformException] with the following error codes:
-  /// - `NO_COMPATIBLE_CAPTURE_METHOD`: No capture method is available
-  /// - `CAPTURE_METHOD_FAILED`: The selected capture method failed
-  /// - `INVALID_WINDOW_ID`: Window with the specified ID was not found
-  Future<Uint8List> captureWindowAuto(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) async {
+  /// Throws [PlatformException] only for system errors (invalid arguments, system failures).
+  Future<CaptureResult> captureWindowAuto(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) async {
     return await MacosWindowToolkitPlatform.instance.captureWindowAuto(windowId, excludeTitlebar: excludeTitlebar, customTitlebarHeight: customTitlebarHeight);
   }
 

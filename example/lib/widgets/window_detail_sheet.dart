@@ -117,25 +117,25 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
         customHeight = double.tryParse(_titlebarHeightController.text);
       }
 
-      Uint8List imageBytes;
+      CaptureResult result;
       
       switch (_captureType) {
         case CaptureType.screenCaptureKit:
-          imageBytes = await _macosWindowToolkit.captureWindow(
+          result = await _macosWindowToolkit.captureWindow(
             widget.window.windowId,
             excludeTitlebar: _excludeTitlebar,
             customTitlebarHeight: customHeight,
           );
           break;
         case CaptureType.legacy:
-          imageBytes = await _macosWindowToolkit.captureWindowLegacy(
+          result = await _macosWindowToolkit.captureWindowLegacy(
             widget.window.windowId,
             excludeTitlebar: _excludeTitlebar,
             customTitlebarHeight: customHeight,
           );
           break;
         case CaptureType.smart:
-          imageBytes = await _macosWindowToolkit.captureWindowAuto(
+          result = await _macosWindowToolkit.captureWindowAuto(
             widget.window.windowId,
             excludeTitlebar: _excludeTitlebar,
             customTitlebarHeight: customHeight,
@@ -147,9 +147,16 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
         _isCapturing = false;
       });
       
-      // Show captured image in dialog
+      // Show captured image or handle failure
       if (mounted) {
-        _showCaptureResultDialog(imageBytes);
+        switch (result) {
+          case CaptureSuccess(imageData: final imageBytes):
+            _showCaptureResultDialog(imageBytes);
+            break;
+          case CaptureFailure(reason: final reason):
+            _handleCaptureFailure(reason);
+            break;
+        }
       }
     } catch (e) {
       setState(() {
@@ -179,6 +186,34 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
         }
       });
     }
+  }
+
+  void _handleCaptureFailure(CaptureFailureReason reason) {
+    setState(() {
+      switch (reason) {
+        case CaptureFailureReason.windowNotFound:
+          _captureError = 'Window not found or not capturable';
+          break;
+        case CaptureFailureReason.windowMinimized:
+          _captureError = 'Window is minimized and cannot be captured. Please restore the window first.';
+          break;
+        case CaptureFailureReason.permissionDenied:
+          _captureError = 'Screen recording permission denied. Please enable it in System Preferences.';
+          break;
+        case CaptureFailureReason.unsupportedVersion:
+          _captureError = 'macOS version not supported for this capture method';
+          break;
+        case CaptureFailureReason.captureInProgress:
+          _captureError = 'Another capture is already in progress. Please wait.';
+          break;
+        case CaptureFailureReason.windowNotCapturable:
+          _captureError = 'This window cannot be captured';
+          break;
+        case CaptureFailureReason.unknown:
+          _captureError = 'Unknown capture error occurred';
+          break;
+      }
+    });
   }
 
   bool get _canCapture {

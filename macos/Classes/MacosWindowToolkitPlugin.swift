@@ -228,14 +228,32 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
           let imageData = try await CaptureHandler.captureWindow(
             windowId: windowId, excludeTitlebar: excludeTitlebar,
             customTitlebarHeight: customTitlebarHeight)
-          result(FlutterStandardTypedData(bytes: imageData))
+          
+          // Return success result
+          result([
+            "success": true,
+            "imageData": FlutterStandardTypedData(bytes: imageData)
+          ])
         } catch let error as CaptureHandler.CaptureError {
           let errorInfo = CaptureHandler.handleCaptureError(error)
-          result(
-            FlutterError(
-              code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
-              message: errorInfo["message"] as? String ?? "Unknown error",
-              details: errorInfo["details"]))
+          
+          // Check if this is a state or a system error
+          if let code = errorInfo["code"] as? String, isStateError(code) {
+            // Return failure result for states
+            result([
+              "success": false,
+              "reason": mapErrorCodeToReasonCode(code),
+              "message": errorInfo["message"],
+              "details": errorInfo["details"]
+            ])
+          } else {
+            // Throw for system errors
+            result(
+              FlutterError(
+                code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
+                message: errorInfo["message"] as? String ?? "Unknown error",
+                details: errorInfo["details"]))
+          }
         } catch {
           result(
             FlutterError(
@@ -245,13 +263,13 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
         }
       }
     } else {
-      result(
-        FlutterError(
-          code: "UNSUPPORTED_MACOS_VERSION",
-          message: "macOS version does not support ScreenCaptureKit",
-          details:
-            "Current version: \(ProcessInfo.processInfo.operatingSystemVersionString), Required: 12.3+"
-        ))
+      // Unsupported version is a state, not a system error
+      result([
+        "success": false,
+        "reason": "unsupported_version",
+        "message": "macOS version does not support ScreenCaptureKit",
+        "details": "Current version: \(ProcessInfo.processInfo.operatingSystemVersionString), Required: 12.3+"
+      ])
     }
   }
 
@@ -308,14 +326,32 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       let imageData = try LegacyCaptureHandler.captureWindow(
         windowId: windowId, excludeTitlebar: excludeTitlebar,
         customTitlebarHeight: customTitlebarHeight)
-      result(FlutterStandardTypedData(bytes: imageData))
+      
+      // Return success result
+      result([
+        "success": true,
+        "imageData": FlutterStandardTypedData(bytes: imageData)
+      ])
     } catch let error as LegacyCaptureHandler.LegacyCaptureError {
       let errorInfo = LegacyCaptureHandler.handleLegacyCaptureError(error)
-      result(
-        FlutterError(
-          code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
-          message: errorInfo["message"] as? String ?? "Unknown error",
-          details: errorInfo["details"]))
+      
+      // Check if this is a state or a system error
+      if let code = errorInfo["code"] as? String, isStateError(code) {
+        // Return failure result for states
+        result([
+          "success": false,
+          "reason": mapErrorCodeToReasonCode(code),
+          "message": errorInfo["message"],
+          "details": errorInfo["details"]
+        ])
+      } else {
+        // Throw for system errors
+        result(
+          FlutterError(
+            code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
+            message: errorInfo["message"] as? String ?? "Unknown error",
+            details: errorInfo["details"]))
+      }
     } catch {
       result(
         FlutterError(
@@ -345,20 +381,39 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     }
 
     let excludeTitlebar = arguments["excludeTitlebar"] as? Bool ?? false
+    let customTitlebarHeight = arguments["customTitlebarHeight"] as? CGFloat
 
     if #available(macOS 10.15, *) {
       Task {
         do {
           let imageData = try await SmartCaptureHandler.captureWindowAuto(
             windowId: windowId, excludeTitlebar: excludeTitlebar)
-          result(FlutterStandardTypedData(bytes: imageData))
+          
+          // Return success result
+          result([
+            "success": true,
+            "imageData": FlutterStandardTypedData(bytes: imageData)
+          ])
         } catch let error as SmartCaptureHandler.SmartCaptureError {
           let errorInfo = SmartCaptureHandler.handleSmartCaptureError(error)
-          result(
-            FlutterError(
-              code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
-              message: errorInfo["message"] as? String ?? "Unknown error",
-              details: errorInfo["details"]))
+          
+          // Check if this is a state or a system error
+          if let code = errorInfo["code"] as? String, isStateError(code) {
+            // Return failure result for states
+            result([
+              "success": false,
+              "reason": mapErrorCodeToReasonCode(code),
+              "message": errorInfo["message"],
+              "details": errorInfo["details"]
+            ])
+          } else {
+            // Throw for system errors
+            result(
+              FlutterError(
+                code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
+                message: errorInfo["message"] as? String ?? "Unknown error",
+                details: errorInfo["details"]))
+          }
         } catch {
           result(
             FlutterError(
@@ -371,15 +426,34 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       // For macOS < 10.15, use legacy capture directly (no async support)
       do {
         let imageData = try LegacyCaptureHandler.captureWindow(
-          windowId: windowId, excludeTitlebar: excludeTitlebar)
-        result(FlutterStandardTypedData(bytes: imageData))
+          windowId: windowId, excludeTitlebar: excludeTitlebar,
+          customTitlebarHeight: customTitlebarHeight)
+        
+        // Return success result
+        result([
+          "success": true,
+          "imageData": FlutterStandardTypedData(bytes: imageData)
+        ])
       } catch let error as LegacyCaptureHandler.LegacyCaptureError {
         let errorInfo = LegacyCaptureHandler.handleLegacyCaptureError(error)
-        result(
-          FlutterError(
-            code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
-            message: errorInfo["message"] as? String ?? "Unknown error",
-            details: errorInfo["details"]))
+        
+        // Check if this is a state or a system error
+        if let code = errorInfo["code"] as? String, isStateError(code) {
+          // Return failure result for states
+          result([
+            "success": false,
+            "reason": mapErrorCodeToReasonCode(code),
+            "message": errorInfo["message"],
+            "details": errorInfo["details"]
+          ])
+        } else {
+          // Throw for system errors
+          result(
+            FlutterError(
+              code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
+              message: errorInfo["message"] as? String ?? "Unknown error",
+              details: errorInfo["details"]))
+        }
       } catch {
         result(
           FlutterError(
@@ -563,6 +637,43 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
           code: "WINDOW_LIST_ERROR",
           message: error.localizedDescription,
           details: nil))
+    }
+  }
+
+  /// Determines if an error code represents a state (not a system error)
+  private func isStateError(_ code: String) -> Bool {
+    switch code {
+    case "WINDOW_MINIMIZED",
+         "INVALID_WINDOW_ID", 
+         "WINDOW_NOT_FOUND",
+         "UNSUPPORTED_MACOS_VERSION",
+         "PERMISSION_DENIED",
+         "SCREEN_RECORDING_PERMISSION_DENIED",
+         "CAPTURE_IN_PROGRESS",
+         "WINDOW_NOT_CAPTURABLE":
+      return true
+    default:
+      return false
+    }
+  }
+
+  /// Maps error codes to reason codes for Dart
+  private func mapErrorCodeToReasonCode(_ code: String) -> String {
+    switch code {
+    case "WINDOW_MINIMIZED":
+      return "window_minimized"
+    case "INVALID_WINDOW_ID", "WINDOW_NOT_FOUND":
+      return "window_not_found"
+    case "UNSUPPORTED_MACOS_VERSION":
+      return "unsupported_version"
+    case "PERMISSION_DENIED", "SCREEN_RECORDING_PERMISSION_DENIED":
+      return "permission_denied"
+    case "CAPTURE_IN_PROGRESS":
+      return "capture_in_progress"
+    case "WINDOW_NOT_CAPTURABLE":
+      return "window_not_capturable"
+    default:
+      return "unknown"
     }
   }
 }

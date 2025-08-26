@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'macos_window_toolkit_platform_interface.dart';
 import 'models/capturable_window_info.dart';
+import 'models/capture_result.dart';
 
 /// An implementation of [MacosWindowToolkitPlatform] that uses method channels.
 class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
@@ -144,7 +145,7 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
   }
 
   @override
-  Future<Uint8List> captureWindow(
+  Future<CaptureResult> captureWindow(
     int windowId, {
     bool excludeTitlebar = false,
     double? customTitlebarHeight,
@@ -157,18 +158,26 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
       arguments['customTitlebarHeight'] = customTitlebarHeight;
     }
     
-    final result = await methodChannel.invokeMethod<Uint8List>(
-      'captureWindow',
-      arguments,
-    );
-    if (result == null) {
-      throw PlatformException(
-        code: 'CAPTURE_FAILED',
-        message: 'Failed to capture window - no data returned',
-        details: null,
+    try {
+      final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
+        'captureWindow',
+        arguments,
       );
+      if (result == null) {
+        return const CaptureFailure(
+          reason: CaptureFailureReason.unknown,
+          message: 'No data returned from capture',
+        );
+      }
+      
+      return _parseCaptureResult(result);
+    } on PlatformException catch (e) {
+      // Only system errors should throw, others should return CaptureFailure
+      if (_isSystemError(e.code)) {
+        rethrow;
+      }
+      return _platformExceptionToCaptureFailure(e);
     }
-    return result;
   }
 
   @override
@@ -186,7 +195,7 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
   }
 
   @override
-  Future<Uint8List> captureWindowLegacy(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) async {
+  Future<CaptureResult> captureWindowLegacy(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) async {
     final arguments = <String, dynamic>{
       'windowId': windowId, 
       'excludeTitlebar': excludeTitlebar,
@@ -195,18 +204,26 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
       arguments['customTitlebarHeight'] = customTitlebarHeight;
     }
     
-    final result = await methodChannel.invokeMethod<Uint8List>(
-      'captureWindowLegacy',
-      arguments,
-    );
-    if (result == null) {
-      throw PlatformException(
-        code: 'CAPTURE_FAILED',
-        message: 'Failed to capture window - no data returned',
-        details: null,
+    try {
+      final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
+        'captureWindowLegacy',
+        arguments,
       );
+      if (result == null) {
+        return const CaptureFailure(
+          reason: CaptureFailureReason.unknown,
+          message: 'No data returned from capture',
+        );
+      }
+      
+      return _parseCaptureResult(result);
+    } on PlatformException catch (e) {
+      // Only system errors should throw, others should return CaptureFailure
+      if (_isSystemError(e.code)) {
+        rethrow;
+      }
+      return _platformExceptionToCaptureFailure(e);
     }
-    return result;
   }
 
   @override
@@ -224,7 +241,7 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
   }
 
   @override
-  Future<Uint8List> captureWindowAuto(
+  Future<CaptureResult> captureWindowAuto(
     int windowId, {
     bool excludeTitlebar = false,
     double? customTitlebarHeight,
@@ -237,18 +254,26 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
       arguments['customTitlebarHeight'] = customTitlebarHeight;
     }
     
-    final result = await methodChannel.invokeMethod<Uint8List>(
-      'captureWindowAuto',
-      arguments,
-    );
-    if (result == null) {
-      throw PlatformException(
-        code: 'CAPTURE_FAILED',
-        message: 'Failed to capture window - no data returned',
-        details: null,
+    try {
+      final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
+        'captureWindowAuto',
+        arguments,
       );
+      if (result == null) {
+        return const CaptureFailure(
+          reason: CaptureFailureReason.unknown,
+          message: 'No data returned from capture',
+        );
+      }
+      
+      return _parseCaptureResult(result);
+    } on PlatformException catch (e) {
+      // Only system errors should throw, others should return CaptureFailure
+      if (_isSystemError(e.code)) {
+        rethrow;
+      }
+      return _platformExceptionToCaptureFailure(e);
     }
-    return result;
   }
 
   @override
@@ -322,5 +347,97 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
       return [];
     }
     return result.cast<int>();
+  }
+
+  /// Helper method to parse capture result from native response
+  CaptureResult _parseCaptureResult(Map<dynamic, dynamic> result) {
+    final success = result['success'] as bool? ?? false;
+    
+    if (success) {
+      final imageData = result['imageData'] as Uint8List?;
+      if (imageData != null) {
+        return CaptureSuccess(imageData);
+      } else {
+        return const CaptureFailure(
+          reason: CaptureFailureReason.unknown,
+          message: 'Success indicated but no image data received',
+        );
+      }
+    } else {
+      final reasonCode = result['reason'] as String? ?? 'unknown';
+      final message = result['message'] as String?;
+      final details = result['details'] as String?;
+      
+      final reason = _mapReasonCodeToFailureReason(reasonCode);
+      return CaptureFailure(
+        reason: reason,
+        message: message,
+        details: details,
+      );
+    }
+  }
+
+  /// Maps native reason codes to CaptureFailureReason enum
+  CaptureFailureReason _mapReasonCodeToFailureReason(String code) {
+    switch (code) {
+      case 'window_minimized':
+        return CaptureFailureReason.windowMinimized;
+      case 'window_not_found':
+        return CaptureFailureReason.windowNotFound;
+      case 'unsupported_version':
+        return CaptureFailureReason.unsupportedVersion;
+      case 'permission_denied':
+        return CaptureFailureReason.permissionDenied;
+      case 'capture_in_progress':
+        return CaptureFailureReason.captureInProgress;
+      case 'window_not_capturable':
+        return CaptureFailureReason.windowNotCapturable;
+      default:
+        return CaptureFailureReason.unknown;
+    }
+  }
+
+  /// Converts PlatformException to CaptureFailure for legacy error handling
+  CaptureFailure _platformExceptionToCaptureFailure(PlatformException e) {
+    final reason = _mapErrorCodeToFailureReason(e.code);
+    return CaptureFailure(
+      reason: reason,
+      message: e.message,
+      details: e.details?.toString(),
+    );
+  }
+
+  /// Maps legacy error codes to CaptureFailureReason
+  CaptureFailureReason _mapErrorCodeToFailureReason(String code) {
+    switch (code) {
+      case 'WINDOW_MINIMIZED':
+        return CaptureFailureReason.windowMinimized;
+      case 'INVALID_WINDOW_ID':
+        return CaptureFailureReason.windowNotFound;
+      case 'UNSUPPORTED_MACOS_VERSION':
+        return CaptureFailureReason.unsupportedVersion;
+      case 'PERMISSION_DENIED':
+      case 'SCREEN_RECORDING_PERMISSION_DENIED':
+        return CaptureFailureReason.permissionDenied;
+      case 'CAPTURE_IN_PROGRESS':
+        return CaptureFailureReason.captureInProgress;
+      case 'WINDOW_NOT_CAPTURABLE':
+        return CaptureFailureReason.windowNotCapturable;
+      default:
+        return CaptureFailureReason.unknown;
+    }
+  }
+
+  /// Determines if an error code represents a system error that should throw
+  bool _isSystemError(String code) {
+    switch (code) {
+      case 'INVALID_ARGUMENTS':
+      case 'SYSTEM_ERROR':
+      case 'OUT_OF_MEMORY':
+      case 'INTERNAL_ERROR':
+        return true;
+      default:
+        return false;
+    }
   }
 }

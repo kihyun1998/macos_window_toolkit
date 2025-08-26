@@ -1,9 +1,8 @@
-import 'dart:typed_data';
-
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'macos_window_toolkit_method_channel.dart';
 import 'models/capturable_window_info.dart';
+import 'models/capture_result.dart';
 
 abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   /// Constructs a MacosWindowToolkitPlatform.
@@ -253,7 +252,7 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
 
   /// Captures a window using ScreenCaptureKit.
   /// 
-  /// Returns the captured image as bytes in PNG format.
+  /// Returns a [CaptureResult] indicating success with image data or failure with reason.
   /// 
   /// [windowId] is the unique identifier of the window to capture.
   /// [excludeTitlebar] if true, removes the titlebar from the captured image.
@@ -261,31 +260,28 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   /// If null and excludeTitlebar is true, uses the default 28pt titlebar height.
   /// Must be non-negative and not larger than the window height.
   /// 
-  /// Throws [PlatformException] with appropriate error codes:
-  /// - `UNSUPPORTED_MACOS_VERSION`: macOS version does not support ScreenCaptureKit (requires 12.3+)
-  /// - `SCREENCAPTUREKIT_NOT_AVAILABLE`: ScreenCaptureKit is not available
-  /// - `INVALID_WINDOW_ID`: Window with the specified ID was not found
-  /// - `CAPTURE_FAILED`: Window capture failed for other reasons
+  /// Returns:
+  /// - `CaptureSuccess` with image data on successful capture
+  /// - `CaptureFailure` for states like window minimized, permission denied, etc.
+  /// 
+  /// Throws [PlatformException] only for system errors (invalid arguments, system failures).
   /// 
   /// Example usage:
   /// ```dart
-  /// try {
-  ///   // Basic window capture
-  ///   final imageBytes = await toolkit.captureWindow(12345);
-  ///   
-  ///   // Capture without titlebar (28pt default)
-  ///   final noBarsImage = await toolkit.captureWindow(12345, excludeTitlebar: true);
-  ///   
-  ///   // Capture with custom titlebar height (e.g., Safari's 44pt)
-  ///   final customImage = await toolkit.captureWindow(12345, 
-  ///     excludeTitlebar: true, customTitlebarHeight: 44.0);
-  /// } catch (e) {
-  ///   if (e is PlatformException && e.code == 'UNSUPPORTED_MACOS_VERSION') {
-  ///     // Fall back to CGWindowListCreateImage method
-  ///   }
+  /// final result = await toolkit.captureWindow(12345);
+  /// switch (result) {
+  ///   case CaptureSuccess(imageData: final data):
+  ///     // Display image
+  ///     break;
+  ///   case CaptureFailure(reason: CaptureFailureReason.windowMinimized):
+  ///     // Show "restore window" button
+  ///     break;
+  ///   case CaptureFailure(reason: CaptureFailureReason.unsupportedVersion):
+  ///     // Fall back to legacy method
+  ///     break;
   /// }
   /// ```
-  Future<Uint8List> captureWindow(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) {
+  Future<CaptureResult> captureWindow(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) {
     throw UnimplementedError('captureWindow() has not been implemented.');
   }
 
@@ -306,7 +302,7 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
 
   /// Captures a window using CGWindowListCreateImage (legacy method).
   /// 
-  /// Returns the captured image as bytes in PNG format.
+  /// Returns a [CaptureResult] indicating success with image data or failure with reason.
   /// 
   /// [windowId] is the unique identifier of the window to capture.
   /// [excludeTitlebar] if true, removes the titlebar from the captured image.
@@ -318,29 +314,25 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   /// on all macOS versions (10.5+) but may have lower quality or performance
   /// compared to ScreenCaptureKit.
   /// 
-  /// Throws [PlatformException] with appropriate error codes:
-  /// - `INVALID_WINDOW_ID`: Window with the specified ID was not found
-  /// - `CAPTURE_FAILED`: Window capture failed for other reasons
+  /// Returns:
+  /// - `CaptureSuccess` with image data on successful capture
+  /// - `CaptureFailure` for states like window minimized, window not found, etc.
+  /// 
+  /// Throws [PlatformException] only for system errors (invalid arguments, system failures).
   /// 
   /// Example usage:
   /// ```dart
-  /// try {
-  ///   // Basic legacy capture
-  ///   final imageBytes = await toolkit.captureWindowLegacy(12345);
-  ///   
-  ///   // Legacy capture without titlebar (28pt default)
-  ///   final noBarsImage = await toolkit.captureWindowLegacy(12345, excludeTitlebar: true);
-  ///   
-  ///   // Legacy capture with custom titlebar height
-  ///   final customImage = await toolkit.captureWindowLegacy(12345, 
-  ///     excludeTitlebar: true, customTitlebarHeight: 44.0);
-  /// } catch (e) {
-  ///   if (e is PlatformException && e.code == 'INVALID_WINDOW_ID') {
-  ///     print('Window not found');
-  ///   }
+  /// final result = await toolkit.captureWindowLegacy(12345);
+  /// switch (result) {
+  ///   case CaptureSuccess(imageData: final data):
+  ///     // Display image
+  ///     break;
+  ///   case CaptureFailure(reason: CaptureFailureReason.windowNotFound):
+  ///     // Show "window not found" message
+  ///     break;
   /// }
   /// ```
-  Future<Uint8List> captureWindowLegacy(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) {
+  Future<CaptureResult> captureWindowLegacy(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) {
     throw UnimplementedError('captureWindowLegacy() has not been implemented.');
   }
 
@@ -364,7 +356,7 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   /// - Uses ScreenCaptureKit on macOS 14.0+ for best quality
   /// - Falls back to CGWindowListCreateImage on older versions or if ScreenCaptureKit fails
   /// 
-  /// Returns the captured image as bytes in PNG format.
+  /// Returns a [CaptureResult] indicating success with image data or failure with reason.
   /// 
   /// [windowId] is the unique identifier of the window to capture.
   /// [excludeTitlebar] if true, removes the titlebar from the captured image.
@@ -375,30 +367,28 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   /// This is the recommended method for window capture as it provides the best
   /// experience across all macOS versions.
   /// 
-  /// Throws [PlatformException] with appropriate error codes:
-  /// - `NO_COMPATIBLE_CAPTURE_METHOD`: No capture method is available
-  /// - `CAPTURE_METHOD_FAILED`: The selected capture method failed
-  /// - `INVALID_WINDOW_ID`: Window with the specified ID was not found
+  /// Returns:
+  /// - `CaptureSuccess` with image data on successful capture
+  /// - `CaptureFailure` for states like window minimized, permission denied, etc.
+  /// 
+  /// Throws [PlatformException] only for system errors (invalid arguments, system failures).
   /// 
   /// Example usage:
   /// ```dart
-  /// try {
-  ///   // Basic window capture with auto-selection
-  ///   final imageBytes = await toolkit.captureWindowAuto(12345);
-  ///   
-  ///   // Capture without titlebar using default height
-  ///   final noBarsImage = await toolkit.captureWindowAuto(12345, excludeTitlebar: true);
-  ///   
-  ///   // Capture with custom titlebar height for Chrome (0pt)
-  ///   final chromeImage = await toolkit.captureWindowAuto(12345, 
-  ///     excludeTitlebar: true, customTitlebarHeight: 0.0);
-  /// } catch (e) {
-  ///   if (e is PlatformException && e.code == 'INVALID_WINDOW_ID') {
-  ///     print('Window not found');
-  ///   }
+  /// final result = await toolkit.captureWindowAuto(12345);
+  /// switch (result) {
+  ///   case CaptureSuccess(imageData: final data):
+  ///     // Display image
+  ///     break;
+  ///   case CaptureFailure(reason: CaptureFailureReason.windowMinimized):
+  ///     // Show restore button
+  ///     break;
+  ///   case CaptureFailure(reason: CaptureFailureReason.permissionDenied):
+  ///     // Show permission dialog
+  ///     break;
   /// }
   /// ```
-  Future<Uint8List> captureWindowAuto(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) {
+  Future<CaptureResult> captureWindowAuto(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) {
     throw UnimplementedError('captureWindowAuto() has not been implemented.');
   }
 

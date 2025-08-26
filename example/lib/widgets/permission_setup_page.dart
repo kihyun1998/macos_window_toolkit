@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:macos_window_toolkit/macos_window_toolkit.dart';
 
-import '../main.dart';
-
 class PermissionSetupPage extends StatefulWidget {
   const PermissionSetupPage({super.key});
 
@@ -83,9 +81,9 @@ class _PermissionSetupPageState extends State<PermissionSetupPage>
       }
     } on PlatformException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.message}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: ${e.message}')));
       }
     }
   }
@@ -111,9 +109,9 @@ class _PermissionSetupPageState extends State<PermissionSetupPage>
       }
     } on PlatformException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.message}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: ${e.message}')));
       }
     }
   }
@@ -124,16 +122,18 @@ class _PermissionSetupPageState extends State<PermissionSetupPage>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Opening System Preferences - enable Screen Recording and return to app'),
+            content: Text(
+              'Opening System Preferences - enable Screen Recording and return to app',
+            ),
             duration: Duration(seconds: 4),
           ),
         );
       }
     } on PlatformException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.message}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: ${e.message}')));
       }
     }
   }
@@ -144,16 +144,18 @@ class _PermissionSetupPageState extends State<PermissionSetupPage>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Opening System Preferences - enable Accessibility and return to app'),
+            content: Text(
+              'Opening System Preferences - enable Accessibility and return to app',
+            ),
             duration: Duration(seconds: 4),
           ),
         );
       }
     } on PlatformException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.message}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: ${e.message}')));
       }
     }
   }
@@ -170,11 +172,7 @@ class _PermissionSetupPageState extends State<PermissionSetupPage>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.security,
-                size: 80,
-                color: colorScheme.primary,
-              ),
+              Icon(Icons.security, size: 80, color: colorScheme.primary),
               const SizedBox(height: 32),
               Text(
                 'Permissions Required',
@@ -193,7 +191,7 @@ class _PermissionSetupPageState extends State<PermissionSetupPage>
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
-              
+
               // Screen Recording Permission
               _buildPermissionTile(
                 context: context,
@@ -204,9 +202,9 @@ class _PermissionSetupPageState extends State<PermissionSetupPage>
                 onRequest: _requestScreenRecordingPermission,
                 onOpenSettings: _openScreenRecordingSettings,
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Accessibility Permission
               _buildPermissionTile(
                 context: context,
@@ -217,9 +215,9 @@ class _PermissionSetupPageState extends State<PermissionSetupPage>
                 onRequest: _requestAccessibilityPermission,
                 onOpenSettings: _openAccessibilitySettings,
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               Text(
                 'After enabling permissions in System Preferences, return to this app. Permissions will be detected automatically.',
                 style: theme.textTheme.bodySmall?.copyWith(
@@ -246,36 +244,32 @@ class _PermissionSetupPageState extends State<PermissionSetupPage>
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     final isGranted = hasPermission == true;
     final isLoading = hasPermission == null;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         border: Border.all(
-          color: isGranted 
-              ? colorScheme.primary
-              : colorScheme.outline,
+          color: isGranted ? colorScheme.primary : colorScheme.outline,
         ),
         borderRadius: BorderRadius.circular(12),
-        color: isGranted
-            ? colorScheme.primaryContainer.withOpacity(0.3)
-            : null,
+        color: isGranted ? colorScheme.primaryContainer.withOpacity(0.3) : null,
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: isGranted 
+              color: isGranted
                   ? colorScheme.primary
-                  : colorScheme.surfaceVariant,
+                  : colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               icon,
-              color: isGranted 
+              color: isGranted
                   ? colorScheme.onPrimary
                   : colorScheme.onSurfaceVariant,
               size: 20,
@@ -307,7 +301,7 @@ class _PermissionSetupPageState extends State<PermissionSetupPage>
                     else
                       Icon(
                         isGranted ? Icons.check_circle : Icons.cancel,
-                        color: isGranted 
+                        color: isGranted
                             ? colorScheme.primary
                             : colorScheme.error,
                         size: 16,
