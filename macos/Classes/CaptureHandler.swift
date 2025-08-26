@@ -8,6 +8,7 @@ class CaptureHandler {
     enum CaptureError: Error {
         case screenCaptureKitNotAvailable
         case invalidWindowId
+        case windowMinimized
         case captureNotSupported
         case captureFailed(String)
         case unsupportedMacOSVersion
@@ -27,6 +28,17 @@ class CaptureHandler {
         }
 
         do {
+            // 먼저 윈도우가 최소화되어 있는지 확인
+            if let windowInfo = getWindowInfo(windowId: windowId) {
+                if let isOnScreen = windowInfo[kCGWindowIsOnscreen as String] as? NSNumber,
+                    !isOnScreen.boolValue
+                {
+                    throw CaptureError.windowMinimized
+                }
+            } else {
+                throw CaptureError.invalidWindowId
+            }
+
             // 캡처 가능한 콘텐츠 가져오기
             let availableContent = try await SCShareableContent.current
 
@@ -37,6 +49,11 @@ class CaptureHandler {
                 })
             else {
                 throw CaptureError.invalidWindowId
+            }
+            
+            // SCWindow에서도 최소화 상태 재확인 (ScreenCaptureKit이 대기하는 것을 방지)
+            if !targetWindow.isOnScreen {
+                throw CaptureError.windowMinimized
             }
 
             // 캡처 설정
@@ -133,6 +150,21 @@ class CaptureHandler {
         return false
     }
 
+    // 윈도우 정보를 가져오는 헬퍼 메서드
+    private static func getWindowInfo(windowId: Int) -> [String: Any]? {
+        guard
+            let windowList = CGWindowListCopyWindowInfo(.optionAll, kCGNullWindowID)
+                as? [[String: Any]]
+        else {
+            return nil
+        }
+
+        return windowList.first { window in
+            guard let wid = window[kCGWindowNumber as String] as? Int else { return false }
+            return wid == windowId
+        }
+    }
+
     // 캡처 가능한 창 목록 반환
     static func getCapturableWindows() async throws -> [[String: Any]] {
         guard VersionUtil.isScreenCaptureKitAvailable() else {
@@ -178,6 +210,13 @@ class CaptureHandler {
                 "code": "INVALID_WINDOW_ID",
                 "message": "Window with the specified ID was not found",
                 "details": NSNull(),
+            ]
+        case .windowMinimized:
+            return [
+                "code": "WINDOW_MINIMIZED",
+                "message": "Window is minimized and cannot be captured",
+                "details":
+                    "The window is currently minimized. Please restore the window to capture it.",
             ]
         case .captureNotSupported:
             return [

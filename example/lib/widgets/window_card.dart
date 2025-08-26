@@ -88,6 +88,13 @@ class WindowCard extends StatelessWidget {
                           text: 'VISIBLE',
                           color: colorScheme.primary,
                           textColor: colorScheme.onPrimary,
+                        )
+                      else
+                        _StatusBadge(
+                          colorScheme: colorScheme,
+                          text: 'MINIMIZED',
+                          color: colorScheme.error,
+                          textColor: colorScheme.onError,
                         ),
                       if (window.sharingState != null &&
                           window.sharingState! > 0) ...[

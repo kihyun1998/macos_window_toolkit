@@ -79,6 +79,16 @@ class NotificationService {
     PlatformException exception,
     String operation,
   ) {
+    // Handle special cases for better user experience
+    if (exception.code == 'WINDOW_MINIMIZED') {
+      showWarning(
+        context,
+        'Cannot capture minimized window. Please restore the window first.',
+        duration: const Duration(seconds: 4),
+      );
+      return;
+    }
+    
     showError(
       context,
       'Error $operation: ${exception.message}',

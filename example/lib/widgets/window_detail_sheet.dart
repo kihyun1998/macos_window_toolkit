@@ -162,6 +162,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
             case 'INVALID_WINDOW_ID':
               _captureError = 'Window not found or not capturable';
               break;
+            case 'WINDOW_MINIMIZED':
+              _captureError = 'Window is minimized and cannot be captured. Please restore the window first.';
+              break;
             case 'CAPTURE_FAILED':
               _captureError = 'Capture failed: ${e.message}';
               break;

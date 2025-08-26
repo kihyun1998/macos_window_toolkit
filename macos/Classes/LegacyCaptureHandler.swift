@@ -5,6 +5,7 @@ class LegacyCaptureHandler {
 
     enum LegacyCaptureError: Error {
         case invalidWindowId
+        case windowMinimized
         case captureNotSupported
         case captureFailed(String)
         case noImageData
@@ -38,9 +39,11 @@ class LegacyCaptureHandler {
                 imageOption
             )
         else {
-            // 캡쳐 실패 시 윈도우 존재 여부 확인
+            // 캡쳐 실패 시 윈도우 존재 여부 및 최소화 상태 확인
             if !isWindowExists(windowId: windowId) {
                 throw LegacyCaptureError.invalidWindowId
+            } else if isWindowMinimized(windowId: windowId) {
+                throw LegacyCaptureError.windowMinimized
             } else {
                 throw LegacyCaptureError.captureFailed("Failed to create window image")
             }
@@ -95,6 +98,29 @@ class LegacyCaptureHandler {
             guard let wid = window[kCGWindowNumber as String] as? Int else { return false }
             return wid == windowId
         } ?? false
+    }
+
+    // 윈도우 최소화 상태 확인
+    private static func isWindowMinimized(windowId: Int) -> Bool {
+        let windowList = CGWindowListCopyWindowInfo(.optionAll, kCGNullWindowID) as? [[String: Any]]
+
+        guard
+            let windowInfo = windowList?.first(where: { window in
+                guard let wid = window[kCGWindowNumber as String] as? Int else { return false }
+                return wid == windowId
+            })
+        else {
+            return false
+        }
+
+        // isOnScreen이 false이면 최소화된 것으로 간주
+        if let isOnScreen = windowInfo[kCGWindowIsOnscreen as String] as? NSNumber {
+            let minimized = !isOnScreen.boolValue
+
+            return minimized
+        }
+
+        return false
     }
 
     // 윈도우 정보를 가져와서 frame 반환
@@ -212,6 +238,13 @@ class LegacyCaptureHandler {
                 "code": "INVALID_WINDOW_ID",
                 "message": "Window with the specified ID was not found",
                 "details": NSNull(),
+            ]
+        case .windowMinimized:
+            return [
+                "code": "WINDOW_MINIMIZED",
+                "message": "Window is minimized and cannot be captured",
+                "details":
+                    "The window is currently minimized. Please restore the window to capture it.",
             ]
         case .captureNotSupported:
             return [

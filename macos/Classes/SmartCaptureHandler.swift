@@ -9,6 +9,7 @@ class SmartCaptureHandler {
         case noCompatibleCaptureMethod
         case captureMethodFailed(String)
         case invalidWindowId
+        case windowMinimized
     }
 
     /// Automatically captures a window using the best available method
@@ -24,8 +25,17 @@ class SmartCaptureHandler {
                     return try await CaptureHandler.captureWindow(
                         windowId: windowId, excludeTitlebar: excludeTitlebar,
                         customTitlebarHeight: customTitlebarHeight)
+                } catch let error as CaptureHandler.CaptureError {
+                    // Re-throw minimized window error without fallback
+                    if case .windowMinimized = error {
+                        throw SmartCaptureError.windowMinimized
+                    }
+                    // For other ScreenCaptureKit errors, fall back to legacy method
+                    return try LegacyCaptureHandler.captureWindow(
+                        windowId: windowId, excludeTitlebar: excludeTitlebar,
+                        customTitlebarHeight: customTitlebarHeight)
                 } catch {
-                    // If ScreenCaptureKit fails, fall back to legacy method
+                    // For unknown errors, fall back to legacy method
                     return try LegacyCaptureHandler.captureWindow(
                         windowId: windowId, excludeTitlebar: excludeTitlebar,
                         customTitlebarHeight: customTitlebarHeight)
@@ -122,6 +132,13 @@ class SmartCaptureHandler {
                 "code": "INVALID_WINDOW_ID",
                 "message": "Window with the specified ID was not found",
                 "details": NSNull(),
+            ]
+        case .windowMinimized:
+            return [
+                "code": "WINDOW_MINIMIZED",
+                "message": "Window is minimized and cannot be captured",
+                "details":
+                    "The window is currently minimized. Please restore the window to capture it.",
             ]
         }
     }

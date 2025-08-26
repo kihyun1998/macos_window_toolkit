@@ -220,12 +220,13 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     }
 
     let excludeTitlebar = arguments["excludeTitlebar"] as? Bool ?? false
+    let customTitlebarHeight = arguments["customTitlebarHeight"] as? CGFloat
 
     if #available(macOS 12.3, *) {
       Task {
         do {
           let imageData = try await CaptureHandler.captureWindow(
-            windowId: windowId, excludeTitlebar: excludeTitlebar)
+            windowId: windowId, excludeTitlebar: excludeTitlebar, customTitlebarHeight: customTitlebarHeight)
           result(FlutterStandardTypedData(bytes: imageData))
         } catch let error as CaptureHandler.CaptureError {
           let errorInfo = CaptureHandler.handleCaptureError(error)
@@ -299,8 +300,12 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       return
     }
 
+    let excludeTitlebar = arguments["excludeTitlebar"] as? Bool ?? false
+    let customTitlebarHeight = arguments["customTitlebarHeight"] as? CGFloat
+
     do {
-      let imageData = try LegacyCaptureHandler.captureWindow(windowId: windowId)
+      let imageData = try LegacyCaptureHandler.captureWindow(
+        windowId: windowId, excludeTitlebar: excludeTitlebar, customTitlebarHeight: customTitlebarHeight)
       result(FlutterStandardTypedData(bytes: imageData))
     } catch let error as LegacyCaptureHandler.LegacyCaptureError {
       let errorInfo = LegacyCaptureHandler.handleLegacyCaptureError(error)
@@ -363,7 +368,8 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     } else {
       // For macOS < 10.15, use legacy capture directly (no async support)
       do {
-        let imageData = try LegacyCaptureHandler.captureWindow(windowId: windowId)
+        let imageData = try LegacyCaptureHandler.captureWindow(
+          windowId: windowId, excludeTitlebar: excludeTitlebar)
         result(FlutterStandardTypedData(bytes: imageData))
       } catch let error as LegacyCaptureHandler.LegacyCaptureError {
         let errorInfo = LegacyCaptureHandler.handleLegacyCaptureError(error)
