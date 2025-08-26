@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:macos_window_toolkit/macos_window_toolkit.dart';
 
-import '../main.dart';
-import 'permission_setup_page.dart';
+import '../../main.dart';
+import 'widgets/permission_setup_page.dart';
 
 class PermissionGuardPage extends StatefulWidget {
   const PermissionGuardPage({super.key});

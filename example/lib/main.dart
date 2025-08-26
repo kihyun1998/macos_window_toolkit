@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:macos_window_toolkit/macos_window_toolkit.dart';
-import 'package:macos_window_toolkit_example/widgets/permission_setup_page.dart';
+import 'package:macos_window_toolkit_example/page/permission/widgets/permission_setup_page.dart';
 
+import 'page/permission/widgets/permissions_status_card.dart';
 import 'services/notification_service.dart';
 import 'services/permission_service.dart';
 import 'services/version_service.dart';
 import 'services/window_service.dart';
-import 'widgets/permissions_status_card.dart';
 import 'widgets/search_controls.dart';
 import 'widgets/version_info_card.dart';
 import 'widgets/window_detail_sheet.dart';
@@ -65,7 +65,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
 
 class WindowDemoPage extends StatefulWidget {
   const WindowDemoPage({super.key});
@@ -124,7 +123,7 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
     });
 
     try {
-      final windows = _excludeEmptyNames 
+      final windows = _excludeEmptyNames
           ? await WindowService.getNamedWindows()
           : await WindowService.getAllWindows();
       setState(() {
@@ -318,9 +317,11 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
                 : 'Start Auto-refresh',
           ),
           IconButton(
-            icon: Icon(_excludeEmptyNames ? Icons.filter_alt : Icons.filter_alt_off),
+            icon: Icon(
+              _excludeEmptyNames ? Icons.filter_alt : Icons.filter_alt_off,
+            ),
             onPressed: _toggleExcludeEmptyNames,
-            tooltip: _excludeEmptyNames 
+            tooltip: _excludeEmptyNames
                 ? 'Show all windows (including unnamed)'
                 : 'Show only named windows',
           ),

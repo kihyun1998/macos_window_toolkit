@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:macos_window_toolkit/macos_window_toolkit.dart';
 
+import 'permission_tile.dart';
+
 class PermissionSetupPage extends StatefulWidget {
   const PermissionSetupPage({super.key});
 
@@ -193,8 +195,7 @@ class _PermissionSetupPageState extends State<PermissionSetupPage>
               const SizedBox(height: 48),
 
               // Screen Recording Permission
-              _buildPermissionTile(
-                context: context,
+              PermissionTile(
                 title: 'Screen Recording',
                 description: 'Required to access window information',
                 icon: Icons.desktop_mac,
@@ -206,8 +207,7 @@ class _PermissionSetupPageState extends State<PermissionSetupPage>
               const SizedBox(height: 16),
 
               // Accessibility Permission
-              _buildPermissionTile(
-                context: context,
+              PermissionTile(
                 title: 'Accessibility',
                 description: 'Required to interact with windows',
                 icon: Icons.accessibility,
@@ -229,114 +229,6 @@ class _PermissionSetupPageState extends State<PermissionSetupPage>
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildPermissionTile({
-    required BuildContext context,
-    required String title,
-    required String description,
-    required IconData icon,
-    required bool? hasPermission,
-    required VoidCallback onRequest,
-    required VoidCallback onOpenSettings,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    final isGranted = hasPermission == true;
-    final isLoading = hasPermission == null;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: isGranted ? colorScheme.primary : colorScheme.outline,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        color: isGranted ? colorScheme.primaryContainer.withOpacity(0.3) : null,
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: isGranted
-                  ? colorScheme.primary
-                  : colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              color: isGranted
-                  ? colorScheme.onPrimary
-                  : colorScheme.onSurfaceVariant,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    if (isLoading)
-                      SizedBox(
-                        width: 12,
-                        height: 12,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: colorScheme.primary,
-                        ),
-                      )
-                    else
-                      Icon(
-                        isGranted ? Icons.check_circle : Icons.cancel,
-                        color: isGranted
-                            ? colorScheme.primary
-                            : colorScheme.error,
-                        size: 16,
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  description,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          if (!isGranted && !isLoading) ...[
-            OutlinedButton(
-              onPressed: onRequest,
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(60, 32),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-              ),
-              child: const Text('Request'),
-            ),
-            const SizedBox(width: 8),
-          ],
-          IconButton(
-            onPressed: onOpenSettings,
-            icon: const Icon(Icons.settings),
-            iconSize: 20,
-            tooltip: 'Open System Preferences',
-          ),
-        ],
       ),
     );
   }
