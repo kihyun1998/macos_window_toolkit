@@ -46,7 +46,7 @@ enum CaptureType { screenCaptureKit, legacy, smart }
 class _WindowDetailSheetState extends State<WindowDetailSheet> {
   final _macosWindowToolkit = MacosWindowToolkit();
   final _titlebarHeightController = TextEditingController();
-  
+
   bool _isCapturing = false;
   String? _captureError;
   MacosVersionInfo? _versionInfo;
@@ -118,7 +118,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
       }
 
       CaptureResult result;
-      
+
       switch (_captureType) {
         case CaptureType.screenCaptureKit:
           result = await _macosWindowToolkit.captureWindow(
@@ -142,11 +142,11 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
           );
           break;
       }
-      
+
       setState(() {
         _isCapturing = false;
       });
-      
+
       // Show captured image or handle failure
       if (mounted) {
         switch (result) {
@@ -164,13 +164,15 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
         if (e is PlatformException) {
           switch (e.code) {
             case 'UNSUPPORTED_MACOS_VERSION':
-              _captureError = 'macOS version not supported for this capture method';
+              _captureError =
+                  'macOS version not supported for this capture method';
               break;
             case 'INVALID_WINDOW_ID':
               _captureError = 'Window not found or not capturable';
               break;
             case 'WINDOW_MINIMIZED':
-              _captureError = 'Window is minimized and cannot be captured. Please restore the window first.';
+              _captureError =
+                  'Window is minimized and cannot be captured. Please restore the window first.';
               break;
             case 'CAPTURE_FAILED':
               _captureError = 'Capture failed: ${e.message}';
@@ -195,16 +197,19 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
           _captureError = 'Window not found or not capturable';
           break;
         case CaptureFailureReason.windowMinimized:
-          _captureError = 'Window is minimized and cannot be captured. Please restore the window first.';
+          _captureError =
+              'Window is minimized and cannot be captured. Please restore the window first.';
           break;
         case CaptureFailureReason.permissionDenied:
-          _captureError = 'Screen recording permission denied. Please enable it in System Preferences.';
+          _captureError =
+              'Screen recording permission denied. Please enable it in System Preferences.';
           break;
         case CaptureFailureReason.unsupportedVersion:
           _captureError = 'macOS version not supported for this capture method';
           break;
         case CaptureFailureReason.captureInProgress:
-          _captureError = 'Another capture is already in progress. Please wait.';
+          _captureError =
+              'Another capture is already in progress. Please wait.';
           break;
         case CaptureFailureReason.windowNotCapturable:
           _captureError = 'This window cannot be captured';
@@ -795,61 +800,74 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                           children: [
                             RadioListTile<CaptureType>(
                               title: const Text('Smart (Auto)'),
-                              subtitle: const Text('Automatically selects best method'),
+                              subtitle: const Text(
+                                'Automatically selects best method',
+                              ),
                               value: CaptureType.smart,
                               groupValue: _captureType,
-                              onChanged: _isCapturing ? null : (value) {
-                                setState(() {
-                                  _captureType = value!;
-                                });
-                              },
+                              onChanged: _isCapturing
+                                  ? null
+                                  : (value) {
+                                      setState(() {
+                                        _captureType = value!;
+                                      });
+                                    },
                               dense: true,
                             ),
                             RadioListTile<CaptureType>(
                               title: const Text('ScreenCaptureKit'),
                               subtitle: Text(
-                                _versionInfo?.isScreenCaptureKitAvailable == true
+                                _versionInfo?.isScreenCaptureKitAvailable ==
+                                        true
                                     ? 'High quality (macOS 12.3+)'
-                                    : 'Not available on this system'
+                                    : 'Not available on this system',
                               ),
                               value: CaptureType.screenCaptureKit,
                               groupValue: _captureType,
-                              onChanged: _isCapturing ? null : (value) {
-                                setState(() {
-                                  _captureType = value!;
-                                });
-                              },
+                              onChanged: _isCapturing
+                                  ? null
+                                  : (value) {
+                                      setState(() {
+                                        _captureType = value!;
+                                      });
+                                    },
                               dense: true,
                             ),
                             RadioListTile<CaptureType>(
                               title: const Text('Legacy'),
-                              subtitle: const Text('Compatible with all macOS versions'),
+                              subtitle: const Text(
+                                'Compatible with all macOS versions',
+                              ),
                               value: CaptureType.legacy,
                               groupValue: _captureType,
-                              onChanged: _isCapturing ? null : (value) {
-                                setState(() {
-                                  _captureType = value!;
-                                });
-                              },
+                              onChanged: _isCapturing
+                                  ? null
+                                  : (value) {
+                                      setState(() {
+                                        _captureType = value!;
+                                      });
+                                    },
                               dense: true,
                             ),
                           ],
                         ),
-                        
+
                         const SizedBox(height: 16),
                         const Divider(),
                         const SizedBox(height: 16),
-                        
+
                         // Titlebar Options
                         Row(
                           children: [
                             Switch(
                               value: _excludeTitlebar,
-                              onChanged: _isCapturing ? null : (value) {
-                                setState(() {
-                                  _excludeTitlebar = value;
-                                });
-                              },
+                              onChanged: _isCapturing
+                                  ? null
+                                  : (value) {
+                                      setState(() {
+                                        _excludeTitlebar = value;
+                                      });
+                                    },
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -861,7 +879,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                             ),
                           ],
                         ),
-                        
+
                         if (_excludeTitlebar) ...[
                           const SizedBox(height: 12),
                           TextField(
@@ -869,7 +887,8 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                             decoration: InputDecoration(
                               labelText: 'Custom Titlebar Height (points)',
                               hintText: 'Leave empty for default (28pt)',
-                              helperText: 'Common values: Safari 44pt, Chrome 0pt',
+                              helperText:
+                                  'Common values: Safari 44pt, Chrome 0pt',
                               border: OutlineInputBorder(),
                               isDense: true,
                             ),
@@ -877,9 +896,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                             enabled: !_isCapturing,
                           ),
                         ],
-                        
+
                         const SizedBox(height: 16),
-                        
+
                         // Capture Button and Status
                         if (!_canCapture) ...[
                           Row(
@@ -905,9 +924,11 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                           ),
                           const SizedBox(height: 12),
                         ],
-                        
+
                         ElevatedButton.icon(
-                          onPressed: (_isCapturing || !_canCapture) ? null : _captureWindow,
+                          onPressed: (_isCapturing || !_canCapture)
+                              ? null
+                              : _captureWindow,
                           icon: _isCapturing
                               ? SizedBox(
                                   width: 16,
@@ -932,7 +953,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                             decoration: BoxDecoration(
                               color: Colors.red.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.red.withOpacity(0.3)),
+                              border: Border.all(
+                                color: Colors.red.withOpacity(0.3),
+                              ),
                             ),
                             child: Row(
                               children: [
@@ -972,10 +995,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                   ? 'Unknown'
                   : widget.window.ownerName,
             ),
-            _DetailItem(
-              label: 'Window ID',
-              value: '${widget.window.windowId}',
-            ),
+            _DetailItem(label: 'Window ID', value: '${widget.window.windowId}'),
             _DetailItem(
               label: 'Process ID',
               value: '${widget.window.processId}',
@@ -1003,9 +1023,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
             if (widget.window.sharingState != null)
               _DetailItem(
                 label: 'Sharing State',
-                value: widget.getSharingStateText(
-                  widget.window.sharingState!,
-                ),
+                value: widget.getSharingStateText(widget.window.sharingState!),
               ),
             if (widget.window.memoryUsage != null)
               _DetailItem(
@@ -1056,10 +1074,7 @@ class _DetailItem extends StatelessWidget {
 class CaptureResultDialog extends StatelessWidget {
   final Uint8List imageBytes;
 
-  const CaptureResultDialog({
-    super.key,
-    required this.imageBytes,
-  });
+  const CaptureResultDialog({super.key, required this.imageBytes});
 
   @override
   Widget build(BuildContext context) {
@@ -1089,10 +1104,7 @@ class CaptureResultDialog extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Image.memory(
-                imageBytes,
-                fit: BoxFit.contain,
-              ),
+              child: Image.memory(imageBytes, fit: BoxFit.contain),
             ),
           ),
         ),
@@ -1104,7 +1116,9 @@ class CaptureResultDialog extends StatelessWidget {
             children: [
               ElevatedButton.icon(
                 onPressed: () {
-                  Clipboard.setData(ClipboardData(text: 'Image copied to clipboard'));
+                  Clipboard.setData(
+                    ClipboardData(text: 'Image copied to clipboard'),
+                  );
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Image size copied to clipboard'),

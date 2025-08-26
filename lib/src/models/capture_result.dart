@@ -8,7 +8,7 @@ sealed class CaptureResult {
 /// Successful capture with image data
 class CaptureSuccess extends CaptureResult {
   final Uint8List imageData;
-  
+
   const CaptureSuccess(this.imageData);
 }
 
@@ -17,13 +17,9 @@ class CaptureFailure extends CaptureResult {
   final CaptureFailureReason reason;
   final String? message;
   final String? details;
-  
-  const CaptureFailure({
-    required this.reason,
-    this.message,
-    this.details,
-  });
-  
+
+  const CaptureFailure({required this.reason, this.message, this.details});
+
   String get userMessage {
     switch (reason) {
       case CaptureFailureReason.windowMinimized:
@@ -42,7 +38,7 @@ class CaptureFailure extends CaptureResult {
         return message ?? 'Unable to capture window';
     }
   }
-  
+
   /// Whether this failure can be retried after user action
   bool get canRetry {
     switch (reason) {
@@ -57,7 +53,7 @@ class CaptureFailure extends CaptureResult {
         return false;
     }
   }
-  
+
   /// Suggested user action for this failure
   String? get suggestedAction {
     switch (reason) {
@@ -80,22 +76,22 @@ class CaptureFailure extends CaptureResult {
 enum CaptureFailureReason {
   /// Window is minimized and cannot be captured
   windowMinimized,
-  
-  /// Window ID is invalid or window no longer exists  
+
+  /// Window ID is invalid or window no longer exists
   windowNotFound,
-  
+
   /// macOS version doesn't support the requested capture method
   unsupportedVersion,
-  
+
   /// Screen recording permission not granted
   permissionDenied,
-  
+
   /// Another capture operation is in progress
   captureInProgress,
-  
+
   /// Window exists but cannot be captured (e.g., system windows)
   windowNotCapturable,
-  
+
   /// Unknown capture state (not a system error)
   unknown,
 }

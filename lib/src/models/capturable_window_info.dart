@@ -2,19 +2,19 @@
 class CapturableWindowInfo {
   /// Unique identifier for the window
   final int windowId;
-  
+
   /// Window title/name
   final String title;
-  
+
   /// Name of the application that owns the window
   final String ownerName;
-  
+
   /// Application bundle identifier
   final String bundleIdentifier;
-  
+
   /// Window frame (position and size)
   final CapturableWindowFrame frame;
-  
+
   /// Whether the window is currently visible on screen
   final bool isOnScreen;
 
@@ -30,7 +30,7 @@ class CapturableWindowInfo {
   /// Creates a [CapturableWindowInfo] from a map representation
   factory CapturableWindowInfo.fromMap(Map<String, dynamic> map) {
     final frameMap = Map<String, dynamic>.from(map['frame'] as Map);
-    
+
     return CapturableWindowInfo(
       windowId: map['windowId'] as int,
       title: map['title'] as String,
@@ -67,7 +67,7 @@ class CapturableWindowInfo {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    
+
     return other is CapturableWindowInfo &&
         other.windowId == windowId &&
         other.title == title &&
@@ -92,13 +92,13 @@ class CapturableWindowInfo {
 class CapturableWindowFrame {
   /// X coordinate of the window
   final double x;
-  
+
   /// Y coordinate of the window
   final double y;
-  
+
   /// Width of the window
   final double width;
-  
+
   /// Height of the window
   final double height;
 
@@ -121,12 +121,7 @@ class CapturableWindowFrame {
 
   /// Converts this [CapturableWindowFrame] to a map representation
   Map<String, dynamic> toMap() {
-    return {
-      'x': x,
-      'y': y,
-      'width': width,
-      'height': height,
-    };
+    return {'x': x, 'y': y, 'width': width, 'height': height};
   }
 
   @override
@@ -137,7 +132,7 @@ class CapturableWindowFrame {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    
+
     return other is CapturableWindowFrame &&
         other.x == x &&
         other.y == y &&

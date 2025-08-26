@@ -2,51 +2,50 @@
 class MacosWindowInfo {
   /// Unique identifier for the window
   final int windowId;
-  
+
   /// Window title/name
   final String name;
-  
+
   /// Name of the application that owns the window
   final String ownerName;
-  
+
   /// X coordinate of the window
   final double x;
-  
+
   /// Y coordinate of the window
   final double y;
-  
+
   /// Width of the window
   final double width;
-  
+
   /// Height of the window
   final double height;
-  
+
   /// Window layer level
   final int layer;
-  
+
   /// Whether the window is currently visible on screen
   final bool isOnScreen;
-  
+
   /// Process ID of the application that owns the window
   final int processId;
-  
+
   /// Window store type (system internal)
   final int? storeType;
-  
+
   /// Sharing state of the window
   /// 0: None (not shared), 1: ReadOnly, 2: ReadWrite
   final int? sharingState;
-  
+
   /// Transparency/alpha value of the window (0.0 = transparent, 1.0 = opaque)
   final double? alpha;
-  
+
   /// Memory usage of the window in bytes
   final int? memoryUsage;
-  
-  
+
   /// Whether the window buffer is stored in video memory
   final bool? isInVideoMemory;
-  
+
   const MacosWindowInfo({
     required this.windowId,
     required this.name,
@@ -64,7 +63,7 @@ class MacosWindowInfo {
     this.memoryUsage,
     this.isInVideoMemory,
   });
-  
+
   /// Creates a [MacosWindowInfo] from a map (typically from platform channel)
   factory MacosWindowInfo.fromMap(Map<String, dynamic> map) {
     return MacosWindowInfo(
@@ -85,7 +84,7 @@ class MacosWindowInfo {
       isInVideoMemory: map['isInVideoMemory'],
     );
   }
-  
+
   /// Converts this [MacosWindowInfo] to a map
   Map<String, dynamic> toMap() {
     return {
@@ -106,7 +105,7 @@ class MacosWindowInfo {
       if (isInVideoMemory != null) 'isInVideoMemory': isInVideoMemory,
     };
   }
-  
+
   @override
   String toString() {
     return 'MacosWindowInfo('
@@ -125,11 +124,11 @@ class MacosWindowInfo {
         '${isInVideoMemory != null ? ', isInVideoMemory: $isInVideoMemory' : ''}'
         ')';
   }
-  
+
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    
+
     return other is MacosWindowInfo &&
         other.windowId == windowId &&
         other.name == name &&
@@ -147,7 +146,7 @@ class MacosWindowInfo {
         other.memoryUsage == memoryUsage &&
         other.isInVideoMemory == isInVideoMemory;
   }
-  
+
   @override
   int get hashCode {
     return Object.hash(

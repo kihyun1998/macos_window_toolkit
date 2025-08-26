@@ -12,7 +12,9 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
   final methodChannel = const MethodChannel('macos_window_toolkit');
 
   @override
-  Future<List<Map<String, dynamic>>> getAllWindows({bool excludeEmptyNames = false}) async {
+  Future<List<Map<String, dynamic>>> getAllWindows({
+    bool excludeEmptyNames = false,
+  }) async {
     final result = await methodChannel.invokeMethod<List<dynamic>>(
       'getAllWindows',
       excludeEmptyNames ? {'excludeEmptyNames': excludeEmptyNames} : null,
@@ -151,13 +153,13 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
     double? customTitlebarHeight,
   }) async {
     final arguments = <String, dynamic>{
-      'windowId': windowId, 
+      'windowId': windowId,
       'excludeTitlebar': excludeTitlebar,
     };
     if (customTitlebarHeight != null) {
       arguments['customTitlebarHeight'] = customTitlebarHeight;
     }
-    
+
     try {
       final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
         'captureWindow',
@@ -169,7 +171,7 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
           message: 'No data returned from capture',
         );
       }
-      
+
       return _parseCaptureResult(result);
     } on PlatformException catch (e) {
       // Only system errors should throw, others should return CaptureFailure
@@ -195,15 +197,19 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
   }
 
   @override
-  Future<CaptureResult> captureWindowLegacy(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) async {
+  Future<CaptureResult> captureWindowLegacy(
+    int windowId, {
+    bool excludeTitlebar = false,
+    double? customTitlebarHeight,
+  }) async {
     final arguments = <String, dynamic>{
-      'windowId': windowId, 
+      'windowId': windowId,
       'excludeTitlebar': excludeTitlebar,
     };
     if (customTitlebarHeight != null) {
       arguments['customTitlebarHeight'] = customTitlebarHeight;
     }
-    
+
     try {
       final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
         'captureWindowLegacy',
@@ -215,7 +221,7 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
           message: 'No data returned from capture',
         );
       }
-      
+
       return _parseCaptureResult(result);
     } on PlatformException catch (e) {
       // Only system errors should throw, others should return CaptureFailure
@@ -247,13 +253,13 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
     double? customTitlebarHeight,
   }) async {
     final arguments = <String, dynamic>{
-      'windowId': windowId, 
+      'windowId': windowId,
       'excludeTitlebar': excludeTitlebar,
     };
     if (customTitlebarHeight != null) {
       arguments['customTitlebarHeight'] = customTitlebarHeight;
     }
-    
+
     try {
       final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
         'captureWindowAuto',
@@ -265,7 +271,7 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
           message: 'No data returned from capture',
         );
       }
-      
+
       return _parseCaptureResult(result);
     } on PlatformException catch (e) {
       // Only system errors should throw, others should return CaptureFailure
@@ -303,24 +309,25 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
 
   @override
   Future<bool> isWindowAlive(int windowId) async {
-    final result = await methodChannel.invokeMethod<bool>(
-      'isWindowAlive',
-      {'windowId': windowId},
-    );
+    final result = await methodChannel.invokeMethod<bool>('isWindowAlive', {
+      'windowId': windowId,
+    });
     return result ?? false;
   }
 
   @override
   Future<bool> closeWindow(int windowId) async {
-    final result = await methodChannel.invokeMethod<bool>(
-      'closeWindow',
-      {'windowId': windowId},
-    );
+    final result = await methodChannel.invokeMethod<bool>('closeWindow', {
+      'windowId': windowId,
+    });
     return result ?? false;
   }
 
   @override
-  Future<bool> terminateApplicationByPID(int processId, {bool force = false}) async {
+  Future<bool> terminateApplicationByPID(
+    int processId, {
+    bool force = false,
+  }) async {
     final result = await methodChannel.invokeMethod<bool>(
       'terminateApplicationByPID',
       {'processId': processId, 'force': force},
@@ -329,7 +336,10 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
   }
 
   @override
-  Future<bool> terminateApplicationTree(int processId, {bool force = false}) async {
+  Future<bool> terminateApplicationTree(
+    int processId, {
+    bool force = false,
+  }) async {
     final result = await methodChannel.invokeMethod<bool>(
       'terminateApplicationTree',
       {'processId': processId, 'force': force},
@@ -352,7 +362,7 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
   /// Helper method to parse capture result from native response
   CaptureResult _parseCaptureResult(Map<dynamic, dynamic> result) {
     final success = result['success'] as bool? ?? false;
-    
+
     if (success) {
       final imageData = result['imageData'] as Uint8List?;
       if (imageData != null) {
@@ -367,13 +377,9 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
       final reasonCode = result['reason'] as String? ?? 'unknown';
       final message = result['message'] as String?;
       final details = result['details'] as String?;
-      
+
       final reason = _mapReasonCodeToFailureReason(reasonCode);
-      return CaptureFailure(
-        reason: reason,
-        message: message,
-        details: details,
-      );
+      return CaptureFailure(reason: reason, message: message, details: details);
     }
   }
 

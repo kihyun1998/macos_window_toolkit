@@ -9,7 +9,7 @@ class NotificationService {
     Duration duration = const Duration(seconds: 3),
   }) {
     if (!context.mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -19,7 +19,7 @@ class NotificationService {
       ),
     );
   }
-  
+
   /// Show success message
   static void showSuccess(
     BuildContext context,
@@ -27,7 +27,7 @@ class NotificationService {
     Duration duration = const Duration(seconds: 3),
   }) {
     if (!context.mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -37,7 +37,7 @@ class NotificationService {
       ),
     );
   }
-  
+
   /// Show warning message
   static void showWarning(
     BuildContext context,
@@ -45,7 +45,7 @@ class NotificationService {
     Duration duration = const Duration(seconds: 3),
   }) {
     if (!context.mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -55,7 +55,7 @@ class NotificationService {
       ),
     );
   }
-  
+
   /// Show info message
   static void showInfo(
     BuildContext context,
@@ -63,7 +63,7 @@ class NotificationService {
     Duration duration = const Duration(seconds: 3),
   }) {
     if (!context.mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -72,7 +72,7 @@ class NotificationService {
       ),
     );
   }
-  
+
   /// Handle platform exception and show appropriate error
   static void handlePlatformException(
     BuildContext context,
@@ -88,13 +88,10 @@ class NotificationService {
       );
       return;
     }
-    
-    showError(
-      context,
-      'Error $operation: ${exception.message}',
-    );
+
+    showError(context, 'Error $operation: ${exception.message}');
   }
-  
+
   /// Show permission result message
   static void showPermissionResult(
     BuildContext context, {
@@ -105,14 +102,14 @@ class NotificationService {
     final message = granted
         ? '$permissionName permission granted!${additionalInfo != null ? ' $additionalInfo' : ''}'
         : '$permissionName permission denied.${additionalInfo != null ? ' $additionalInfo' : ''}';
-    
+
     if (granted) {
       showSuccess(context, message, duration: const Duration(seconds: 4));
     } else {
       showError(context, message, duration: const Duration(seconds: 4));
     }
   }
-  
+
   /// Show settings opening result
   static void showSettingsResult(
     BuildContext context, {
@@ -122,7 +119,7 @@ class NotificationService {
     final message = success
         ? 'Opening System Preferences - please enable $settingsType.'
         : 'Failed to open System Preferences. Please open it manually.';
-    
+
     if (success) {
       showWarning(context, message);
     } else {

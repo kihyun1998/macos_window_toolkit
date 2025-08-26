@@ -2,16 +2,16 @@
 class MacosVersionInfo {
   /// Major version number (e.g., 13 for macOS Ventura)
   final int majorVersion;
-  
+
   /// Minor version number (e.g., 0 for 13.0)
   final int minorVersion;
-  
+
   /// Patch version number (e.g., 1 for 13.0.1)
   final int patchVersion;
-  
+
   /// Full version string (e.g., "13.0.1")
   final String versionString;
-  
+
   /// Whether ScreenCaptureKit is available (macOS 12.3+)
   final bool isScreenCaptureKitAvailable;
 
@@ -30,7 +30,8 @@ class MacosVersionInfo {
       minorVersion: map['minorVersion'] as int? ?? 0,
       patchVersion: map['patchVersion'] as int? ?? 0,
       versionString: map['versionString'] as String? ?? '',
-      isScreenCaptureKitAvailable: map['isScreenCaptureKitAvailable'] as bool? ?? false,
+      isScreenCaptureKitAvailable:
+          map['isScreenCaptureKitAvailable'] as bool? ?? false,
     );
   }
 
@@ -49,10 +50,10 @@ class MacosVersionInfo {
   bool isAtLeast(int major, [int minor = 0, int patch = 0]) {
     if (majorVersion > major) return true;
     if (majorVersion < major) return false;
-    
+
     if (minorVersion > minor) return true;
     if (minorVersion < minor) return false;
-    
+
     return patchVersion >= patch;
   }
 
@@ -64,7 +65,7 @@ class MacosVersionInfo {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    
+
     return other is MacosVersionInfo &&
         other.majorVersion == majorVersion &&
         other.minorVersion == minorVersion &&

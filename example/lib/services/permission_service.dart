@@ -3,7 +3,7 @@ import 'package:macos_window_toolkit/macos_window_toolkit.dart';
 
 class PermissionService {
   static final MacosWindowToolkit _plugin = MacosWindowToolkit();
-  
+
   /// Check screen recording permission
   static Future<bool?> checkScreenRecordingPermission() async {
     try {
@@ -12,7 +12,7 @@ class PermissionService {
       return null;
     }
   }
-  
+
   /// Check accessibility permission
   static Future<bool?> checkAccessibilityPermission() async {
     try {
@@ -21,7 +21,7 @@ class PermissionService {
       return null;
     }
   }
-  
+
   /// Request screen recording permission
   static Future<bool?> requestScreenRecordingPermission() async {
     try {
@@ -30,7 +30,7 @@ class PermissionService {
       return null;
     }
   }
-  
+
   /// Request accessibility permission
   static Future<bool?> requestAccessibilityPermission() async {
     try {
@@ -39,7 +39,7 @@ class PermissionService {
       return null;
     }
   }
-  
+
   /// Open screen recording settings
   static Future<bool?> openScreenRecordingSettings() async {
     try {
@@ -48,7 +48,7 @@ class PermissionService {
       return null;
     }
   }
-  
+
   /// Open accessibility settings
   static Future<bool?> openAccessibilitySettings() async {
     try {
@@ -57,7 +57,7 @@ class PermissionService {
       return null;
     }
   }
-  
+
   /// Get the most critical missing permission
   static PermissionType? getMostCriticalMissingPermission({
     required bool? hasScreenRecording,
@@ -71,7 +71,7 @@ class PermissionService {
     }
     return null;
   }
-  
+
   /// Check if any permission is missing
   static bool hasAnyMissingPermission({
     required bool? hasScreenRecording,
@@ -81,7 +81,4 @@ class PermissionService {
   }
 }
 
-enum PermissionType {
-  screenRecording,
-  accessibility,
-}
+enum PermissionType { screenRecording, accessibility }

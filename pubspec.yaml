@@ -1,7 +1,10 @@
 name: macos_window_toolkit
-description: "A new Flutter plugin project."
-version: 0.0.1
-homepage:
+description: A Flutter plugin for macOS that provides window management functionality, allowing you to retrieve information about all open windows on the system.
+version: 1.0.0
+homepage: https://github.com/kihyun/macos_window_toolkit
+repository: https://github.com/kihyun/macos_window_toolkit
+issue_tracker: https://github.com/kihyun/macos_window_toolkit/issues
+documentation: https://github.com/kihyun/macos_window_toolkit#readme
 
 environment:
   sdk: ^3.8.1

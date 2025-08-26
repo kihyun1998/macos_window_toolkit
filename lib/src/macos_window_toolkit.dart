@@ -28,13 +28,13 @@ class MacosWindowToolkit {
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
-  /// 
+  ///
   /// // Get all windows including those with empty names
   /// final allWindows = await toolkit.getAllWindows();
-  /// 
+  ///
   /// // Get only windows with non-empty names
   /// final namedWindows = await toolkit.getAllWindows(excludeEmptyNames: true);
-  /// 
+  ///
   /// for (final window in namedWindows) {
   ///   print('Window: ${window.name} (ID: ${window.windowId})');
   ///   print('App: ${window.ownerName}');
@@ -47,21 +47,25 @@ class MacosWindowToolkit {
   /// ```
   ///
   /// Throws [PlatformException] if unable to retrieve window information.
-  Future<List<MacosWindowInfo>> getAllWindows({bool excludeEmptyNames = false}) async {
-    final List<Map<String, dynamic>> windowMaps = 
-        await MacosWindowToolkitPlatform.instance.getAllWindows(excludeEmptyNames: excludeEmptyNames);
+  Future<List<MacosWindowInfo>> getAllWindows({
+    bool excludeEmptyNames = false,
+  }) async {
+    final List<Map<String, dynamic>> windowMaps =
+        await MacosWindowToolkitPlatform.instance.getAllWindows(
+          excludeEmptyNames: excludeEmptyNames,
+        );
     return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
   }
 
   /// Checks if the app has screen recording permission.
-  /// 
+  ///
   /// Returns `true` if the app has been granted screen recording permission,
   /// `false` otherwise. On macOS versions prior to 10.15 (Catalina), this
   /// always returns `true` as screen recording permission is not required.
-  /// 
+  ///
   /// This is useful for checking permission status before calling [getAllWindows]
   /// to determine if window names will be available.
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
@@ -79,20 +83,20 @@ class MacosWindowToolkit {
   }
 
   /// Requests screen recording permission from the user.
-  /// 
+  ///
   /// Shows a system dialog asking for screen recording permission. If the user
   /// clicks "Open System Preferences", they will be taken directly to the
   /// Screen Recording section of Privacy settings.
-  /// 
+  ///
   /// Returns `true` if permission is granted, `false` if denied.
-  /// 
+  ///
   /// Note: The system dialog will only appear once per app session. If the user
   /// has already seen and dismissed the dialog, subsequent calls will not show
   /// the dialog again until the app is restarted.
-  /// 
+  ///
   /// On macOS versions prior to 10.15 (Catalina), this always returns `true`
   /// as screen recording permission is not required.
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
@@ -104,26 +108,27 @@ class MacosWindowToolkit {
   /// }
   /// ```
   Future<bool> requestScreenRecordingPermission() {
-    return MacosWindowToolkitPlatform.instance.requestScreenRecordingPermission();
+    return MacosWindowToolkitPlatform.instance
+        .requestScreenRecordingPermission();
   }
 
   /// Opens the Screen Recording section in System Preferences.
-  /// 
+  ///
   /// This method will attempt to open the specific Screen Recording settings page.
   /// If that fails, it will fall back to opening the general Privacy & Security
   /// settings, and as a last resort, it will open System Preferences.
-  /// 
+  ///
   /// Returns `true` if System Preferences was opened successfully, `false` otherwise.
-  /// 
+  ///
   /// This is useful when the system permission dialog doesn't appear (e.g., when
   /// the user has already denied permission once) and you need to guide users
   /// to manually enable the permission.
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
   /// final hasPermission = await toolkit.hasScreenRecordingPermission();
-  /// 
+  ///
   /// if (!hasPermission) {
   ///   final granted = await toolkit.requestScreenRecordingPermission();
   ///   if (!granted) {
@@ -140,15 +145,15 @@ class MacosWindowToolkit {
   }
 
   /// Checks if the app has accessibility permission.
-  /// 
+  ///
   /// Returns `true` if the app has been granted accessibility permission,
   /// `false` otherwise. Accessibility permissions are required for certain
-  /// window operations that interact with other applications, such as 
+  /// window operations that interact with other applications, such as
   /// [closeWindow].
-  /// 
+  ///
   /// This method checks the current accessibility permission status without
   /// showing any dialogs or requesting permission.
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
@@ -166,20 +171,20 @@ class MacosWindowToolkit {
   }
 
   /// Requests accessibility permission from the user.
-  /// 
+  ///
   /// Shows a system dialog asking for accessibility permission. The user will
   /// be prompted to enable accessibility for the application in System Preferences.
-  /// 
+  ///
   /// Returns `true` if permission is granted, `false` if denied or not yet granted.
-  /// 
+  ///
   /// Note: Unlike screen recording permission, accessibility permission requires
   /// the user to manually enable it in System Preferences. The system dialog
   /// will guide users to the correct settings page, but the permission must be
   /// granted manually by the user.
-  /// 
+  ///
   /// After granting permission in System Preferences, the application may need
   /// to be restarted for the permission to take effect.
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
@@ -198,21 +203,21 @@ class MacosWindowToolkit {
   }
 
   /// Opens the Accessibility section in System Preferences.
-  /// 
+  ///
   /// This method will attempt to open the specific Accessibility settings page.
   /// If that fails, it will fall back to opening the general Privacy & Security
   /// settings, and as a last resort, it will open System Preferences.
-  /// 
+  ///
   /// Returns `true` if System Preferences was opened successfully, `false` otherwise.
-  /// 
+  ///
   /// This is useful for guiding users to manually enable accessibility permission
   /// when the system permission dialog doesn't provide direct access to the settings.
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
   /// final hasPermission = await toolkit.hasAccessibilityPermission();
-  /// 
+  ///
   /// if (!hasPermission) {
   ///   final granted = await toolkit.requestAccessibilityPermission();
   ///   if (!granted) {
@@ -230,11 +235,11 @@ class MacosWindowToolkit {
   }
 
   /// Retrieves windows filtered by name (window title).
-  /// 
+  ///
   /// Returns a list of [MacosWindowInfo] objects for windows whose
   /// name/title contains the specified [name] string. The search is case-sensitive
   /// and uses substring matching.
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
@@ -243,20 +248,20 @@ class MacosWindowToolkit {
   ///   print('Found Chrome window: ${window.name}');
   /// }
   /// ```
-  /// 
+  ///
   /// Throws [PlatformException] if unable to retrieve window information.
   Future<List<MacosWindowInfo>> getWindowsByName(String name) async {
-    final List<Map<String, dynamic>> windowMaps = 
+    final List<Map<String, dynamic>> windowMaps =
         await MacosWindowToolkitPlatform.instance.getWindowsByName(name);
     return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
   }
 
   /// Retrieves windows filtered by owner name (application name).
-  /// 
+  ///
   /// Returns a list of [MacosWindowInfo] objects for windows owned by
   /// applications whose name contains the specified [ownerName] string.
   /// The search is case-sensitive and uses substring matching.
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
@@ -265,19 +270,21 @@ class MacosWindowToolkit {
   ///   print('Safari window: ${window.name}');
   /// }
   /// ```
-  /// 
+  ///
   /// Throws [PlatformException] if unable to retrieve window information.
   Future<List<MacosWindowInfo>> getWindowsByOwnerName(String ownerName) async {
-    final List<Map<String, dynamic>> windowMaps = 
-        await MacosWindowToolkitPlatform.instance.getWindowsByOwnerName(ownerName);
+    final List<Map<String, dynamic>> windowMaps =
+        await MacosWindowToolkitPlatform.instance.getWindowsByOwnerName(
+          ownerName,
+        );
     return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
   }
 
   /// Retrieves a specific window by its window ID.
-  /// 
+  ///
   /// Returns a list containing the [MacosWindowInfo] with the specified [windowId].
   /// Returns an empty list if no window with the given ID is found.
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
@@ -288,80 +295,83 @@ class MacosWindowToolkit {
   ///   print('Window not found');
   /// }
   /// ```
-  /// 
+  ///
   /// Throws [PlatformException] if unable to retrieve window information.
   Future<List<MacosWindowInfo>> getWindowById(int windowId) async {
-    final List<Map<String, dynamic>> windowMaps = 
+    final List<Map<String, dynamic>> windowMaps =
         await MacosWindowToolkitPlatform.instance.getWindowById(windowId);
     return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
   }
 
   /// Retrieves windows filtered by process ID.
-  /// 
+  ///
   /// Returns a list of [MacosWindowInfo] objects for windows owned by
   /// the application with the specified [processId].
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
   /// final appWindows = await toolkit.getWindowsByProcessId(1234);
   /// print('Found ${appWindows.length} windows for process 1234');
   /// ```
-  /// 
+  ///
   /// Throws [PlatformException] if unable to retrieve window information.
   Future<List<MacosWindowInfo>> getWindowsByProcessId(int processId) async {
-    final List<Map<String, dynamic>> windowMaps = 
-        await MacosWindowToolkitPlatform.instance.getWindowsByProcessId(processId);
+    final List<Map<String, dynamic>> windowMaps =
+        await MacosWindowToolkitPlatform.instance.getWindowsByProcessId(
+          processId,
+        );
     return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
   }
 
   /// Gets macOS version information.
-  /// 
+  ///
   /// Returns a [MacosVersionInfo] object containing:
   /// - `majorVersion`: Major version number (e.g., 13 for macOS Ventura)
   /// - `minorVersion`: Minor version number (e.g., 0 for 13.0)
   /// - `patchVersion`: Patch version number (e.g., 1 for 13.0.1)
   /// - `versionString`: Full version string (e.g., "13.0.1")
   /// - `isScreenCaptureKitAvailable`: Whether ScreenCaptureKit is available (macOS 12.3+)
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
   /// final versionInfo = await toolkit.getMacOSVersionInfo();
   /// print('macOS ${versionInfo.versionString}');
   /// print('ScreenCaptureKit available: ${versionInfo.isScreenCaptureKitAvailable}');
-  /// 
+  ///
   /// // Check if running on macOS 13 or later
   /// if (versionInfo.isAtLeast(13)) {
   ///   print('Running on macOS Ventura or later');
   /// }
   /// ```
   Future<MacosVersionInfo> getMacOSVersionInfo() async {
-    final versionMap = await MacosWindowToolkitPlatform.instance.getMacOSVersionInfo();
+    final versionMap = await MacosWindowToolkitPlatform.instance
+        .getMacOSVersionInfo();
     return MacosVersionInfo.fromMap(versionMap);
   }
 
   /// Captures a window using ScreenCaptureKit.
-  /// 
+  ///
   /// Returns a [CaptureResult] indicating success with image data or failure with reason.
-  /// 
+  ///
   /// [windowId] is the unique identifier of the window to capture, which can be
   /// obtained from [getAllWindows], [getWindowById], or [getCapturableWindows].
-  /// 
+  ///
   /// [excludeTitlebar] if true, removes the titlebar from the captured image.
-  /// 
+  ///
   /// [customTitlebarHeight] specifies a custom titlebar height to remove (in points).
   /// If null and excludeTitlebar is true, uses the default 28pt titlebar height.
   /// Must be non-negative and not larger than the window height.
-  /// 
+  ///
   /// This method uses ScreenCaptureKit (macOS 12.3+) which provides high-quality
   /// window captures with better performance and more accurate color reproduction
   /// compared to the legacy CGWindowListCreateImage method.
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
-  /// 
+  ///
   /// // First check if ScreenCaptureKit is available
   /// final versionInfo = await toolkit.getMacOSVersionInfo();
   /// if (versionInfo.isScreenCaptureKitAvailable) {
@@ -382,27 +392,35 @@ class MacosWindowToolkit {
   ///   // Fall back to CGWindowListCreateImage method
   /// }
   /// ```
-  /// 
+  ///
   /// Throws [PlatformException] only for system errors (invalid arguments, system failures).
-  Future<CaptureResult> captureWindow(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) async {
-    return await MacosWindowToolkitPlatform.instance.captureWindow(windowId, excludeTitlebar: excludeTitlebar, customTitlebarHeight: customTitlebarHeight);
+  Future<CaptureResult> captureWindow(
+    int windowId, {
+    bool excludeTitlebar = false,
+    double? customTitlebarHeight,
+  }) async {
+    return await MacosWindowToolkitPlatform.instance.captureWindow(
+      windowId,
+      excludeTitlebar: excludeTitlebar,
+      customTitlebarHeight: customTitlebarHeight,
+    );
   }
 
   /// Gets list of capturable windows using ScreenCaptureKit.
-  /// 
+  ///
   /// Returns a list of [CapturableWindowInfo] objects that are specifically optimized
   /// for window capture operations. This method only returns windows that can
   /// actually be captured by ScreenCaptureKit, which may be a subset of windows
   /// returned by [getAllWindows].
-  /// 
+  ///
   /// This method is particularly useful when you want to present users with
   /// a list of windows they can capture, as it filters out system windows
   /// and other non-capturable elements.
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
-  /// 
+  ///
   /// try {
   ///   final capturableWindows = await toolkit.getCapturableWindows();
   ///   for (final window in capturableWindows) {
@@ -416,7 +434,7 @@ class MacosWindowToolkit {
   ///   }
   /// }
   /// ```
-  /// 
+  ///
   /// Throws [PlatformException] with the following error codes:
   /// - `UNSUPPORTED_MACOS_VERSION`: Current macOS version doesn't support ScreenCaptureKit
   /// - `SCREENCAPTUREKIT_NOT_AVAILABLE`: ScreenCaptureKit framework is not available
@@ -426,27 +444,27 @@ class MacosWindowToolkit {
   }
 
   /// Captures a window using CGWindowListCreateImage (legacy method).
-  /// 
+  ///
   /// Returns a [CaptureResult] indicating success with image data or failure with reason.
-  /// 
+  ///
   /// [windowId] is the unique identifier of the window to capture, which can be
   /// obtained from [getAllWindows], [getWindowById], or [getCapturableWindowsLegacy].
-  /// 
+  ///
   /// [excludeTitlebar] if true, removes the titlebar from the captured image.
-  /// 
+  ///
   /// [customTitlebarHeight] specifies a custom titlebar height to remove (in points).
   /// If null and excludeTitlebar is true, uses the default 28pt titlebar height.
   /// Must be non-negative and not larger than the window height.
-  /// 
+  ///
   /// This method uses the legacy CGWindowListCreateImage API which is available
   /// on all macOS versions (10.5+) but may have lower quality or performance
   /// compared to ScreenCaptureKit. Use this method when you need compatibility
   /// with older macOS versions or when ScreenCaptureKit is not available.
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
-  /// 
+  ///
   /// final result = await toolkit.captureWindowLegacy(12345);
   /// switch (result) {
   ///   case CaptureSuccess(imageData: final data):
@@ -461,27 +479,35 @@ class MacosWindowToolkit {
   ///     break;
   /// }
   /// ```
-  /// 
+  ///
   /// Throws [PlatformException] only for system errors (invalid arguments, system failures).
-  Future<CaptureResult> captureWindowLegacy(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) async {
-    return await MacosWindowToolkitPlatform.instance.captureWindowLegacy(windowId, excludeTitlebar: excludeTitlebar, customTitlebarHeight: customTitlebarHeight);
+  Future<CaptureResult> captureWindowLegacy(
+    int windowId, {
+    bool excludeTitlebar = false,
+    double? customTitlebarHeight,
+  }) async {
+    return await MacosWindowToolkitPlatform.instance.captureWindowLegacy(
+      windowId,
+      excludeTitlebar: excludeTitlebar,
+      customTitlebarHeight: customTitlebarHeight,
+    );
   }
 
   /// Gets list of capturable windows using CGWindowListCopyWindowInfo (legacy method).
-  /// 
+  ///
   /// Returns a list of [CapturableWindowInfo] objects using the legacy
   /// CGWindowListCopyWindowInfo API. This method is available on all macOS
   /// versions and provides broader compatibility compared to ScreenCaptureKit.
-  /// 
+  ///
   /// Note that the window information returned by this method may differ
   /// slightly from [getCapturableWindows] as it uses different underlying APIs.
   /// The bundleIdentifier field will be empty as CGWindowListCopyWindowInfo
   /// does not provide bundle information.
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
-  /// 
+  ///
   /// final capturableWindows = await toolkit.getCapturableWindowsLegacy();
   /// for (final window in capturableWindows) {
   ///   print('Capturable window: ${window.title} (ID: ${window.windowId})');
@@ -489,37 +515,38 @@ class MacosWindowToolkit {
   ///   print('Size: ${window.frame.width} x ${window.frame.height}');
   /// }
   /// ```
-  /// 
+  ///
   /// This method always succeeds and does not throw exceptions. Returns an
   /// empty list if no windows are found.
   Future<List<CapturableWindowInfo>> getCapturableWindowsLegacy() async {
-    return await MacosWindowToolkitPlatform.instance.getCapturableWindowsLegacy();
+    return await MacosWindowToolkitPlatform.instance
+        .getCapturableWindowsLegacy();
   }
 
   /// Captures a window using the best available method (auto-selection).
-  /// 
+  ///
   /// Returns a [CaptureResult] indicating success with image data or failure with reason.
-  /// 
+  ///
   /// [windowId] is the unique identifier of the window to capture, which can be
   /// obtained from [getAllWindows], [getWindowById], or [getCapturableWindowsAuto].
-  /// 
+  ///
   /// [excludeTitlebar] if true, removes the titlebar from the captured image.
-  /// 
+  ///
   /// [customTitlebarHeight] specifies a custom titlebar height to remove (in points).
   /// If null and excludeTitlebar is true, uses the default 28pt titlebar height.
   /// Must be non-negative and not larger than the window height.
-  /// 
+  ///
   /// This method automatically selects the optimal capture method:
   /// - Uses ScreenCaptureKit on macOS 14.0+ for best quality
   /// - Falls back to CGWindowListCreateImage on older versions or if ScreenCaptureKit fails
-  /// 
+  ///
   /// This is the **recommended method** for window capture as it provides the best
   /// experience across all macOS versions without requiring version checks.
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
-  /// 
+  ///
   /// final result = await toolkit.captureWindowAuto(12345);
   /// switch (result) {
   ///   case CaptureSuccess(imageData: final data):
@@ -537,27 +564,35 @@ class MacosWindowToolkit {
   ///     break;
   /// }
   /// ```
-  /// 
+  ///
   /// Throws [PlatformException] only for system errors (invalid arguments, system failures).
-  Future<CaptureResult> captureWindowAuto(int windowId, {bool excludeTitlebar = false, double? customTitlebarHeight}) async {
-    return await MacosWindowToolkitPlatform.instance.captureWindowAuto(windowId, excludeTitlebar: excludeTitlebar, customTitlebarHeight: customTitlebarHeight);
+  Future<CaptureResult> captureWindowAuto(
+    int windowId, {
+    bool excludeTitlebar = false,
+    double? customTitlebarHeight,
+  }) async {
+    return await MacosWindowToolkitPlatform.instance.captureWindowAuto(
+      windowId,
+      excludeTitlebar: excludeTitlebar,
+      customTitlebarHeight: customTitlebarHeight,
+    );
   }
 
   /// Gets list of capturable windows using the best available method (auto-selection).
-  /// 
+  ///
   /// Returns a list of [CapturableWindowInfo] objects optimized for the current system.
-  /// 
+  ///
   /// This method automatically selects the optimal window listing method:
   /// - Uses ScreenCaptureKit on macOS 12.3+ for better window information
   /// - Falls back to CGWindowListCopyWindowInfo on older versions or if ScreenCaptureKit fails
-  /// 
+  ///
   /// This is the **recommended method** for getting capturable windows as it provides
   /// the best experience across all macOS versions without requiring version checks.
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
-  /// 
+  ///
   /// try {
   ///   final capturableWindows = await toolkit.getCapturableWindowsAuto();
   ///   for (final window in capturableWindows) {
@@ -571,7 +606,7 @@ class MacosWindowToolkit {
   ///   }
   /// }
   /// ```
-  /// 
+  ///
   /// Throws [PlatformException] with the following error codes:
   /// - `NO_COMPATIBLE_CAPTURE_METHOD`: No window listing method is available
   /// - `CAPTURE_METHOD_FAILED`: The selected window listing method failed
@@ -580,11 +615,11 @@ class MacosWindowToolkit {
   }
 
   /// Gets information about the capture method that would be used by auto-selection.
-  /// 
+  ///
   /// Returns information about the capture capabilities and methods that would be
   /// selected on the current system. This is useful for debugging, user feedback,
   /// and understanding the capture behavior.
-  /// 
+  ///
   /// The returned map contains:
   /// - `captureMethod`: The capture method that would be used ("ScreenCaptureKit" or "CGWindowListCreateImage")
   /// - `windowListMethod`: The window listing method that would be used ("ScreenCaptureKit" or "CGWindowListCopyWindowInfo")
@@ -592,19 +627,19 @@ class MacosWindowToolkit {
   /// - `isScreenCaptureKitAvailable`: Whether ScreenCaptureKit framework is available (bool)
   /// - `supportsModernCapture`: Whether modern capture (ScreenCaptureKit) is supported (bool)
   /// - `supportsModernWindowList`: Whether modern window listing (ScreenCaptureKit) is supported (bool)
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
   /// final info = await toolkit.getCaptureMethodInfo();
-  /// 
+  ///
   /// print('Capture method: ${info['captureMethod']}');
   /// print('Window list method: ${info['windowListMethod']}');
   /// print('macOS version: ${info['macOSVersion']}');
   /// print('ScreenCaptureKit available: ${info['isScreenCaptureKitAvailable']}');
   /// print('Modern capture supported: ${info['supportsModernCapture']}');
   /// print('Modern window list supported: ${info['supportsModernWindowList']}');
-  /// 
+  ///
   /// // Show user-friendly message
   /// if (info['supportsModernCapture'] == true) {
   ///   print('Using high-quality ScreenCaptureKit capture');
@@ -617,23 +652,23 @@ class MacosWindowToolkit {
   }
 
   /// Checks if a window with the specified ID is currently alive/exists.
-  /// 
+  ///
   /// Returns `true` if the window exists and is currently available on the system,
   /// `false` otherwise.
-  /// 
+  ///
   /// [windowId] is the unique identifier of the window to check, which can be
   /// obtained from [getAllWindows], [getWindowsByName], or other window listing methods.
-  /// 
+  ///
   /// This method is useful for verifying if a window is still valid before
-  /// attempting operations like capture or other window manipulations. It's 
+  /// attempting operations like capture or other window manipulations. It's
   /// particularly important for long-running applications where windows may
   /// be closed by users or applications.
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
   /// final windows = await toolkit.getAllWindows();
-  /// 
+  ///
   /// for (final window in windows) {
   ///   // Check if window is still alive before capturing
   ///   final isAlive = await toolkit.isWindowAlive(window.windowId);
@@ -649,7 +684,7 @@ class MacosWindowToolkit {
   ///   }
   /// }
   /// ```
-  /// 
+  ///
   /// This method is lightweight and fast as it performs a simple existence check
   /// without retrieving full window information.
   Future<bool> isWindowAlive(int windowId) async {
@@ -657,28 +692,28 @@ class MacosWindowToolkit {
   }
 
   /// Closes a window by its window ID using AppleScript.
-  /// 
+  ///
   /// Returns `true` if the window was successfully closed, `false` otherwise.
-  /// 
+  ///
   /// [windowId] is the unique identifier of the window to close, which can be
   /// obtained from [getAllWindows], [getWindowsByName], or other window listing methods.
-  /// 
+  ///
   /// This method uses AppleScript to interact with the application's window
   /// close button. It first retrieves the window information to get the
   /// application name and window title, then executes an AppleScript to
   /// click the close button.
-  /// 
+  ///
   /// **Important Notes:**
   /// - This method may require accessibility permissions on some systems
   /// - It may not work with all applications depending on their AppleScript support
   /// - The success depends on the application's window structure and close button availability
   /// - Some applications may show confirmation dialogs before closing
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
   /// final windows = await toolkit.getAllWindows();
-  /// 
+  ///
   /// for (final window in windows) {
   ///   if (window.name.contains('Untitled')) {
   ///     try {
@@ -696,7 +731,7 @@ class MacosWindowToolkit {
   ///   }
   /// }
   /// ```
-  /// 
+  ///
   /// Throws [PlatformException] with the following error codes:
   /// - `CLOSE_WINDOW_ERROR`: General window closing error
   /// - `WINDOW_NOT_FOUND`: Window with the specified ID was not found
@@ -707,138 +742,150 @@ class MacosWindowToolkit {
   }
 
   /// Terminates an application by its process ID.
-  /// 
+  ///
   /// This method will terminate the entire application, not just a specific window.
   /// Unlike [closeWindow], this method works at the process level and does not
   /// require accessibility permissions, making it suitable for security applications.
-  /// 
+  ///
   /// [processId] is the process ID of the application to terminate, which can be
   /// obtained from window information returned by [getAllWindows] or other window
   /// retrieval methods.
-  /// 
+  ///
   /// [force] determines the termination method:
   /// - `false` (default): Graceful termination - allows the application to clean up
   /// - `true`: Force termination - immediately kills the process
-  /// 
+  ///
   /// Returns `true` if the application was successfully terminated, `false` otherwise.
-  /// 
+  ///
   /// This method tries multiple approaches:
   /// 1. NSRunningApplication API (preferred, more graceful)
   /// 2. Signal-based termination (SIGTERM/SIGKILL) as fallback
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
-  /// 
+  ///
   /// // Get windows and find the process to terminate
   /// final windows = await toolkit.getAllWindows();
   /// final targetWindow = windows.firstWhere((w) => w.ownerName.contains('Safari'));
-  /// 
+  ///
   /// // Try graceful termination first
   /// bool success = await toolkit.terminateApplicationByPID(targetWindow.processId);
-  /// 
+  ///
   /// if (!success) {
   ///   // If graceful termination failed, try force termination
   ///   success = await toolkit.terminateApplicationByPID(
-  ///     targetWindow.processId, 
+  ///     targetWindow.processId,
   ///     force: true
   ///   );
   /// }
-  /// 
+  ///
   /// print(success ? 'Application terminated' : 'Termination failed');
   /// ```
-  /// 
+  ///
   /// Throws [PlatformException] with appropriate error codes:
   /// - `TERMINATE_APP_ERROR`: Application termination failed
   /// - `PROCESS_NOT_FOUND`: Process with the specified ID does not exist
   /// - `TERMINATION_FAILED`: System call to terminate process failed
-  Future<bool> terminateApplicationByPID(int processId, {bool force = false}) async {
-    return await MacosWindowToolkitPlatform.instance.terminateApplicationByPID(processId, force: force);
+  Future<bool> terminateApplicationByPID(
+    int processId, {
+    bool force = false,
+  }) async {
+    return await MacosWindowToolkitPlatform.instance.terminateApplicationByPID(
+      processId,
+      force: force,
+    );
   }
 
   /// Terminates an application and all its child processes.
-  /// 
+  ///
   /// This method provides comprehensive process termination by first identifying
   /// all child processes spawned by the target application, then terminating them
   /// in the correct order (children first, then parent).
-  /// 
+  ///
   /// This is particularly useful for security applications where you need to ensure
   /// that all related processes are terminated, preventing potential security bypasses
   /// where child processes might continue running after the parent is terminated.
-  /// 
+  ///
   /// [processId] is the process ID of the parent application to terminate.
   /// [force] determines the termination method for all processes:
   /// - `false` (default): Graceful termination for all processes
   /// - `true`: Force termination for all processes
-  /// 
+  ///
   /// Returns `true` if all processes were successfully terminated, `false` if any failed.
-  /// 
+  ///
   /// The termination process:
   /// 1. Discovers all child processes using system process list
   /// 2. Terminates child processes first (bottom-up approach)
   /// 3. Finally terminates the parent process
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
-  /// 
+  ///
   /// // Get process ID from a window
   /// final windows = await toolkit.getAllWindows();
   /// final targetWindow = windows.firstWhere((w) => w.ownerName.contains('Electron'));
-  /// 
+  ///
   /// // Terminate the entire process tree
   /// final success = await toolkit.terminateApplicationTree(targetWindow.processId);
-  /// 
+  ///
   /// if (success) {
   ///   print('Application and all child processes terminated');
   /// } else {
   ///   print('Some processes failed to terminate');
   /// }
-  /// 
+  ///
   /// // For security applications, you might want to use force termination
   /// await toolkit.terminateApplicationTree(processId, force: true);
   /// ```
-  /// 
+  ///
   /// Throws [PlatformException] with appropriate error codes:
   /// - `TERMINATE_TREE_ERROR`: Process tree termination failed
   /// - `PROCESS_NOT_FOUND`: Parent process with the specified ID does not exist
   /// - `FAILED_TO_GET_PROCESS_LIST`: Unable to retrieve system process list
-  Future<bool> terminateApplicationTree(int processId, {bool force = false}) async {
-    return await MacosWindowToolkitPlatform.instance.terminateApplicationTree(processId, force: force);
+  Future<bool> terminateApplicationTree(
+    int processId, {
+    bool force = false,
+  }) async {
+    return await MacosWindowToolkitPlatform.instance.terminateApplicationTree(
+      processId,
+      force: force,
+    );
   }
 
   /// Gets all child process IDs for a given parent process ID.
-  /// 
+  ///
   /// This method searches through the system process list to identify all processes
   /// that were spawned by the specified parent process. This is useful for understanding
   /// process relationships and for implementing comprehensive process management.
-  /// 
+  ///
   /// [processId] is the process ID of the parent process to analyze.
-  /// 
+  ///
   /// Returns a list of process IDs that are direct children of the specified parent.
   /// Returns an empty list if no child processes are found or if the parent process
   /// doesn't exist.
-  /// 
+  ///
   /// This method is particularly useful in security applications for:
   /// - Understanding application architecture
   /// - Detecting process spawning patterns
   /// - Implementing selective process termination
   /// - Monitoring process relationships
-  /// 
+  ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
-  /// 
+  ///
   /// // Get process ID from a window
   /// final windows = await toolkit.getAllWindows();
   /// final parentWindow = windows.firstWhere((w) => w.ownerName.contains('Browser'));
-  /// 
+  ///
   /// // Get all child processes
   /// final childPIDs = await toolkit.getChildProcesses(parentWindow.processId);
-  /// 
+  ///
   /// print('Parent PID: ${parentWindow.processId}');
   /// print('Child PIDs: $childPIDs');
-  /// 
+  ///
   /// // Selectively terminate child processes if needed
   /// for (final childPID in childPIDs) {
   ///   final windows = await toolkit.getWindowsByProcessId(childPID);
@@ -847,14 +894,16 @@ class MacosWindowToolkit {
   ///   }
   /// }
   /// ```
-  /// 
+  ///
   /// Note: This method does not require accessibility permissions and works
   /// by querying the system process table directly.
-  /// 
+  ///
   /// Throws [PlatformException] with appropriate error codes:
   /// - `GET_CHILD_PROCESSES_ERROR`: Failed to retrieve child processes
   /// - `FAILED_TO_GET_PROCESS_LIST`: Unable to retrieve system process list
   Future<List<int>> getChildProcesses(int processId) async {
-    return await MacosWindowToolkitPlatform.instance.getChildProcesses(processId);
+    return await MacosWindowToolkitPlatform.instance.getChildProcesses(
+      processId,
+    );
   }
 }
