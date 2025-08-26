@@ -91,13 +91,11 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
       final isAlive = await _macosWindowToolkit.isWindowAlive(
         widget.window.windowId,
       );
-      print('Window ${widget.window.windowId} alive check result: $isAlive');
       setState(() {
         _isWindowAlive = isAlive;
         _isCheckingAlive = false;
       });
     } catch (e) {
-      print('Error checking window alive: $e');
       setState(() {
         _isWindowAlive = null;
         _isCheckingAlive = false;
@@ -491,9 +489,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: _isWindowAlive == true
-                    ? Colors.green.withOpacity(0.1)
+                    ? Colors.green.withValues(alpha: 0.1)
                     : _isWindowAlive == false
-                    ? Colors.red.withOpacity(0.1)
+                    ? Colors.red.withValues(alpha: 0.1)
                     : colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12),
                 border: _isWindowAlive != null
@@ -577,7 +575,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                                 horizontal: 12,
                                 vertical: 4,
                               ),
-                              backgroundColor: Colors.red.withOpacity(0.1),
+                              backgroundColor: Colors.red.withValues(
+                                alpha: 0.1,
+                              ),
                               foregroundColor: Colors.red,
                             ),
                           ),
@@ -623,10 +623,10 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: colorScheme.errorContainer.withOpacity(0.3),
+                color: colorScheme.errorContainer.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: colorScheme.error.withOpacity(0.5),
+                  color: colorScheme.error.withValues(alpha: 0.5),
                   width: 1,
                 ),
               ),
@@ -680,7 +680,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                         label: Text('Terminate App'),
                         style: ElevatedButton.styleFrom(
                           minimumSize: Size(120, 36),
-                          backgroundColor: Colors.orange.withOpacity(0.1),
+                          backgroundColor: Colors.orange.withValues(alpha: 0.1),
                           foregroundColor: Colors.orange,
                         ),
                       ),
@@ -700,7 +700,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                         label: Text('Force Terminate'),
                         style: ElevatedButton.styleFrom(
                           minimumSize: Size(130, 36),
-                          backgroundColor: Colors.red.withOpacity(0.1),
+                          backgroundColor: Colors.red.withValues(alpha: 0.1),
                           foregroundColor: Colors.red,
                         ),
                       ),
@@ -720,7 +720,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                         label: Text('Terminate Tree'),
                         style: ElevatedButton.styleFrom(
                           minimumSize: Size(130, 36),
-                          backgroundColor: Colors.deepOrange.withOpacity(0.1),
+                          backgroundColor: Colors.deepOrange.withValues(
+                            alpha: 0.1,
+                          ),
                           foregroundColor: Colors.deepOrange,
                         ),
                       ),
@@ -740,7 +742,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                         label: Text('Force Tree'),
                         style: ElevatedButton.styleFrom(
                           minimumSize: Size(110, 36),
-                          backgroundColor: Colors.red.withOpacity(0.2),
+                          backgroundColor: Colors.red.withValues(alpha: 0.2),
                           foregroundColor: Colors.red.shade800,
                         ),
                       ),
@@ -751,7 +753,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                     'Process ID: ${widget.window.processId}',
                     style: TextStyle(
                       fontSize: 11,
-                      color: colorScheme.onErrorContainer.withOpacity(0.7),
+                      color: colorScheme.onErrorContainer.withValues(
+                        alpha: 0.7,
+                      ),
                       fontFamily: 'monospace',
                     ),
                   ),
@@ -951,10 +955,10 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                           Container(
                             padding: EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.1),
+                              color: Colors.red.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: Colors.red.withOpacity(0.3),
+                                color: Colors.red.withValues(alpha: 0.3),
                               ),
                             ),
                             child: Row(
@@ -1085,7 +1089,7 @@ class CaptureResultDialog extends StatelessWidget {
         backgroundColor: Colors.black,
         appBar: AppBar(
           title: const Text('Captured Window'),
-          backgroundColor: colorScheme.surface.withOpacity(0.9),
+          backgroundColor: colorScheme.surface.withValues(alpha: 0.9),
           foregroundColor: colorScheme.onSurface,
           leading: IconButton(
             icon: const Icon(Icons.close),
@@ -1098,7 +1102,7 @@ class CaptureResultDialog extends StatelessWidget {
               decoration: BoxDecoration(
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black.withValues(alpha: 0.3),
                     blurRadius: 20,
                     spreadRadius: 5,
                   ),
@@ -1110,7 +1114,7 @@ class CaptureResultDialog extends StatelessWidget {
         ),
         bottomNavigationBar: Container(
           padding: const EdgeInsets.all(16),
-          color: colorScheme.surface.withOpacity(0.9),
+          color: colorScheme.surface.withValues(alpha: 0.9),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [

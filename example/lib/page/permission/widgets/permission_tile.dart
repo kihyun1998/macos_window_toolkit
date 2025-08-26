@@ -33,7 +33,9 @@ class PermissionTile extends StatelessWidget {
           color: isGranted ? colorScheme.primary : colorScheme.outline,
         ),
         borderRadius: BorderRadius.circular(12),
-        color: isGranted ? colorScheme.primaryContainer.withOpacity(0.3) : null,
+        color: isGranted
+            ? colorScheme.primaryContainer.withValues(alpha: 0.3)
+            : null,
       ),
       child: Row(
         children: [

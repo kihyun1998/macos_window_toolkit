@@ -251,7 +251,7 @@ See [CHANGELOG.md](CHANGELOG.md) for a detailed list of changes and version hist
 
 ## Support
 
-- 📚 [Documentation](docs/)
+- 📚 [Documentation](documentations/)
 - 🐛 [Issue Tracker](https://github.com/kihyun/macos_window_toolkit/issues)
 - 💬 [Discussions](https://github.com/kihyun/macos_window_toolkit/discussions)
 

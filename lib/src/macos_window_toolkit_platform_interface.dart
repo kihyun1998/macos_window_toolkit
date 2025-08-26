@@ -36,7 +36,7 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   /// - `windowId`: Unique identifier for the window (int)
   /// - `name`: Window title/name (String)
   /// - `ownerName`: Name of the application that owns the window (String)
-  /// - `bounds`: Window position and size as [x, y, width, height] (List<double>)
+  /// - `bounds`: Window position and size as [x, y, width, height] (List\<double\>)
   /// - `layer`: Window layer level (int)
   /// - `isOnScreen`: Whether the window is currently visible on screen (bool)
   /// - `processId`: Process ID of the application that owns the window (int)
