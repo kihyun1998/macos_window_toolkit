@@ -3,8 +3,8 @@ library;
 import 'macos_window_toolkit_platform_interface.dart';
 import 'models/capturable_window_info.dart';
 import 'models/capture_result.dart';
-import 'models/macos_window_info.dart';
 import 'models/macos_version_info.dart';
+import 'models/macos_window_info.dart';
 import 'models/permission_status.dart';
 import 'permission_watcher.dart';
 
@@ -12,8 +12,8 @@ export 'macos_window_toolkit_method_channel.dart';
 export 'macos_window_toolkit_platform_interface.dart';
 export 'models/capturable_window_info.dart';
 export 'models/capture_result.dart';
-export 'models/macos_window_info.dart';
 export 'models/macos_version_info.dart';
+export 'models/macos_window_info.dart';
 
 /// Main class for macOS Window Toolkit functionality
 class MacosWindowToolkit {
@@ -54,8 +54,8 @@ class MacosWindowToolkit {
   }) async {
     final List<Map<String, dynamic>> windowMaps =
         await MacosWindowToolkitPlatform.instance.getAllWindows(
-          excludeEmptyNames: excludeEmptyNames,
-        );
+      excludeEmptyNames: excludeEmptyNames,
+    );
     return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
   }
 
@@ -277,8 +277,8 @@ class MacosWindowToolkit {
   Future<List<MacosWindowInfo>> getWindowsByOwnerName(String ownerName) async {
     final List<Map<String, dynamic>> windowMaps =
         await MacosWindowToolkitPlatform.instance.getWindowsByOwnerName(
-          ownerName,
-        );
+      ownerName,
+    );
     return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
   }
 
@@ -321,8 +321,8 @@ class MacosWindowToolkit {
   Future<List<MacosWindowInfo>> getWindowsByProcessId(int processId) async {
     final List<Map<String, dynamic>> windowMaps =
         await MacosWindowToolkitPlatform.instance.getWindowsByProcessId(
-          processId,
-        );
+      processId,
+    );
     return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
   }
 
@@ -348,8 +348,8 @@ class MacosWindowToolkit {
   /// }
   /// ```
   Future<MacosVersionInfo> getMacOSVersionInfo() async {
-    final versionMap = await MacosWindowToolkitPlatform.instance
-        .getMacOSVersionInfo();
+    final versionMap =
+        await MacosWindowToolkitPlatform.instance.getMacOSVersionInfo();
     return MacosVersionInfo.fromMap(versionMap);
   }
 

@@ -1,3 +1,14 @@
+## 1.1.3
+
+### Added
+- **DOCS**: Comprehensive sandbox configuration documentation
+- **DOCS**: Detailed explanation of API requirements for sandbox disable (CGWindowListCopyWindowInfo, Accessibility API, Process Control, etc.)
+- **DOCS**: App Store distribution guidelines and security considerations
+
+### Changed
+- **DOCS**: Enhanced README with sandbox requirements and configuration steps
+- **DOCS**: Added new sandbox_configuration.md guide to documentations/
+
 ## 1.1.2
 
 - **DOCS**: Update package description for pub.dev search optimization.

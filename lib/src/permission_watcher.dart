@@ -126,8 +126,7 @@ class PermissionWatcher {
       };
 
       // Check for changes
-      final hasChanges =
-          _previousState == null ||
+      final hasChanges = _previousState == null ||
           _previousState!['screenRecording'] != screenRecording ||
           _previousState!['accessibility'] != accessibility;
 

@@ -51,7 +51,7 @@ Add this package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  macos_window_toolkit: ^1.1.2
+  macos_window_toolkit: ^1.1.3
 ```
 
 Then run:
@@ -264,6 +264,64 @@ The example app includes:
 ## Privacy and Permissions
 
 This plugin uses public macOS APIs that typically don't require explicit user permissions. However, some system configurations might require accessibility permissions for full functionality.
+
+### App Sandbox Requirements
+
+**Important**: Applications using this plugin must **disable App Sandbox** to function properly. This is because the plugin requires access to system-wide resources that are restricted in sandboxed environments.
+
+#### Why Sandbox Must Be Disabled
+
+The plugin uses the following APIs that require sandbox to be disabled:
+
+1. **Window Information Access**
+   - `CGWindowListCopyWindowInfo()` - Accesses window data from other applications
+   - Sandboxed apps cannot read window information from other processes
+
+2. **Accessibility API Operations**
+   - `AXUIElementCreateApplication()` - Creates accessibility elements for other apps
+   - `AXUIElementCopyAttributeValue()` - Reads window properties from other apps
+   - `AXUIElementPerformAction()` - Performs actions (like closing windows) on other apps
+
+3. **Process Control Operations**
+   - `kill()` system calls - Terminates other processes
+   - `sysctl()` - Queries system process lists
+   - `NSRunningApplication` - Controls other applications
+
+4. **Screen Capture (Legacy Support)**
+   - `CGWindowListCreateImage()` - Captures screenshots of other app windows
+   - Requires access to other applications' visual content
+
+5. **Apple Events Communication**
+   - Requires `com.apple.security.automation.apple-events` entitlement
+   - Enables inter-app communication for window management
+
+#### How to Disable Sandbox
+
+To disable sandbox in your macOS app:
+
+1. Open `macos/Runner/Release.entitlements` and `macos/Runner/DebugProfile.entitlements`
+2. Set the sandbox key to `false`:
+
+```xml
+<key>com.apple.security.app-sandbox</key>
+<false/>
+```
+
+3. Add Apple Events entitlement:
+
+```xml
+<key>com.apple.security.automation.apple-events</key>
+<true/>
+```
+
+#### App Store Distribution
+
+**Note**: Apps distributed through the Mac App Store typically require sandboxing. If you need App Store distribution, you may need to:
+- Request special entitlements from Apple for system-level access
+- Consider alternative approaches that work within sandbox restrictions
+- Distribute outside the App Store
+
+### Privacy Manifest
 
 The plugin includes a privacy manifest (`PrivacyInfo.xcprivacy`) that declares:
 - No user data collection
