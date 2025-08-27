@@ -1,6 +1,6 @@
 # Examples
 
-Practical examples and code snippets for common use cases with macOS Window Toolkit.
+Practical examples and code snippets for common use cases with macOS Window Toolkit, including the new permission monitoring features.
 
 ## Basic Examples
 
@@ -604,6 +604,501 @@ class _StatCard extends StatelessWidget {
             SizedBox(height: 8),
             Text(value, style: Theme.of(context).textTheme.headlineSmall),
             Text(title, style: Theme.of(context).textTheme.bodySmall),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+## Permission Monitoring Examples
+
+### Real-time Permission Monitoring
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:macos_window_toolkit/macos_window_toolkit.dart';
+
+class PermissionMonitoringExample extends StatefulWidget {
+  @override
+  State<PermissionMonitoringExample> createState() => _PermissionMonitoringExampleState();
+}
+
+class _PermissionMonitoringExampleState extends State<PermissionMonitoringExample> {
+  final _toolkit = MacosWindowToolkit();
+  PermissionStatus? _lastStatus;
+  List<String> _eventLog = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _startMonitoring();
+  }
+
+  @override
+  void dispose() {
+    _toolkit.stopPermissionWatching();
+    super.dispose();
+  }
+
+  void _startMonitoring() {
+    _toolkit.startPermissionWatching(
+      interval: const Duration(seconds: 2),
+      emitOnlyChanges: true,
+    );
+
+    _toolkit.permissionStream.listen((status) {
+      setState(() {
+        _lastStatus = status;
+        
+        if (status.hasChanges) {
+          _eventLog.insert(0, 
+            '[${DateTime.now().toString().substring(11, 19)}] '
+            'CHANGE: Screen=${status.screenRecording}, '
+            'Accessibility=${status.accessibility}'
+          );
+        }
+        
+        // Keep only last 10 events
+        if (_eventLog.length > 10) {
+          _eventLog = _eventLog.take(10).toList();
+        }
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Permission Monitoring')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Status Card
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Current Status', style: Theme.of(context).textTheme.headlineSmall),
+                    SizedBox(height: 16),
+                    _buildPermissionRow('Screen Recording', _lastStatus?.screenRecording),
+                    _buildPermissionRow('Accessibility', _lastStatus?.accessibility),
+                    SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _lastStatus?.allPermissionsGranted == true 
+                              ? Colors.green.withOpacity(0.1)
+                              : Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: _lastStatus?.allPermissionsGranted == true 
+                                ? Colors.green 
+                                : Colors.red
+                            ),
+                          ),
+                          child: Text(
+                            _lastStatus?.allPermissionsGranted == true 
+                              ? 'All Granted' 
+                              : 'Missing Permissions',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: _lastStatus?.allPermissionsGranted == true 
+                                ? Colors.green.shade700 
+                                : Colors.red.shade700,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 16),
+                        Text(
+                          'Monitoring: ${_toolkit.isPermissionWatching ? "ON" : "OFF"}',
+                          style: TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            SizedBox(height: 16),
+            
+            // Controls
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: _toolkit.isPermissionWatching 
+                    ? null 
+                    : () => _startMonitoring(),
+                  child: Text('Start Monitoring'),
+                ),
+                SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: _toolkit.isPermissionWatching 
+                    ? () {
+                        _toolkit.stopPermissionWatching();
+                        setState(() {});
+                      }
+                    : null,
+                  child: Text('Stop Monitoring'),
+                ),
+              ],
+            ),
+            
+            SizedBox(height: 16),
+            
+            // Event Log
+            Text('Recent Changes', style: Theme.of(context).textTheme.headlineSmall),
+            SizedBox(height: 8),
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: _eventLog.isEmpty
+                  ? Center(child: Text('No changes detected yet'))
+                  : ListView.builder(
+                      padding: EdgeInsets.all(12),
+                      itemCount: _eventLog.length,
+                      itemBuilder: (context, index) {
+                        return Container(
+                          padding: EdgeInsets.symmetric(vertical: 4),
+                          child: Text(
+                            _eventLog[index],
+                            style: TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 13,
+                              color: Colors.orange.shade700,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPermissionRow(String name, bool? status) {
+    Color color;
+    String text;
+    IconData icon;
+    
+    if (status == null) {
+      color = Colors.grey;
+      text = 'Unknown';
+      icon = Icons.help;
+    } else if (status) {
+      color = Colors.green;
+      text = 'Granted';
+      icon = Icons.check_circle;
+    } else {
+      color = Colors.red;
+      text = 'Denied';
+      icon = Icons.error;
+    }
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          SizedBox(width: 12),
+          Text('$name:', style: TextStyle(fontWeight: FontWeight.w500)),
+          SizedBox(width: 8),
+          Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}
+```
+
+### Permission-Aware App Structure with Riverpod
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:macos_window_toolkit/macos_window_toolkit.dart';
+
+// Providers
+final permissionProvider = StreamProvider<PermissionStatus>((ref) {
+  final toolkit = MacosWindowToolkit();
+  toolkit.startPermissionWatching();
+  return toolkit.permissionStream;
+});
+
+final windowsProvider = FutureProvider<List<MacosWindowInfo>>((ref) async {
+  final toolkit = MacosWindowToolkit();
+  return await toolkit.getAllWindows();
+});
+
+// Main App Structure
+class PermissionAwareApp extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return MaterialApp(
+      home: PermissionGate(),
+    );
+  }
+}
+
+class PermissionGate extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final permissionAsync = ref.watch(permissionProvider);
+    
+    return permissionAsync.when(
+      data: (status) {
+        if (status.allPermissionsGranted) {
+          return MainApp();
+        } else {
+          return PermissionSetupScreen(status: status);
+        }
+      },
+      loading: () => LoadingScreen(),
+      error: (error, _) => ErrorScreen(error: error),
+    );
+  }
+}
+
+class PermissionSetupScreen extends ConsumerWidget {
+  final PermissionStatus status;
+  
+  const PermissionSetupScreen({required this.status, super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Permissions Required')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.security, size: 80, color: Colors.orange),
+            SizedBox(height: 24),
+            Text(
+              'This app requires the following permissions:',
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 32),
+            
+            // Show missing permissions
+            ...status.deniedPermissions.map((permission) => 
+              PermissionTile(
+                name: permission,
+                isGranted: false,
+                onRequest: () => _requestPermission(permission),
+              )
+            ).toList(),
+            
+            SizedBox(height: 32),
+            
+            Text(
+              'Permissions will be detected automatically once granted.',
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _requestPermission(String permission) async {
+    final toolkit = MacosWindowToolkit();
+    
+    switch (permission) {
+      case 'Screen Recording':
+        await toolkit.requestScreenRecordingPermission();
+        break;
+      case 'Accessibility':
+        await toolkit.requestAccessibilityPermission();
+        break;
+    }
+  }
+}
+
+class PermissionTile extends StatelessWidget {
+  final String name;
+  final bool isGranted;
+  final VoidCallback onRequest;
+  
+  const PermissionTile({
+    required this.name,
+    required this.isGranted,
+    required this.onRequest,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        leading: Icon(
+          isGranted ? Icons.check_circle : Icons.warning,
+          color: isGranted ? Colors.green : Colors.orange,
+        ),
+        title: Text(name),
+        subtitle: Text(isGranted ? 'Granted' : 'Required'),
+        trailing: isGranted 
+          ? null 
+          : ElevatedButton(
+              onPressed: onRequest,
+              child: Text('Request'),
+            ),
+      ),
+    );
+  }
+}
+
+class MainApp extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final windowsAsync = ref.watch(windowsProvider);
+    
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Window Manager'),
+        actions: [
+          PermissionStatusIndicator(),
+        ],
+      ),
+      body: windowsAsync.when(
+        data: (windows) => WindowListView(windows: windows),
+        loading: () => Center(child: CircularProgressIndicator()),
+        error: (error, _) => Center(child: Text('Error: $error')),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => ref.refresh(windowsProvider),
+        child: Icon(Icons.refresh),
+      ),
+    );
+  }
+}
+
+class PermissionStatusIndicator extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final permissionAsync = ref.watch(permissionProvider);
+    
+    return permissionAsync.when(
+      data: (status) => Container(
+        margin: EdgeInsets.only(right: 16),
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: status.allPermissionsGranted 
+            ? Colors.green.withOpacity(0.1)
+            : Colors.orange.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: status.allPermissionsGranted ? Colors.green : Colors.orange,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              status.allPermissionsGranted ? Icons.check : Icons.warning,
+              size: 16,
+              color: status.allPermissionsGranted ? Colors.green : Colors.orange,
+            ),
+            SizedBox(width: 4),
+            Text(
+              status.allPermissionsGranted ? 'OK' : '${status.deniedPermissions.length}',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: status.allPermissionsGranted ? Colors.green : Colors.orange,
+              ),
+            ),
+          ],
+        ),
+      ),
+      loading: () => SizedBox.shrink(),
+      error: (_, __) => Icon(Icons.error, color: Colors.red),
+    );
+  }
+}
+
+class WindowListView extends StatelessWidget {
+  final List<MacosWindowInfo> windows;
+  
+  const WindowListView({required this.windows, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount: windows.length,
+      itemBuilder: (context, index) {
+        final window = windows[index];
+        return Card(
+          margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: ListTile(
+            leading: Icon(
+              window.isOnScreen ? Icons.visibility : Icons.visibility_off,
+              color: window.isOnScreen ? Colors.green : Colors.grey,
+            ),
+            title: Text(window.name.isEmpty ? '(No Title)' : window.name),
+            subtitle: Text('${window.ownerName} • PID: ${window.processId}'),
+            trailing: Text('${window.width.toInt()} × ${window.height.toInt()}'),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class LoadingScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Checking permissions...'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ErrorScreen extends StatelessWidget {
+  final Object error;
+  
+  const ErrorScreen({required this.error, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error, size: 64, color: Colors.red),
+            SizedBox(height: 16),
+            Text('Error: $error'),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Retry'),
+            ),
           ],
         ),
       ),

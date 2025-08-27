@@ -15,6 +15,16 @@ A Flutter plugin for macOS that provides comprehensive window management functio
   - Window layer level
   - Visibility status
   - Process ID
+- 👀 **Real-time Permission Monitoring**: Monitor macOS permissions with live updates
+  - Screen Recording permission tracking
+  - Accessibility permission tracking
+  - Configurable monitoring intervals
+  - Type-safe permission status updates
+  - Perfect integration with state management (Riverpod, Bloc, etc.)
+- 🔐 **Permission Management**: Check and request macOS permissions
+  - Screen recording permission
+  - Accessibility permission
+  - Open system preference panes
 - 🚀 **High Performance**: Efficient native implementation using Core Graphics APIs
 - 🛡️ **Privacy Compliant**: Includes proper privacy manifest for App Store distribution
 - 🔧 **Easy Integration**: Simple API with comprehensive error handling
@@ -41,7 +51,7 @@ Add this package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  macos_window_toolkit: ^1.0.0
+  macos_window_toolkit: ^1.1.0
 ```
 
 Then run:
@@ -52,12 +62,16 @@ flutter pub get
 
 ## Quick Start
 
+### Basic Window Enumeration
+
 ```dart
 import 'package:macos_window_toolkit/macos_window_toolkit.dart';
 
 void main() async {
+  final toolkit = MacosWindowToolkit();
+  
   // Get all open windows
-  final windows = await MacosWindowToolkit.getAllWindows();
+  final windows = await toolkit.getAllWindows();
   
   for (final window in windows) {
     print('Window: ${window.name}');
@@ -68,7 +82,74 @@ void main() async {
 }
 ```
 
+### Real-time Permission Monitoring
+
+```dart
+import 'package:macos_window_toolkit/macos_window_toolkit.dart';
+
+void main() async {
+  final toolkit = MacosWindowToolkit();
+  
+  // Start monitoring permissions every 2 seconds
+  toolkit.startPermissionWatching();
+  
+  // Listen to permission changes
+  toolkit.permissionStream.listen((status) {
+    if (status.hasChanges) {
+      print('Permission changed!');
+      print('Screen Recording: ${status.screenRecording}');
+      print('Accessibility: ${status.accessibility}');
+      
+      if (status.allPermissionsGranted) {
+        print('All permissions granted! 🎉');
+      } else {
+        print('Missing: ${status.deniedPermissions.join(', ')}');
+      }
+    }
+  });
+}
+```
+
 ## Usage
+
+### Permission Monitoring with Riverpod
+
+```dart
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:macos_window_toolkit/macos_window_toolkit.dart';
+
+// Create a StreamProvider for permission monitoring
+final permissionProvider = StreamProvider<PermissionStatus>((ref) {
+  final toolkit = MacosWindowToolkit();
+  toolkit.startPermissionWatching(
+    interval: const Duration(seconds: 2),
+    emitOnlyChanges: true, // Only emit when permissions change
+  );
+  return toolkit.permissionStream;
+});
+
+// Use in your widget
+class MyApp extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final permissionAsync = ref.watch(permissionProvider);
+    
+    return permissionAsync.when(
+      data: (status) {
+        if (status.allPermissionsGranted) {
+          return MainApp(); // Show main app
+        } else {
+          return PermissionSetupScreen(
+            missingPermissions: status.deniedPermissions,
+          );
+        }
+      },
+      loading: () => const LoadingScreen(),
+      error: (error, _) => ErrorScreen(error: error),
+    );
+  }
+}
+```
 
 ### Basic Window Enumeration
 
@@ -76,9 +157,11 @@ void main() async {
 import 'package:macos_window_toolkit/macos_window_toolkit.dart';
 
 class WindowManager {
-  static Future<List<WindowInfo>> getVisibleWindows() async {
+  final _toolkit = MacosWindowToolkit();
+  
+  Future<List<MacosWindowInfo>> getVisibleWindows() async {
     try {
-      final windows = await MacosWindowToolkit.getAllWindows();
+      final windows = await _toolkit.getAllWindows();
       return windows.where((window) => window.isOnScreen).toList();
     } catch (e) {
       print('Error getting windows: $e');
@@ -86,6 +169,24 @@ class WindowManager {
     }
   }
 }
+```
+
+### Permission Management
+
+```dart
+final toolkit = MacosWindowToolkit();
+
+// Check current permissions
+final hasScreenRecording = await toolkit.hasScreenRecordingPermission();
+final hasAccessibility = await toolkit.hasAccessibilityPermission();
+
+// Request permissions
+await toolkit.requestScreenRecordingPermission();
+await toolkit.requestAccessibilityPermission();
+
+// Open system settings
+await toolkit.openScreenRecordingSettings();
+await toolkit.openAccessibilitySettings();
 ```
 
 ### Window Information Structure

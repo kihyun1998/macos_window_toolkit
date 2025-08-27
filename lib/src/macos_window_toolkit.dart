@@ -1055,8 +1055,8 @@ class MacosWindowToolkit {
   /// Consumer(builder: (context, ref, child) {
   ///   final permissionAsync = ref.watch(permissionProvider);
   ///   return permissionAsync.when(
-  ///     data: (status) => status.allPermissionsGranted 
-  ///       ? MainWidget() 
+  ///     data: (status) => status.allPermissionsGranted
+  ///       ? MainWidget()
   ///       : PermissionSetupWidget(),
   ///     loading: () => CircularProgressIndicator(),
   ///     error: (error, _) => Text('Error: $error'),

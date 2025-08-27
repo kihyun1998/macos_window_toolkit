@@ -1,4 +1,16 @@
 
+## 1.1.0
+
+- **FEAT**: Add permission monitoring that automatically checks screen recording and accessibility permissions at configurable intervals.
+- **FEAT**: Add PermissionStatus model that provides structured permission data with timestamp and change detection.
+- **FEAT**: Add stream-based permission updates that emit when permissions change or at regular intervals.
+- **FEAT**: Add manual start/stop controls for permission monitoring.
+- **FEAT**: Add support for two monitoring modes: emit only on changes (efficient) or emit regularly (heartbeat).
+- **FEAT**: Add timer management that prevents multiple timers from running simultaneously.
+- **IMPROVEMENT**: Update example application to demonstrate permission monitoring features.
+- **DOCS**: Update documentation with permission monitoring examples and integration patterns.
+- **BREAKING**: Export PermissionStatus and PermissionWatcher classes in main library.
+
 ## 1.0.0
 
 - **FEAT**: Initial release of macOS Window Toolkit with window enumeration functionality.

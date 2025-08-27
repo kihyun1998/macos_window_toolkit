@@ -31,21 +31,23 @@ class _TestPermissionMonitoringState extends State<TestPermissionMonitoring> {
     _toolkit.permissionStream.listen((status) {
       setState(() {
         _lastPermissionStatus = status;
-        
+
         final timestamp = status.timestamp.toString().substring(11, 19);
-        
+
         if (status.hasChanges) {
-          _eventLog.insert(0, 
+          _eventLog.insert(
+            0,
             '[$timestamp] CHANGE DETECTED - Screen: ${status.screenRecording}, '
-            'Accessibility: ${status.accessibility}'
+            'Accessibility: ${status.accessibility}',
           );
         } else {
-          _eventLog.insert(0, 
+          _eventLog.insert(
+            0,
             '[$timestamp] Check - Screen: ${status.screenRecording}, '
-            'Accessibility: ${status.accessibility}'
+            'Accessibility: ${status.accessibility}',
           );
         }
-        
+
         // Keep only last 20 events
         if (_eventLog.length > 20) {
           _eventLog = _eventLog.take(20).toList();
@@ -57,7 +59,7 @@ class _TestPermissionMonitoringState extends State<TestPermissionMonitoring> {
   Widget _buildPermissionStatus(String name, bool? status) {
     Color color;
     String text;
-    
+
     if (status == null) {
       color = Colors.grey;
       text = 'Unknown';
@@ -68,11 +70,11 @@ class _TestPermissionMonitoringState extends State<TestPermissionMonitoring> {
       color = Colors.red;
       text = 'Denied';
     }
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color),
       ),
@@ -87,10 +89,7 @@ class _TestPermissionMonitoringState extends State<TestPermissionMonitoring> {
           const SizedBox(width: 8),
           Text(
             '$name: $text',
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(color: color, fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -133,9 +132,10 @@ class _TestPermissionMonitoringState extends State<TestPermissionMonitoring> {
                               emitOnlyChanges: true, // 기본값: 변경시만 emit
                             );
                             setState(() {
-                              _eventLog.insert(0, 
+                              _eventLog.insert(
+                                0,
                                 '[${DateTime.now().toString().substring(11, 19)}] '
-                                'Monitoring STARTED (2s interval, changes only)'
+                                'Monitoring STARTED (2s interval, changes only)',
                               );
                             });
                           },
@@ -153,9 +153,10 @@ class _TestPermissionMonitoringState extends State<TestPermissionMonitoring> {
                               emitOnlyChanges: false, // 모든 체크마다 emit
                             );
                             setState(() {
-                              _eventLog.insert(0, 
+                              _eventLog.insert(
+                                0,
                                 '[${DateTime.now().toString().substring(11, 19)}] '
-                                'Monitoring STARTED (2s interval, with heartbeat)'
+                                'Monitoring STARTED (2s interval, with heartbeat)',
                               );
                             });
                           },
@@ -170,9 +171,10 @@ class _TestPermissionMonitoringState extends State<TestPermissionMonitoring> {
                           onPressed: () {
                             _toolkit.stopPermissionWatching();
                             setState(() {
-                              _eventLog.insert(0, 
+                              _eventLog.insert(
+                                0,
                                 '[${DateTime.now().toString().substring(11, 19)}] '
-                                'Monitoring STOPPED'
+                                'Monitoring STOPPED',
                               );
                             });
                           },
@@ -185,21 +187,22 @@ class _TestPermissionMonitoringState extends State<TestPermissionMonitoring> {
                         const SizedBox(width: 20),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8
+                            horizontal: 12,
+                            vertical: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: _toolkit.isPermissionWatching 
-                              ? Colors.green.withOpacity(0.1) 
-                              : Colors.grey.withOpacity(0.1),
+                            color: _toolkit.isPermissionWatching
+                                ? Colors.green.withValues(alpha: 0.1)
+                                : Colors.grey.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             'Status: ${_toolkit.isPermissionWatching ? "ACTIVE" : "INACTIVE"}',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              color: _toolkit.isPermissionWatching 
-                                ? Colors.green.shade700 
-                                : Colors.grey.shade700,
+                              color: _toolkit.isPermissionWatching
+                                  ? Colors.green.shade700
+                                  : Colors.grey.shade700,
                             ),
                           ),
                         ),
@@ -209,9 +212,9 @@ class _TestPermissionMonitoringState extends State<TestPermissionMonitoring> {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Current Permission Status
             Card(
               child: Padding(
@@ -230,13 +233,13 @@ class _TestPermissionMonitoringState extends State<TestPermissionMonitoring> {
                     Row(
                       children: [
                         _buildPermissionStatus(
-                          'Screen Recording', 
-                          _lastPermissionStatus?.screenRecording
+                          'Screen Recording',
+                          _lastPermissionStatus?.screenRecording,
                         ),
                         const SizedBox(width: 16),
                         _buildPermissionStatus(
-                          'Accessibility', 
-                          _lastPermissionStatus?.accessibility
+                          'Accessibility',
+                          _lastPermissionStatus?.accessibility,
                         ),
                       ],
                     ),
@@ -250,23 +253,28 @@ class _TestPermissionMonitoringState extends State<TestPermissionMonitoring> {
                         const SizedBox(width: 16),
                         if (_lastPermissionStatus != null) ...[
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: _lastPermissionStatus!.allPermissionsGranted 
-                                ? Colors.green.withOpacity(0.1)
-                                : Colors.red.withOpacity(0.1),
+                              color:
+                                  _lastPermissionStatus!.allPermissionsGranted
+                                  ? Colors.green.withValues(alpha: 0.1)
+                                  : Colors.red.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              _lastPermissionStatus!.allPermissionsGranted 
-                                ? 'All Granted' 
-                                : 'Missing: ${_lastPermissionStatus!.deniedPermissions.join(', ')}',
+                              _lastPermissionStatus!.allPermissionsGranted
+                                  ? 'All Granted'
+                                  : 'Missing: ${_lastPermissionStatus!.deniedPermissions.join(', ')}',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
-                                color: _lastPermissionStatus!.allPermissionsGranted 
-                                  ? Colors.green.shade700
-                                  : Colors.red.shade700,
+                                color:
+                                    _lastPermissionStatus!.allPermissionsGranted
+                                    ? Colors.green.shade700
+                                    : Colors.red.shade700,
                               ),
                             ),
                           ),
@@ -277,64 +285,64 @@ class _TestPermissionMonitoringState extends State<TestPermissionMonitoring> {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Event Log
             const Text(
               'Event Log',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Expanded(
               child: Card(
                 child: _eventLog.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'No events yet. Start monitoring to see permission checks.',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontStyle: FontStyle.italic,
+                    ? const Center(
+                        child: Text(
+                          'No events yet. Start monitoring to see permission checks.',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(12),
-                      itemCount: _eventLog.length,
-                      itemBuilder: (context, index) {
-                        final event = _eventLog[index];
-                        final isChangeEvent = event.contains('CHANGE DETECTED');
-                        
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 4),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4
-                          ),
-                          decoration: BoxDecoration(
-                            color: isChangeEvent 
-                              ? Colors.orange.withOpacity(0.1)
-                              : Colors.transparent,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            event,
-                            style: TextStyle(
-                              fontFamily: 'monospace',
-                              fontSize: 12,
-                              color: isChangeEvent 
-                                ? Colors.orange.shade700
-                                : Colors.grey.shade700,
-                              fontWeight: isChangeEvent 
-                                ? FontWeight.w600 
-                                : FontWeight.normal,
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: _eventLog.length,
+                        itemBuilder: (context, index) {
+                          final event = _eventLog[index];
+                          final isChangeEvent = event.contains(
+                            'CHANGE DETECTED',
+                          );
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
                             ),
-                          ),
-                        );
-                      },
-                    ),
+                            decoration: BoxDecoration(
+                              color: isChangeEvent
+                                  ? Colors.orange.withValues(alpha: 0.1)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              event,
+                              style: TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 12,
+                                color: isChangeEvent
+                                    ? Colors.orange.shade700
+                                    : Colors.grey.shade700,
+                                fontWeight: isChangeEvent
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
               ),
             ),
           ],
