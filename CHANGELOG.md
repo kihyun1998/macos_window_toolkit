@@ -1,3 +1,6 @@
+## 1.1.1
+
+- **DOCS**: Added new topics to pubspec.yaml to help users find the package more easily.
 
 ## 1.1.0
 
