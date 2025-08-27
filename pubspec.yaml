@@ -8,7 +8,7 @@ documentation: https://github.com/kihyun/macos_window_toolkit#readme
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
-  flutter: ">=1.17.0"
+  flutter: ">=3.10.0"
 
 topics:
   - macos
