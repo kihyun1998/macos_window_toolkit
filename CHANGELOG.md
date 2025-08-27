@@ -1,3 +1,7 @@
+## 1.1.2
+
+- **DOCS**: Update package description for pub.dev search optimization.
+
 ## 1.1.1
 
 - **DOCS**: Added new topics to pubspec.yaml to help users find the package more easily.
