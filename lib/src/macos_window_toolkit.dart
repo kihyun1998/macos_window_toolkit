@@ -5,6 +5,8 @@ import 'models/capturable_window_info.dart';
 import 'models/capture_result.dart';
 import 'models/macos_window_info.dart';
 import 'models/macos_version_info.dart';
+import 'models/permission_status.dart';
+import 'permission_watcher.dart';
 
 export 'macos_window_toolkit_method_channel.dart';
 export 'macos_window_toolkit_platform_interface.dart';
@@ -905,5 +907,204 @@ class MacosWindowToolkit {
     return await MacosWindowToolkitPlatform.instance.getChildProcesses(
       processId,
     );
+  }
+
+  // MARK: - Permission Monitoring
+
+  /// Starts monitoring permissions at the specified interval.
+  ///
+  /// This method enables real-time monitoring of macOS permissions (screen recording
+  /// and accessibility) by checking their status periodically and emitting changes
+  /// through a stream.
+  ///
+  /// If monitoring is already active, the existing timer will be cancelled and a
+  /// new one will be started with the new interval. This prevents multiple timers
+  /// from running simultaneously.
+  ///
+  /// [interval] The frequency to check permissions. Defaults to 2 seconds.
+  /// Shorter intervals provide more responsive detection but use more CPU.
+  /// Longer intervals are more efficient but may delay permission change detection.
+  ///
+  /// [emitOnlyChanges] If true (default), only emits when permissions change.
+  /// If false, emits on every check regardless of changes. Set to false if you
+  /// need regular heartbeat signals or want to show "last checked" timestamps.
+  ///
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  ///
+  /// // Start monitoring with default 2-second interval
+  /// toolkit.startPermissionWatching();
+  ///
+  /// // Start monitoring with custom interval
+  /// toolkit.startPermissionWatching(interval: Duration(seconds: 5));
+  ///
+  /// // Start monitoring with heartbeat (emit even without changes)
+  /// toolkit.startPermissionWatching(emitOnlyChanges: false);
+  ///
+  /// // Listen to permission changes
+  /// toolkit.permissionStream.listen((status) {
+  ///   if (status.hasChanges) {
+  ///     print('Permission status changed!');
+  ///     if (!status.screenRecording) {
+  ///       // Handle screen recording permission loss
+  ///       showDialog(context: context, builder: (_) => PermissionLostDialog());
+  ///     }
+  ///   }
+  /// });
+  /// ```
+  ///
+  /// **Integration with State Management:**
+  /// This works excellently with Riverpod StreamProvider:
+  /// ```dart
+  /// final permissionStreamProvider = StreamProvider<PermissionStatus>((ref) {
+  ///   final toolkit = MacosWindowToolkit();
+  ///   toolkit.startPermissionWatching();
+  ///   return toolkit.permissionStream;
+  /// });
+  /// ```
+  void startPermissionWatching({
+    Duration interval = const Duration(seconds: 2),
+    bool emitOnlyChanges = true,
+  }) {
+    PermissionWatcher.instance.startWatching(
+      interval: interval,
+      emitOnlyChanges: emitOnlyChanges,
+    );
+  }
+
+  /// Stops permission monitoring.
+  ///
+  /// Cancels the active timer and stops checking permission status. The stream
+  /// remains available for reconnection, so you can call [startPermissionWatching]
+  /// again to resume monitoring.
+  ///
+  /// This is useful when you want to temporarily pause monitoring to save
+  /// resources or when the user explicitly disables permission monitoring.
+  ///
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  ///
+  /// // Start monitoring
+  /// toolkit.startPermissionWatching();
+  ///
+  /// // Later, stop monitoring
+  /// toolkit.stopPermissionWatching();
+  ///
+  /// // Check if monitoring is active
+  /// if (toolkit.isPermissionWatching) {
+  ///   print('Still monitoring permissions');
+  /// } else {
+  ///   print('Permission monitoring is stopped');
+  /// }
+  /// ```
+  void stopPermissionWatching() {
+    PermissionWatcher.instance.stopWatching();
+  }
+
+  /// Stream of permission status changes.
+  ///
+  /// Emits [PermissionStatus] objects containing the current permission status
+  /// whenever permissions are checked (based on the monitoring interval) or when
+  /// changes are detected.
+  ///
+  /// **Note:** You must call [startPermissionWatching] to begin emitting values.
+  /// The stream will not emit anything until monitoring is started.
+  ///
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  /// toolkit.startPermissionWatching();
+  ///
+  /// // Basic usage
+  /// toolkit.permissionStream.listen((status) {
+  ///   print('Screen recording: ${status.screenRecording}');
+  ///   print('Accessibility: ${status.accessibility}');
+  ///   print('Has changes: ${status.hasChanges}');
+  ///   print('All granted: ${status.allPermissionsGranted}');
+  /// });
+  ///
+  /// // React to permission changes only
+  /// toolkit.permissionStream
+  ///     .where((status) => status.hasChanges)
+  ///     .listen((status) {
+  ///       // Handle permission changes
+  ///       if (status.screenRecording == false) {
+  ///         navigateToPermissionSetup();
+  ///       }
+  ///     });
+  ///
+  /// // Handle errors (when permission status is null)
+  /// toolkit.permissionStream.listen((status) {
+  ///   if (status.hasUnknownStatus) {
+  ///     print('Permission check error occurred');
+  ///   }
+  /// });
+  /// ```
+  ///
+  /// **Riverpod Integration:**
+  /// ```dart
+  /// final permissionProvider = StreamProvider<PermissionStatus>((ref) {
+  ///   final toolkit = MacosWindowToolkit();
+  ///   toolkit.startPermissionWatching();
+  ///   return toolkit.permissionStream;
+  /// });
+  ///
+  /// // In widget
+  /// Consumer(builder: (context, ref, child) {
+  ///   final permissionAsync = ref.watch(permissionProvider);
+  ///   return permissionAsync.when(
+  ///     data: (status) => status.allPermissionsGranted 
+  ///       ? MainWidget() 
+  ///       : PermissionSetupWidget(),
+  ///     loading: () => CircularProgressIndicator(),
+  ///     error: (error, _) => Text('Error: $error'),
+  ///   );
+  /// });
+  /// ```
+  Stream<PermissionStatus> get permissionStream {
+    return PermissionWatcher.instance.permissionStream;
+  }
+
+  /// Whether permission monitoring is currently active.
+  ///
+  /// Returns `true` if [startPermissionWatching] has been called and monitoring
+  /// is active, `false` if monitoring is stopped or was never started.
+  ///
+  /// This is useful for:
+  /// - Showing monitoring status in UI
+  /// - Preventing duplicate monitoring setup
+  /// - Conditional logic based on monitoring state
+  ///
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  ///
+  /// // Check before starting
+  /// if (!toolkit.isPermissionWatching) {
+  ///   toolkit.startPermissionWatching();
+  /// }
+  ///
+  /// // Show status in UI
+  /// Text(toolkit.isPermissionWatching
+  ///   ? 'Permission monitoring: ON'
+  ///   : 'Permission monitoring: OFF'
+  /// );
+  ///
+  /// // Toggle monitoring
+  /// ElevatedButton(
+  ///   onPressed: () {
+  ///     if (toolkit.isPermissionWatching) {
+  ///       toolkit.stopPermissionWatching();
+  ///     } else {
+  ///       toolkit.startPermissionWatching();
+  ///     }
+  ///   },
+  ///   child: Text(toolkit.isPermissionWatching ? 'Stop' : 'Start'),
+  /// );
+  /// ```
+  bool get isPermissionWatching {
+    return PermissionWatcher.instance.isWatching;
   }
 }

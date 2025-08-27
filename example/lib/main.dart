@@ -10,6 +10,7 @@ import 'services/notification_service.dart';
 import 'services/permission_service.dart';
 import 'services/version_service.dart';
 import 'services/window_service.dart';
+import 'test_permission_monitoring.dart';
 import 'widgets/search_controls.dart';
 import 'widgets/version_info_card.dart';
 import 'widgets/window_detail_sheet.dart';
@@ -61,6 +62,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/main': (context) => const WindowDemoPage(),
         '/permission': (context) => const PermissionSetupPage(),
+        '/test-monitoring': (context) => const TestPermissionMonitoring(),
       },
     );
   }
@@ -329,6 +331,11 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
             icon: const Icon(Icons.window),
             onPressed: _isLoading ? null : _getAllWindows,
             tooltip: 'Refresh Windows',
+          ),
+          IconButton(
+            icon: const Icon(Icons.monitor_heart),
+            onPressed: () => Navigator.pushNamed(context, '/test-monitoring'),
+            tooltip: 'Test Permission Monitoring',
           ),
         ],
       ),
