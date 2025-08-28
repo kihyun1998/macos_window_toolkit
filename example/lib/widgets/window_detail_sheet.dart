@@ -179,7 +179,8 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
               _captureError = 'No compatible capture method available';
               break;
             case 'SCREEN_RECORDING_PERMISSION_DENIED':
-              _captureError = 'Screen recording permission required. Please enable it in System Settings.';
+              _captureError =
+                  'Screen recording permission required. Please enable it in System Settings.';
               // Show permission dialog
               if (mounted) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -188,7 +189,8 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
               }
               break;
             case 'REQUIRES_MACOS_14':
-              _captureError = 'This capture method requires macOS 14.0 or later';
+              _captureError =
+                  'This capture method requires macOS 14.0 or later';
               break;
             default:
               _captureError = 'Capture error: ${e.message}';
