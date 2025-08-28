@@ -1,3 +1,23 @@
+## 1.1.5
+
+### Added
+- **DOCS**: Comprehensive API Reference restructure with modular documentation
+- **DOCS**: Complete API documentation for all 27 methods and properties
+- **DOCS**: New modular documentation structure in `documentations/api/`:
+  - `window_management.md` - Window discovery, filtering, and management (7 methods)
+  - `permission_management.md` - Permission handling and real-time monitoring (10 methods/properties)
+  - `window_capture.md` - ScreenCaptureKit and legacy capture methods (6 methods)
+  - `process_management.md` - Application process control and management (3 methods)
+  - `system_info.md` - macOS version detection and capabilities (2 methods)
+  - `error_handling.md` - Exception codes and error patterns reference
+- **DOCS**: Updated main `api_reference.md` as comprehensive index with navigation
+- **DOCS**: Added practical examples, performance notes, and integration patterns
+- **DOCS**: Complete error code reference with resolution strategies
+
+### Changed
+- **DOCS**: Restructured API documentation from single file to organized category-based files
+- **DOCS**: Enhanced documentation with real-world usage examples and best practices
+
 ## 1.1.4
 
 ### Added

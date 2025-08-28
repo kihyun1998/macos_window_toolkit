@@ -52,7 +52,7 @@ Add this package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  macos_window_toolkit: ^1.1.4
+  macos_window_toolkit: ^1.1.5
 ```
 
 Then run:
