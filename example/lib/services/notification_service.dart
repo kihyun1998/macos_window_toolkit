@@ -80,16 +80,84 @@ class NotificationService {
     String operation,
   ) {
     // Handle special cases for better user experience
-    if (exception.code == 'WINDOW_MINIMIZED') {
-      showWarning(
-        context,
-        'Cannot capture minimized window. Please restore the window first.',
-        duration: const Duration(seconds: 4),
-      );
-      return;
+    switch (exception.code) {
+      case 'WINDOW_MINIMIZED':
+        showWarning(
+          context,
+          'Cannot capture minimized window. Please restore the window first.',
+          duration: const Duration(seconds: 4),
+        );
+        return;
+      case 'SCREEN_RECORDING_PERMISSION_DENIED':
+        _showPermissionErrorDialog(context, 'Screen Recording');
+        return;
+      case 'ACCESSIBILITY_PERMISSION_DENIED':
+        _showPermissionErrorDialog(context, 'Accessibility');
+        return;
+      case 'REQUIRES_MACOS_14':
+        showWarning(
+          context,
+          'This capture method requires macOS 14.0 or later. Your system may not support this feature.',
+          duration: const Duration(seconds: 5),
+        );
+        return;
+      case 'UNSUPPORTED_MACOS_VERSION':
+        showWarning(
+          context,
+          'Your macOS version does not support this feature. Please update to a newer version.',
+          duration: const Duration(seconds: 5),
+        );
+        return;
     }
 
     showError(context, 'Error $operation: ${exception.message}');
+  }
+
+  /// Show permission error dialog with action buttons
+  static void _showPermissionErrorDialog(
+    BuildContext context,
+    String permissionType,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: Icon(
+          Icons.security,
+          color: Theme.of(context).colorScheme.error,
+          size: 48,
+        ),
+        title: Text('$permissionType Permission Required'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '$permissionType permission is required for this operation.',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Please grant permission in System Settings > Privacy & Security > $permissionType.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/permission');
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Show permission result message

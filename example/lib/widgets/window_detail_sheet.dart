@@ -178,6 +178,18 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
             case 'NO_COMPATIBLE_CAPTURE_METHOD':
               _captureError = 'No compatible capture method available';
               break;
+            case 'SCREEN_RECORDING_PERMISSION_DENIED':
+              _captureError = 'Screen recording permission required. Please enable it in System Settings.';
+              // Show permission dialog
+              if (mounted) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  Navigator.pushNamed(context, '/permission');
+                });
+              }
+              break;
+            case 'REQUIRES_MACOS_14':
+              _captureError = 'This capture method requires macOS 14.0 or later';
+              break;
             default:
               _captureError = 'Capture error: ${e.message}';
           }
@@ -200,7 +212,13 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
           break;
         case CaptureFailureReason.permissionDenied:
           _captureError =
-              'Screen recording permission denied. Please enable it in System Preferences.';
+              'Screen recording permission denied. Please enable it in System Settings.';
+          // Navigate to permission settings
+          if (mounted) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.pushNamed(context, '/permission');
+            });
+          }
           break;
         case CaptureFailureReason.unsupportedVersion:
           _captureError = 'macOS version not supported for this capture method';
@@ -282,6 +300,15 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
               break;
             case 'APPLESCRIPT_EXECUTION_FAILED':
               errorMessage = 'AppleScript execution failed';
+              break;
+            case 'ACCESSIBILITY_PERMISSION_DENIED':
+              errorMessage = 'Accessibility permission required';
+              // Navigate to permission settings
+              if (mounted) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  Navigator.pushNamed(context, '/permission');
+                });
+              }
               break;
             default:
               errorMessage = 'Error: ${e.message}';

@@ -12,12 +12,15 @@ enum PlatformErrorCode {
   captureWindowMinimized('WINDOW_MINIMIZED'),
   captureFailed('CAPTURE_FAILED'),
   captureNoCompatibleMethod('NO_COMPATIBLE_CAPTURE_METHOD'),
+  captureScreenRecordingPermissionDenied('SCREEN_RECORDING_PERMISSION_DENIED'),
+  captureRequiresMacOS14('REQUIRES_MACOS_14'),
 
   // Window management errors
   closeWindowError('CLOSE_WINDOW_ERROR'),
   windowNotFound('WINDOW_NOT_FOUND'),
   insufficientWindowInfo('INSUFFICIENT_WINDOW_INFO'),
   appleScriptExecutionFailed('APPLESCRIPT_EXECUTION_FAILED'),
+  accessibilityPermissionDenied('ACCESSIBILITY_PERMISSION_DENIED'),
 
   // Process termination errors
   terminateAppError('TERMINATE_APP_ERROR'),
@@ -58,6 +61,10 @@ enum PlatformErrorCode {
         return 'Window capture failed';
       case PlatformErrorCode.captureNoCompatibleMethod:
         return 'No compatible capture method available';
+      case PlatformErrorCode.captureScreenRecordingPermissionDenied:
+        return 'Screen recording permission is required for window capture. Please grant permission in System Settings.';
+      case PlatformErrorCode.captureRequiresMacOS14:
+        return 'This capture method requires macOS 14.0 or later';
       case PlatformErrorCode.closeWindowError:
         return 'Failed to close window';
       case PlatformErrorCode.windowNotFound:
@@ -66,6 +73,8 @@ enum PlatformErrorCode {
         return 'Not enough window information';
       case PlatformErrorCode.appleScriptExecutionFailed:
         return 'AppleScript execution failed';
+      case PlatformErrorCode.accessibilityPermissionDenied:
+        return 'Accessibility permission is required for window management. Please grant permission in System Settings.';
       case PlatformErrorCode.terminateAppError:
         return 'Application termination error';
       case PlatformErrorCode.terminateTreeError:

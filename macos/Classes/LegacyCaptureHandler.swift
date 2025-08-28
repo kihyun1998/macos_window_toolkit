@@ -9,23 +9,32 @@ class LegacyCaptureHandler {
         case captureNotSupported
         case captureFailed(String)
         case noImageData
+        case screenRecordingPermissionDenied
     }
 
-    // CGWindowListCreateImage를 사용한 윈도우 캡쳐 (macOS 10.5+)
+    // Window capture using CGWindowListCreateImage (macOS 10.5+)
     static func captureWindow(
         windowId: Int, excludeTitlebar: Bool = false, customTitlebarHeight: CGFloat? = nil
     ) throws -> Data {
-        // CGWindowID로 변환
+        // Check Screen Recording permission (macOS 10.15+)
+        if #available(macOS 10.15, *) {
+            let permissionHandler = PermissionHandler()
+            guard permissionHandler.hasScreenRecordingPermission() else {
+                throw LegacyCaptureError.screenRecordingPermissionDenied
+            }
+        }
+        
+        // Convert to CGWindowID
         let cgWindowId = CGWindowID(windowId)
 
-        // 캡처 전에 윈도우 존재 여부 및 최소화 상태 확인
+        // Check window existence and minimized state before capture
         if !isWindowExists(windowId: windowId) {
             throw LegacyCaptureError.invalidWindowId
         } else if isWindowMinimized(windowId: windowId) {
             throw LegacyCaptureError.windowMinimized
         }
 
-        // 윈도우 캡쳐 옵션 설정
+        // Set window capture options
         let imageOption: CGWindowImageOption = [
             .nominalResolution,  // 표준 해상도
             .boundsIgnoreFraming,  // 프레임 무시하고 내용만
@@ -179,6 +188,14 @@ class LegacyCaptureHandler {
 
     // 캡쳐 가능한 윈도우 목록 반환 (CGWindowListCopyWindowInfo 사용)
     static func getCapturableWindows() -> [[String: Any]] {
+        // Check Screen Recording permission (macOS 10.15+)
+        if #available(macOS 10.15, *) {
+            let permissionHandler = PermissionHandler()
+            guard permissionHandler.hasScreenRecordingPermission() else {
+                return [] // 권한 없으면 빈 배열 반환
+            }
+        }
+        
         guard
             let windowList = CGWindowListCopyWindowInfo(
                 [.optionOnScreenOnly, .excludeDesktopElements],
@@ -257,6 +274,12 @@ class LegacyCaptureHandler {
                 "code": "CAPTURE_FAILED",
                 "message": "Failed to convert captured image to PNG data",
                 "details": NSNull(),
+            ]
+        case .screenRecordingPermissionDenied:
+            return [
+                "code": "SCREEN_RECORDING_PERMISSION_DENIED",
+                "message": "Screen recording permission is required for window capture",
+                "details": "Please grant screen recording permission in System Settings > Privacy & Security > Screen Recording",
             ]
         }
     }

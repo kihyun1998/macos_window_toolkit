@@ -1,3 +1,15 @@
+## 1.1.4
+
+### Added
+- Permission error detection for all capture methods (ScreenCaptureKit, Legacy, Smart)
+- New error codes: `SCREEN_RECORDING_PERMISSION_DENIED`, `REQUIRES_MACOS_14`, `ACCESSIBILITY_PERMISSION_DENIED`
+- Permission error dialogs with direct navigation to settings page
+- Automatic permission settings navigation on capture failures
+
+### Fixed
+- Capture operations now properly detect Screen Recording permission issues
+- Enhanced error messages with actionable user guidance
+
 ## 1.1.3
 
 ### Added

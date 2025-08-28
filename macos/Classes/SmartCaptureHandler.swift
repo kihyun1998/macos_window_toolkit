@@ -10,6 +10,7 @@ class SmartCaptureHandler {
         case captureMethodFailed(String)
         case invalidWindowId
         case windowMinimized
+        case screenRecordingPermissionDenied
     }
 
     /// Automatically captures a window using the best available method
@@ -18,6 +19,13 @@ class SmartCaptureHandler {
     static func captureWindowAuto(
         windowId: Int, excludeTitlebar: Bool = false, customTitlebarHeight: CGFloat? = nil
     ) async throws -> Data {
+        // Check Screen Recording permission (macOS 10.15+)
+        if #available(macOS 10.15, *) {
+            let permissionHandler = PermissionHandler()
+            guard permissionHandler.hasScreenRecordingPermission() else {
+                throw SmartCaptureError.screenRecordingPermissionDenied
+            }
+        }
         if shouldUseScreenCaptureKit() {
             if #available(macOS 12.3, *) {
                 do {
@@ -58,6 +66,13 @@ class SmartCaptureHandler {
     /// - Uses ScreenCaptureKit on macOS 12.3+ for better window information
     /// - Falls back to CGWindowListCreateImage on older versions
     static func getCapturableWindowsAuto() async throws -> [[String: Any]] {
+        // Check Screen Recording permission (macOS 10.15+)
+        if #available(macOS 10.15, *) {
+            let permissionHandler = PermissionHandler()
+            guard permissionHandler.hasScreenRecordingPermission() else {
+                return [] // 권한 없으면 빈 배열 반환
+            }
+        }
         if shouldUseScreenCaptureKitForWindowList() {
             if #available(macOS 12.3, *) {
                 do {
@@ -139,6 +154,12 @@ class SmartCaptureHandler {
                 "message": "Window is minimized and cannot be captured",
                 "details":
                     "The window is currently minimized. Please restore the window to capture it.",
+            ]
+        case .screenRecordingPermissionDenied:
+            return [
+                "code": "SCREEN_RECORDING_PERMISSION_DENIED",
+                "message": "Screen recording permission is required for window capture",
+                "details": "Please grant screen recording permission in System Settings > Privacy & Security > Screen Recording",
             ]
         }
     }

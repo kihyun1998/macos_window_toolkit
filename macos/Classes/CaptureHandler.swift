@@ -13,12 +13,19 @@ class CaptureHandler {
         case captureFailed(String)
         case unsupportedMacOSVersion
         case requiresMacOS14
+        case screenRecordingPermissionDenied
     }
 
     static func captureWindow(
         windowId: Int, excludeTitlebar: Bool = false, customTitlebarHeight: CGFloat? = nil
     ) async throws -> Data {
-        // macOS 버전 확인 - SCScreenshotManager는 macOS 14.0+에서만 사용 가능
+        // Check Screen Recording permission
+        let permissionHandler = PermissionHandler()
+        guard permissionHandler.hasScreenRecordingPermission() else {
+            throw CaptureError.screenRecordingPermissionDenied
+        }
+        
+        // Check macOS version - SCScreenshotManager is only available on macOS 14.0+
         guard #available(macOS 14.0, *) else {
             throw CaptureError.requiresMacOS14
         }
@@ -28,10 +35,10 @@ class CaptureHandler {
         }
 
         do {
-            // 캡처 가능한 콘텐츠 가져오기
+            // Get capturable content
             let availableContent = try await SCShareableContent.current
 
-            // 특정 window ID 찾기
+            // Find specific window ID
             guard
                 let targetWindow = availableContent.windows.first(where: { window in
                     window.windowID == CGWindowID(windowId)
@@ -40,12 +47,12 @@ class CaptureHandler {
                 throw CaptureError.invalidWindowId
             }
             
-            // SCWindow에서도 최소화 상태 재확인 (ScreenCaptureKit이 대기하는 것을 방지)
+            // Re-check minimized state in SCWindow (prevent ScreenCaptureKit from waiting)
             if !targetWindow.isOnScreen {
                 throw CaptureError.windowMinimized
             }
 
-            // 캡처 설정
+            // Capture configuration
             let configuration = SCStreamConfiguration()
             configuration.width = Int(targetWindow.frame.width)
             configuration.height = Int(targetWindow.frame.height)
@@ -54,24 +61,24 @@ class CaptureHandler {
             configuration.scalesToFit = false
             configuration.minimumFrameInterval = CMTime(value: 1, timescale: 60)
 
-            // 캡처 필터 설정 (특정 창만 캡처)
+            // Set capture filter (capture specific window only)
             let filter = SCContentFilter(desktopIndependentWindow: targetWindow)
 
-            // 캡처 실행 - macOS 14.0+에서 SCScreenshotManager 사용
+            // Execute capture - use SCScreenshotManager on macOS 14.0+
             let screenshot = try await SCScreenshotManager.captureImage(
                 contentFilter: filter,
                 configuration: configuration
             )
 
-            // Titlebar 제외가 요청된 경우 이미지를 crop
+            // Crop image if titlebar exclusion is requested
             let finalImage: CGImage
             if excludeTitlebar {
-                // 전체화면에서는 타이틀바가 없으므로 항상 0으로 설정
+                // Always set to 0 for fullscreen windows as they have no titlebar
                 let titlebarHeight: CGFloat
                 if isFullscreenWindow(targetWindow.frame) {
                     titlebarHeight = 0.0
                 } else {
-                    // 일반 윈도우에서는 custom 값 또는 기본값(28px) 사용
+                    // Use custom value or default (28px) for regular windows
                     let requestedHeight = customTitlebarHeight ?? 28.0
                     titlebarHeight = max(0, min(requestedHeight, targetWindow.frame.height))
                 }
@@ -154,8 +161,14 @@ class CaptureHandler {
         }
     }
 
-    // 캡처 가능한 창 목록 반환
+    // Return list of capturable windows
     static func getCapturableWindows() async throws -> [[String: Any]] {
+        // Check Screen Recording permission
+        let permissionHandler = PermissionHandler()
+        guard permissionHandler.hasScreenRecordingPermission() else {
+            throw CaptureError.screenRecordingPermissionDenied
+        }
+        
         guard VersionUtil.isScreenCaptureKitAvailable() else {
             throw CaptureError.unsupportedMacOSVersion
         }
@@ -185,7 +198,7 @@ class CaptureHandler {
         }
     }
 
-    // 에러를 Flutter에 전달하기 위한 헬퍼 메서드
+    // Helper method to pass errors to Flutter
     static func handleCaptureError(_ error: CaptureError) -> [String: Any] {
         switch error {
         case .screenCaptureKitNotAvailable:
@@ -230,6 +243,12 @@ class CaptureHandler {
                 "code": "REQUIRES_MACOS_14",
                 "message": "Window capture requires macOS 14.0 or later",
                 "details": "Current version: \(VersionUtil.getMacOSVersion()), Required: 14.0+",
+            ]
+        case .screenRecordingPermissionDenied:
+            return [
+                "code": "SCREEN_RECORDING_PERMISSION_DENIED",
+                "message": "Screen recording permission is required for window capture",
+                "details": "Please grant screen recording permission in System Settings > Privacy & Security > Screen Recording",
             ]
         }
     }

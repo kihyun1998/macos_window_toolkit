@@ -333,6 +333,11 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
             tooltip: 'Refresh Windows',
           ),
           IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () => Navigator.pushNamed(context, '/permission'),
+            tooltip: 'Permission Settings',
+          ),
+          IconButton(
             icon: const Icon(Icons.monitor_heart),
             onPressed: () => Navigator.pushNamed(context, '/test-monitoring'),
             tooltip: 'Test Permission Monitoring',

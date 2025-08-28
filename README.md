@@ -28,6 +28,7 @@ A Flutter plugin for macOS that provides comprehensive window management functio
 - 🚀 **High Performance**: Efficient native implementation using Core Graphics APIs
 - 🛡️ **Privacy Compliant**: Includes proper privacy manifest for App Store distribution
 - 🔧 **Easy Integration**: Simple API with comprehensive error handling
+- ⚠️ **Enhanced Permission Detection**: Automatic detection and user-friendly handling of permission issues
 
 ## Platform Support
 
@@ -232,14 +233,20 @@ try {
   // Process windows
 } on PlatformException catch (e) {
   switch (e.code) {
-    case 'PERMISSION_DENIED':
-      print('Permission denied to access window information');
+    case 'SCREEN_RECORDING_PERMISSION_DENIED':
+      print('Screen recording permission required. Please enable it in System Settings.');
       break;
-    case 'SYSTEM_ERROR':
-      print('System error occurred: ${e.message}');
+    case 'ACCESSIBILITY_PERMISSION_DENIED':
+      print('Accessibility permission required for window management.');
+      break;
+    case 'REQUIRES_MACOS_14':
+      print('This capture method requires macOS 14.0 or later.');
+      break;
+    case 'WINDOW_MINIMIZED':
+      print('Cannot capture minimized window. Please restore it first.');
       break;
     default:
-      print('Unknown error: ${e.message}');
+      print('Error: ${e.message}');
   }
 } catch (e) {
   print('Unexpected error: $e');

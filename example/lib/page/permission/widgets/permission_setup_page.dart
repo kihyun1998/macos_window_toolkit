@@ -226,6 +226,32 @@ class _PermissionSetupPageState extends State<PermissionSetupPage>
                 ),
                 textAlign: TextAlign.center,
               ),
+
+              const SizedBox(height: 24),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  OutlinedButton(
+                    onPressed: () {
+                      Navigator.pushReplacementNamed(context, '/main');
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: colorScheme.onSurface,
+                      side: BorderSide(color: colorScheme.outline),
+                    ),
+                    child: const Text('Skip & Continue'),
+                  ),
+                  ElevatedButton(
+                    onPressed: _checkPermissions,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                    ),
+                    child: const Text('Recheck Permissions'),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
