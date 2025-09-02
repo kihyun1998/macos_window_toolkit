@@ -638,6 +638,91 @@ class WindowHandler {
         return .success(childPIDs)
     }
 
+    /// Gets all installed applications on the system
+    func getAllInstalledApplications() -> Result<[[String: Any]], WindowError> {
+        let fileManager = FileManager.default
+        var applications: [[String: Any]] = []
+        
+        // Search paths for applications
+        let searchPaths = [
+            "/Applications",
+            "/System/Applications",
+            "/System/Applications/Utilities",
+            NSHomeDirectory() + "/Applications",
+            "/System/Library/CoreServices"
+        ]
+        
+        for searchPath in searchPaths {
+            guard let enumerator = fileManager.enumerator(
+                at: URL(fileURLWithPath: searchPath),
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants]
+            ) else { continue }
+            
+            for case let appURL as URL in enumerator {
+                // Only process .app bundles
+                guard appURL.pathExtension == "app" else { continue }
+                
+                var appInfo: [String: Any] = [:]
+                
+                // Get bundle
+                guard let bundle = Bundle(url: appURL) else { continue }
+                
+                // App name (display name or bundle name)
+                let appName = bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ??
+                             bundle.object(forInfoDictionaryKey: "CFBundleName") as? String ??
+                             appURL.lastPathComponent.replacingOccurrences(of: ".app", with: "")
+                
+                appInfo["name"] = appName
+                
+                // Bundle identifier
+                appInfo["bundleId"] = bundle.bundleIdentifier ?? ""
+                
+                // Version
+                appInfo["version"] = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+                
+                // Path
+                appInfo["path"] = appURL.path
+                
+                // Icon path (try to find the app icon)
+                var iconPath = ""
+                if let iconFile = bundle.object(forInfoDictionaryKey: "CFBundleIconFile") as? String {
+                    let iconURL = appURL.appendingPathComponent("Contents/Resources").appendingPathComponent(iconFile)
+                    if fileManager.fileExists(atPath: iconURL.path) {
+                        iconPath = iconURL.path
+                    } else {
+                        // Try with .icns extension
+                        let iconURLWithExt = iconURL.appendingPathExtension("icns")
+                        if fileManager.fileExists(atPath: iconURLWithExt.path) {
+                            iconPath = iconURLWithExt.path
+                        }
+                    }
+                }
+                appInfo["iconPath"] = iconPath
+                
+                applications.append(appInfo)
+            }
+        }
+        
+        return .success(applications)
+    }
+    
+    /// Gets applications filtered by name
+    func getApplicationByName(_ name: String) -> Result<[[String: Any]], WindowError> {
+        let allAppsResult = getAllInstalledApplications()
+        
+        switch allAppsResult {
+        case .success(let applications):
+            let filteredApps = applications.filter { app in
+                let appName = app["name"] as? String ?? ""
+                return appName.localizedCaseInsensitiveContains(name)
+            }
+            return .success(filteredApps)
+        case .failure(let error):
+            return .failure(error)
+        }
+    }
+
     /// Terminates an application and all its child processes
     func terminateApplicationTree(_ processId: Int, force: Bool = false) -> Result<
         Bool, WindowError

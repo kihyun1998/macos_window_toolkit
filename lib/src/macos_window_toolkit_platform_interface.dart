@@ -661,4 +661,29 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   Future<List<int>> getChildProcesses(int processId) {
     throw UnimplementedError('getChildProcesses() has not been implemented.');
   }
+
+  /// Gets all installed applications on the system.
+  ///
+  /// Returns a list of maps containing application properties:
+  /// - `name`: Application display name (String)
+  /// - `bundleId`: Bundle identifier (String)
+  /// - `version`: Application version (String)
+  /// - `path`: Full path to application bundle (String)
+  /// - `iconPath`: Path to application icon file (String)
+  ///
+  /// Throws [PlatformException] if unable to retrieve application information.
+  Future<List<Map<String, dynamic>>> getAllInstalledApplications() {
+    throw UnimplementedError('getAllInstalledApplications() has not been implemented.');
+  }
+
+  /// Gets applications filtered by name.
+  ///
+  /// Returns a list of maps containing application properties for applications whose
+  /// name contains the specified [name] string. The search is case-insensitive
+  /// and uses substring matching.
+  ///
+  /// Throws [PlatformException] if unable to retrieve application information.
+  Future<List<Map<String, dynamic>>> getApplicationByName(String name) {
+    throw UnimplementedError('getApplicationByName() has not been implemented.');
+  }
 }

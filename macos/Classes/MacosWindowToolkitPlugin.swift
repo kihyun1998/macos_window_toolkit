@@ -62,6 +62,10 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       requestAccessibilityPermission(result: result)
     case "openAccessibilitySettings":
       openAccessibilitySettings(result: result)
+    case "getAllInstalledApplications":
+      getAllInstalledApplications(result: result)
+    case "getApplicationByName":
+      getApplicationByName(call: call, result: result)
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -619,6 +623,47 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       result(
         FlutterError(
           code: "GET_CHILD_PROCESSES_ERROR",
+          message: error.localizedDescription,
+          details: nil))
+    }
+  }
+
+  /// Gets all installed applications on the system
+  private func getAllInstalledApplications(result: @escaping FlutterResult) {
+    let appsResult = windowHandler.getAllInstalledApplications()
+    switch appsResult {
+    case .success(let applications):
+      result(applications)
+    case .failure(let error):
+      result(
+        FlutterError(
+          code: "GET_APPLICATIONS_ERROR",
+          message: error.localizedDescription,
+          details: nil))
+    }
+  }
+
+  /// Gets applications filtered by name
+  private func getApplicationByName(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let arguments = call.arguments as? [String: Any],
+      let name = arguments["name"] as? String
+    else {
+      result(
+        FlutterError(
+          code: "INVALID_ARGUMENTS",
+          message: "Name parameter is required",
+          details: nil))
+      return
+    }
+
+    let appsResult = windowHandler.getApplicationByName(name)
+    switch appsResult {
+    case .success(let applications):
+      result(applications)
+    case .failure(let error):
+      result(
+        FlutterError(
+          code: "GET_APPLICATIONS_ERROR",
           message: error.localizedDescription,
           details: nil))
     }

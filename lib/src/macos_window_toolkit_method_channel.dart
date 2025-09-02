@@ -359,6 +359,33 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
     return result.cast<int>();
   }
 
+  @override
+  Future<List<Map<String, dynamic>>> getAllInstalledApplications() async {
+    final result = await methodChannel.invokeMethod<List<dynamic>>(
+      'getAllInstalledApplications',
+    );
+    if (result == null) {
+      return [];
+    }
+    return result
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getApplicationByName(String name) async {
+    final result = await methodChannel.invokeMethod<List<dynamic>>(
+      'getApplicationByName',
+      {'name': name},
+    );
+    if (result == null) {
+      return [];
+    }
+    return result
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+  }
+
   /// Helper method to parse capture result from native response
   CaptureResult _parseCaptureResult(Map<dynamic, dynamic> result) {
     final success = result['success'] as bool? ?? false;

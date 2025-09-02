@@ -3,6 +3,7 @@ library;
 import 'macos_window_toolkit_platform_interface.dart';
 import 'models/capturable_window_info.dart';
 import 'models/capture_result.dart';
+import 'models/macos_application_info.dart';
 import 'models/macos_version_info.dart';
 import 'models/macos_window_info.dart';
 import 'models/permission_status.dart';
@@ -12,6 +13,7 @@ export 'macos_window_toolkit_method_channel.dart';
 export 'macos_window_toolkit_platform_interface.dart';
 export 'models/capturable_window_info.dart';
 export 'models/capture_result.dart';
+export 'models/macos_application_info.dart';
 export 'models/macos_version_info.dart';
 export 'models/macos_window_info.dart';
 
@@ -907,6 +909,130 @@ class MacosWindowToolkit {
     return await MacosWindowToolkitPlatform.instance.getChildProcesses(
       processId,
     );
+  }
+
+  /// Gets all installed applications on the system.
+  ///
+  /// Returns an [ApplicationResult] containing either:
+  /// - [ApplicationSuccess] with a list of [MacosApplicationInfo] objects
+  /// - [ApplicationFailure] with the reason for failure
+  ///
+  /// This method scans all application domains (user and system) to find
+  /// installed applications. It uses direct file system access which is
+  /// more reliable than command-line tools like mdfind.
+  ///
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  /// final result = await toolkit.getAllInstalledApplications();
+  ///
+  /// switch (result) {
+  ///   case ApplicationSuccess(applications: final apps):
+  ///     for (final app in apps) {
+  ///       print('App: ${app.name}');
+  ///       print('Bundle ID: ${app.bundleId}');
+  ///       print('Version: ${app.version}');
+  ///       print('Path: ${app.path}');
+  ///       if (app.iconPath.isNotEmpty) {
+  ///         print('Icon: ${app.iconPath}');
+  ///       }
+  ///       print('---');
+  ///     }
+  ///   case ApplicationFailure(reason: final reason):
+  ///     print('Failed to get applications: ${reason.name}');
+  ///     if (result.canRetry) {
+  ///       print('Suggestion: ${result.suggestedAction}');
+  ///     }
+  /// }
+  /// ```
+  ///
+  /// Unlike other methods, this does not throw [PlatformException] for failures.
+  /// All failures are returned as [ApplicationFailure] objects.
+  Future<ApplicationResult> getAllInstalledApplications() async {
+    try {
+      final List<Map<String, dynamic>> applicationMaps =
+          await MacosWindowToolkitPlatform.instance.getAllInstalledApplications();
+      
+      if (applicationMaps.isEmpty) {
+        return const ApplicationFailure(
+          reason: ApplicationFailureReason.notFound,
+          message: 'No applications found on the system',
+        );
+      }
+      
+      final applications = applicationMaps
+          .map((map) => MacosApplicationInfo.fromMap(map))
+          .toList();
+      
+      return ApplicationSuccess(applications);
+    } catch (e) {
+      return ApplicationFailure(
+        reason: ApplicationFailureReason.systemError,
+        message: 'Failed to retrieve applications',
+        details: e.toString(),
+      );
+    }
+  }
+
+  /// Gets applications filtered by name.
+  ///
+  /// Returns an [ApplicationResult] containing either:
+  /// - [ApplicationSuccess] with matching [MacosApplicationInfo] objects
+  /// - [ApplicationFailure] with the reason for failure
+  ///
+  /// [name] The application name to search for (case-insensitive)
+  ///
+  /// The search is case-insensitive and uses substring matching on the
+  /// application display name.
+  ///
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  ///
+  /// // Find Safari browser
+  /// final result = await toolkit.getApplicationByName('Safari');
+  /// switch (result) {
+  ///   case ApplicationSuccess(applications: final apps):
+  ///     if (apps.isNotEmpty) {
+  ///       final safari = apps.first;
+  ///       print('Found Safari at: ${safari.path}');
+  ///       print('Version: ${safari.version}');
+  ///     } else {
+  ///       print('Safari not found');
+  ///     }
+  ///   case ApplicationFailure():
+  ///     print('Search failed: ${result.userMessage}');
+  /// }
+  ///
+  /// // Find all apps containing "Code"
+  /// final codeResult = await toolkit.getApplicationByName('Code');
+  /// if (codeResult case ApplicationSuccess(applications: final codeApps)) {
+  ///   for (final app in codeApps) {
+  ///     print('Found: ${app.name} (${app.bundleId})');
+  ///   }
+  /// }
+  /// ```
+  ///
+  /// Unlike other methods, this does not throw [PlatformException] for failures.
+  /// All failures are returned as [ApplicationFailure] objects.
+  Future<ApplicationResult> getApplicationByName(String name) async {
+    try {
+      final List<Map<String, dynamic>> applicationMaps =
+          await MacosWindowToolkitPlatform.instance.getApplicationByName(name);
+      
+      final applications = applicationMaps
+          .map((map) => MacosApplicationInfo.fromMap(map))
+          .toList();
+      
+      // Note: Empty results are still success, not failure
+      return ApplicationSuccess(applications);
+    } catch (e) {
+      return ApplicationFailure(
+        reason: ApplicationFailureReason.systemError,
+        message: 'Failed to search for applications',
+        details: e.toString(),
+      );
+    }
   }
 
   // MARK: - Permission Monitoring

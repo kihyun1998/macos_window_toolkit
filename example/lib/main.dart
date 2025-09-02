@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:macos_window_toolkit/macos_window_toolkit.dart';
+import 'package:macos_window_toolkit_example/page/applications/applications_page.dart';
 import 'package:macos_window_toolkit_example/page/permission/widgets/permission_setup_page.dart';
 
 import 'page/permission/widgets/permissions_status_card.dart';
@@ -26,6 +27,7 @@ void main() async {
     final screenRecording = await plugin.hasScreenRecordingPermission();
     final accessibility = await plugin.hasAccessibilityPermission();
     hasPermissions = screenRecording && accessibility;
+    
   } catch (e) {
     // 권한 확인 실패시 기본값 false로 권한 설정 페이지로 이동
     hasPermissions = false;
@@ -61,6 +63,7 @@ class MyApp extends StatelessWidget {
       initialRoute: hasInitialPermissions ? '/main' : '/permission',
       routes: {
         '/main': (context) => const WindowDemoPage(),
+        '/applications': (context) => const ApplicationsPage(),
         '/permission': (context) => const PermissionSetupPage(),
         '/test-monitoring': (context) => const TestPermissionMonitoring(),
       },
@@ -331,6 +334,11 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
             icon: const Icon(Icons.window),
             onPressed: _isLoading ? null : _getAllWindows,
             tooltip: 'Refresh Windows',
+          ),
+          IconButton(
+            icon: const Icon(Icons.apps),
+            onPressed: () => Navigator.pushNamed(context, '/applications'),
+            tooltip: 'View Applications',
           ),
           IconButton(
             icon: const Icon(Icons.settings),
