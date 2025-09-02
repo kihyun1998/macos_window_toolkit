@@ -273,6 +273,21 @@ if (searchResult case ApplicationSuccess(applications: final codeApps)) {
     print('Found code editor: ${app.name} at ${app.path}');
   }
 }
+
+// App Store integration - search when app not found
+final result = await toolkit.getApplicationByName('NonExistentApp');
+switch (result) {
+  case ApplicationSuccess(applications: final apps):
+    if (apps.isEmpty) {
+      print('App not found locally, searching in App Store...');
+      final opened = await toolkit.openAppStoreSearch('NonExistentApp');
+      if (opened) {
+        print('App Store opened for search');
+      }
+    }
+  case ApplicationFailure():
+    print('Search failed: ${result.userMessage}');
+}
 ```
 
 ### Application Information Structure

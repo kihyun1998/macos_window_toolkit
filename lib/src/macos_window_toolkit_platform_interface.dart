@@ -701,7 +701,7 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
   /// final result = await toolkit.getApplicationByName('NonExistentApp');
-  /// 
+  ///
   /// switch (result) {
   ///   case ApplicationSuccess(applications: final apps):
   ///     if (apps.isEmpty) {
@@ -719,7 +719,6 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   ///
   /// Throws [PlatformException] if unable to open the App Store.
   Future<bool> openAppStoreSearch(String searchTerm) {
-    throw UnimplementedError(
-        'openAppStoreSearch() has not been implemented.');
+    throw UnimplementedError('openAppStoreSearch() has not been implemented.');
   }
 }

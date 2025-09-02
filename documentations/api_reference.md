@@ -44,11 +44,13 @@ Discover and search installed applications with type-safe APIs and comprehensive
 **Core Methods:**
 - `getAllInstalledApplications()` - Get all installed applications system-wide
 - `getApplicationByName()` - Search applications by name (case-insensitive)
+- `openAppStoreSearch()` - Open Mac App Store with search query
 
 **Key Features:**
 - Type-safe `ApplicationResult` with success/failure states
 - Rich application metadata (name, bundle ID, version, path, icon path)
 - User-friendly error messages with actionable suggestions
+- App Store integration for discovering unavailable applications
 - High-performance direct file system enumeration
 - No permissions required
 
@@ -159,12 +161,13 @@ final toolkit = MacosWindowToolkit();
 | Category | Methods | Description |
 |----------|---------|-------------|
 | **Window Management** | 6 methods | Finding and managing windows |
+| **Application Discovery** | 3 methods | Discovering and searching installed applications |
 | **Permission Management** | 10 methods/properties | Permission handling and monitoring |
 | **Window Capture** | 6 methods | Screenshot capture functionality |
 | **Process Management** | 3 methods | Process control and information |
 | **System Information** | 2 methods | macOS version and capabilities |
 
-**Total: 27 public methods and properties**
+**Total: 30 public methods and properties**
 
 ## Getting Started
 
@@ -239,6 +242,7 @@ All methods are thread-safe and can be called from any isolate.
 ## Navigation
 
 - **[Window Management API →](api/window_management.md)**
+- **[Application Discovery API →](api/application_discovery.md)**
 - **[Permission Management API →](api/permission_management.md)**
 - **[Window Capture API →](api/window_capture.md)**
 - **[Process Management API →](api/process_management.md)**

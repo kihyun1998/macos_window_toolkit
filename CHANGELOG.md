@@ -1,3 +1,13 @@
+## 1.2.0
+
+### Added
+- **FEAT**: App Store integration - `openAppStoreSearch(String searchTerm)` method
+- **FEAT**: ApplicationHandler.swift for dedicated application operations  
+- **FEAT**: Example app integration with App Store search buttons when apps not found
+
+### Changed
+- **REFACTOR**: Moved application logic from WindowHandler to ApplicationHandler
+
 ## 1.1.6
 
 ### Added

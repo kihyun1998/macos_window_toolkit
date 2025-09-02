@@ -383,3 +383,121 @@ The new approach provides:
 - **More descriptive error messages**
 - **Structured failure reasons**
 - **Retry guidance**
+
+## App Store Integration
+
+### openAppStoreSearch Method
+
+When an application is not found locally, you can help users discover it through the Mac App Store:
+
+```dart
+Future<bool> openAppStoreSearch(String searchTerm)
+```
+
+**Parameters:**
+- `searchTerm` - Application name or keywords to search for
+
+**Returns:** `true` if App Store opened successfully, `false` otherwise
+
+**Throws:** `PlatformException` for system-level errors
+
+### Basic Usage
+
+```dart
+final toolkit = MacosWindowToolkit();
+
+// Direct App Store search
+final opened = await toolkit.openAppStoreSearch('Xcode');
+if (opened) {
+  print('App Store opened with Xcode search');
+}
+```
+
+### Integration with Application Search
+
+```dart
+Future<void> searchAndDiscoverApp(String appName) async {
+  final toolkit = MacosWindowToolkit();
+  
+  // First, search locally
+  final result = await toolkit.getApplicationByName(appName);
+  
+  switch (result) {
+    case ApplicationSuccess(applications: final apps):
+      if (apps.isNotEmpty) {
+        print('Found ${apps.length} local applications:');
+        for (final app in apps) {
+          print('- ${app.name} v${app.version}');
+        }
+      } else {
+        // Not found locally, search in App Store
+        print('$appName not found locally. Opening App Store...');
+        final opened = await toolkit.openAppStoreSearch(appName);
+        if (opened) {
+          print('✅ App Store opened for discovery');
+        } else {
+          print('❌ Failed to open App Store');
+        }
+      }
+    case ApplicationFailure():
+      print('Search error: ${result.userMessage}');
+  }
+}
+
+// Usage
+await searchAndDiscoverApp('Logic Pro');
+await searchAndDiscoverApp('Final Cut Pro');
+```
+
+### UI Integration Example
+
+```dart
+Widget buildSearchResultsWithAppStore(ApplicationResult result, String query) {
+  return switch (result) {
+    ApplicationSuccess(applications: final apps) => apps.isEmpty
+        ? Column(
+            children: [
+              Text('No apps found matching "$query"'),
+              ElevatedButton.icon(
+                onPressed: () => toolkit.openAppStoreSearch(query),
+                icon: Icon(Icons.store),
+                label: Text('Search in App Store'),
+              ),
+            ],
+          )
+        : ListView.builder(
+            itemCount: apps.length,
+            itemBuilder: (context, index) => ListTile(
+              title: Text(apps[index].name),
+              subtitle: Text(apps[index].bundleId),
+            ),
+          ),
+    ApplicationFailure() => Text('Error: ${result.userMessage}'),
+  };
+}
+```
+
+### URL Scheme Details
+
+The method uses the `macappstores://` URL scheme with proper search parameters:
+- Automatically URL-encodes search terms
+- Uses Mac App Store specific search endpoint
+- Handles special characters and spaces correctly
+
+### Error Handling
+
+```dart
+try {
+  final success = await toolkit.openAppStoreSearch('My App');
+  if (success) {
+    // App Store opened successfully
+    showSuccessMessage('App Store opened for search');
+  } else {
+    // Failed to open (URL scheme not supported, App Store not available, etc.)
+    showErrorMessage('Unable to open App Store');
+  }
+} on PlatformException catch (e) {
+  // System-level error
+  showErrorMessage('System error: ${e.message}');
+}
+```
