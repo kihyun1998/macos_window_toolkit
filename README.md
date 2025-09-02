@@ -3,7 +3,7 @@
 [![pub package](https://img.shields.io/pub/v/macos_window_toolkit.svg)](https://pub.dev/packages/macos_window_toolkit)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Flutter plugin for macOS that provides comprehensive window management functionality. This plugin allows Flutter applications to retrieve detailed information about all open windows on the macOS system, including window properties like title, bounds, owner application, and process ID.
+A Flutter plugin for macOS that provides comprehensive window management and application discovery functionality. This plugin allows Flutter applications to retrieve detailed information about all open windows and installed applications on the macOS system, with type-safe APIs and structured error handling.
 
 ## Features
 
@@ -15,6 +15,12 @@ A Flutter plugin for macOS that provides comprehensive window management functio
   - Window layer level
   - Visibility status
   - Process ID
+- 📱 **Application Discovery**: Discover and search installed applications with type-safe APIs
+  - Get all installed applications system-wide
+  - Search applications by name with case-insensitive matching
+  - Rich application metadata (name, bundle ID, version, path, icon path)
+  - Type-safe `ApplicationResult` with success/failure states
+  - Comprehensive error handling with user-friendly messages
 - 👀 **Real-time Permission Monitoring**: Monitor macOS permissions with live updates
   - Screen Recording permission tracking
   - Accessibility permission tracking
@@ -52,7 +58,7 @@ Add this package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  macos_window_toolkit: ^1.1.5
+  macos_window_toolkit: ^1.1.6
 ```
 
 Then run:
@@ -79,6 +85,37 @@ void main() async {
     print('App: ${window.ownerName}');
     print('Bounds: ${window.bounds}');
     print('---');
+  }
+}
+```
+
+### Application Discovery
+
+```dart
+import 'package:macos_window_toolkit/macos_window_toolkit.dart';
+
+void main() async {
+  final toolkit = MacosWindowToolkit();
+  
+  // Get all installed applications
+  final result = await toolkit.getAllInstalledApplications();
+  
+  switch (result) {
+    case ApplicationSuccess(applications: final apps):
+      print('Found ${apps.length} applications');
+      for (final app in apps) {
+        print('${app.name} (${app.bundleId}) v${app.version}');
+      }
+    case ApplicationFailure():
+      print('Failed: ${result.userMessage}');
+  }
+  
+  // Search for specific application
+  final safariResult = await toolkit.getApplicationByName('Safari');
+  if (safariResult case ApplicationSuccess(applications: final safariApps)) {
+    if (safariApps.isNotEmpty) {
+      print('Found Safari at: ${safariApps.first.path}');
+    }
   }
 }
 ```
@@ -188,6 +225,68 @@ await toolkit.requestAccessibilityPermission();
 // Open system settings
 await toolkit.openScreenRecordingSettings();
 await toolkit.openAccessibilitySettings();
+```
+
+### Application Discovery
+
+```dart
+final toolkit = MacosWindowToolkit();
+
+// Get all applications with comprehensive error handling
+final result = await toolkit.getAllInstalledApplications();
+
+switch (result) {
+  case ApplicationSuccess(applications: final apps):
+    print('Successfully found ${apps.length} applications');
+    
+    // Filter applications by criteria
+    final developerApps = apps.where((app) => 
+      app.bundleId.contains('developer') || 
+      app.name.toLowerCase().contains('xcode')
+    ).toList();
+    
+    for (final app in developerApps) {
+      print('Dev App: ${app.name}');
+      print('Bundle ID: ${app.bundleId}');
+      print('Version: ${app.version}');
+      print('Path: ${app.path}');
+      if (app.iconPath.isNotEmpty) {
+        print('Icon: ${app.iconPath}');
+      }
+      print('---');
+    }
+    
+  case ApplicationFailure(reason: final reason):
+    print('Failed to get applications: ${reason.name}');
+    print('User message: ${result.userMessage}');
+    
+    if (result.canRetry) {
+      print('Suggested action: ${result.suggestedAction}');
+      // Implement retry logic
+    }
+}
+
+// Search for specific applications
+final searchResult = await toolkit.getApplicationByName('Code');
+if (searchResult case ApplicationSuccess(applications: final codeApps)) {
+  for (final app in codeApps) {
+    print('Found code editor: ${app.name} at ${app.path}');
+  }
+}
+```
+
+### Application Information Structure
+
+Each application object contains the following properties:
+
+```dart
+class MacosApplicationInfo {
+  final String name;       // Application display name
+  final String bundleId;   // Bundle identifier (e.g., "com.apple.Safari")
+  final String version;    // Application version string
+  final String path;       // Full path to application bundle
+  final String iconPath;   // Path to application icon file
+}
 ```
 
 ### Window Information Structure

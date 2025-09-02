@@ -13,6 +13,7 @@ macOS Window Toolkit provides comprehensive window management, permission handli
 
 ### Core Categories
 - **[Window Management](api/window_management.md)** - Finding, listing, and managing windows
+- **[Application Discovery](api/application_discovery.md)** - Discovering and searching installed applications
 - **[Permission Management](api/permission_management.md)** - Handling macOS permissions and monitoring
 - **[Window Capture](api/window_capture.md)** - Capturing window screenshots with ScreenCaptureKit
 - **[Process Management](api/process_management.md)** - Managing application processes
@@ -34,6 +35,27 @@ Retrieve and manage window information across the system.
 
 **Data Models:**
 - `MacosWindowInfo` - Complete window information with position, size, transparency, etc.
+
+---
+
+### 📱 [Application Discovery](api/application_discovery.md)
+Discover and search installed applications with type-safe APIs and comprehensive error handling.
+
+**Core Methods:**
+- `getAllInstalledApplications()` - Get all installed applications system-wide
+- `getApplicationByName()` - Search applications by name (case-insensitive)
+
+**Key Features:**
+- Type-safe `ApplicationResult` with success/failure states
+- Rich application metadata (name, bundle ID, version, path, icon path)
+- User-friendly error messages with actionable suggestions
+- High-performance direct file system enumeration
+- No permissions required
+
+**Data Models:**
+- `MacosApplicationInfo` - Complete application information with metadata
+- `ApplicationResult` - Type-safe result wrapper with error handling
+- `ApplicationFailureReason` - Structured error categories
 
 ---
 

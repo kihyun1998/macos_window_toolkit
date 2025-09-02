@@ -1,3 +1,14 @@
+## 1.1.6
+
+### Added
+- **FEAT**: Application Discovery API
+  - `getAllInstalledApplications()` method to retrieve all installed applications
+  - `getApplicationByName(String name)` method for case-insensitive application search
+  - `MacosApplicationInfo` model class with name, bundleId, version, path, and iconPath properties
+  - `ApplicationResult` sealed class with `ApplicationSuccess`/`ApplicationFailure` states for type-safe error handling
+  - Comprehensive search across multiple system directories (/Applications, /System/Applications, etc.)
+- **FEAT**: Type-safe application metadata access with structured error handling and user-friendly failure messages
+
 ## 1.1.5
 
 ### Added
