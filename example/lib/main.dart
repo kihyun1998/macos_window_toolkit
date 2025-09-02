@@ -27,7 +27,6 @@ void main() async {
     final screenRecording = await plugin.hasScreenRecordingPermission();
     final accessibility = await plugin.hasAccessibilityPermission();
     hasPermissions = screenRecording && accessibility;
-    
   } catch (e) {
     // 권한 확인 실패시 기본값 false로 권한 설정 페이지로 이동
     hasPermissions = false;

@@ -36,7 +36,7 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
     });
 
     final result = await _toolkit.getAllInstalledApplications();
-    
+
     switch (result) {
       case ApplicationSuccess(applications: final apps):
         setState(() {
@@ -59,7 +59,7 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
     setState(() {
       _filteredApplications = _applications.where((app) {
         return app.name.toLowerCase().contains(query) ||
-               app.bundleId.toLowerCase().contains(query);
+            app.bundleId.toLowerCase().contains(query);
       }).toList();
     });
   }
@@ -74,14 +74,14 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
     });
 
     final result = await _toolkit.getApplicationByName(query);
-    
+
     switch (result) {
       case ApplicationSuccess(applications: final apps):
         setState(() {
           _filteredApplications = apps;
           _isLoading = false;
         });
-        
+
         if (apps.isEmpty && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -92,7 +92,9 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
         } else if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Found ${apps.length} application(s) matching "$query"'),
+              content: Text(
+                'Found ${apps.length} application(s) matching "$query"',
+              ),
               backgroundColor: Colors.green,
             ),
           );
@@ -139,7 +141,9 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
             decoration: BoxDecoration(
               color: colorScheme.surface,
               border: Border(
-                bottom: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
+                bottom: BorderSide(
+                  color: colorScheme.outline.withValues(alpha: 0.2),
+                ),
               ),
             ),
             child: Column(
@@ -150,7 +154,8 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
                       child: TextField(
                         controller: _searchController,
                         decoration: InputDecoration(
-                          hintText: 'Search applications by name or bundle ID...',
+                          hintText:
+                              'Search applications by name or bundle ID...',
                           prefixIcon: const Icon(Icons.search),
                           suffixIcon: _searchController.text.isNotEmpty
                               ? IconButton(
@@ -159,7 +164,9 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
                                 )
                               : null,
                           border: const OutlineInputBorder(),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 8,
+                          ),
                         ),
                       ),
                     ),
@@ -174,7 +181,11 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.info_outline, size: 16, color: colorScheme.onSurfaceVariant),
+                    Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       'Found ${_filteredApplications.length} applications',
@@ -187,11 +198,9 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
               ],
             ),
           ),
-          
+
           // Content
-          Expanded(
-            child: _buildContent(),
-          ),
+          Expanded(child: _buildContent()),
         ],
       ),
     );
@@ -262,7 +271,7 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              _searchController.text.isEmpty 
+              _searchController.text.isEmpty
                   ? 'No applications are installed on this system'
                   : 'No applications match your search criteria',
               textAlign: TextAlign.center,
@@ -333,7 +342,7 @@ class _ApplicationCard extends StatelessWidget {
                       ),
               ),
               const SizedBox(width: 16),
-              
+
               // App Info
               Expanded(
                 child: Column(
@@ -368,12 +377,9 @@ class _ApplicationCard extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               // Arrow icon
-              Icon(
-                Icons.chevron_right,
-                color: colorScheme.onSurfaceVariant,
-              ),
+              Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant),
             ],
           ),
         ),
@@ -443,7 +449,7 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(

@@ -951,19 +951,20 @@ class MacosWindowToolkit {
   Future<ApplicationResult> getAllInstalledApplications() async {
     try {
       final List<Map<String, dynamic>> applicationMaps =
-          await MacosWindowToolkitPlatform.instance.getAllInstalledApplications();
-      
+          await MacosWindowToolkitPlatform.instance
+              .getAllInstalledApplications();
+
       if (applicationMaps.isEmpty) {
         return const ApplicationFailure(
           reason: ApplicationFailureReason.notFound,
           message: 'No applications found on the system',
         );
       }
-      
+
       final applications = applicationMaps
           .map((map) => MacosApplicationInfo.fromMap(map))
           .toList();
-      
+
       return ApplicationSuccess(applications);
     } catch (e) {
       return ApplicationFailure(
@@ -1019,11 +1020,11 @@ class MacosWindowToolkit {
     try {
       final List<Map<String, dynamic>> applicationMaps =
           await MacosWindowToolkitPlatform.instance.getApplicationByName(name);
-      
+
       final applications = applicationMaps
           .map((map) => MacosApplicationInfo.fromMap(map))
           .toList();
-      
+
       // Note: Empty results are still success, not failure
       return ApplicationSuccess(applications);
     } catch (e) {

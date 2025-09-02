@@ -673,7 +673,8 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   ///
   /// Throws [PlatformException] if unable to retrieve application information.
   Future<List<Map<String, dynamic>>> getAllInstalledApplications() {
-    throw UnimplementedError('getAllInstalledApplications() has not been implemented.');
+    throw UnimplementedError(
+        'getAllInstalledApplications() has not been implemented.');
   }
 
   /// Gets applications filtered by name.
@@ -684,6 +685,7 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
   ///
   /// Throws [PlatformException] if unable to retrieve application information.
   Future<List<Map<String, dynamic>>> getApplicationByName(String name) {
-    throw UnimplementedError('getApplicationByName() has not been implemented.');
+    throw UnimplementedError(
+        'getApplicationByName() has not been implemented.');
   }
 }
