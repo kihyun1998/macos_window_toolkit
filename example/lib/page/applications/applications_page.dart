@@ -87,6 +87,10 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
             SnackBar(
               content: Text('No applications found matching "$query"'),
               backgroundColor: Colors.orange,
+              action: SnackBarAction(
+                label: 'Search App Store',
+                onPressed: () => _searchInAppStore(query),
+              ),
             ),
           );
         } else if (mounted) {
@@ -112,6 +116,36 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
     setState(() {
       _filteredApplications = _applications;
     });
+  }
+
+  Future<void> _searchInAppStore(String query) async {
+    try {
+      final success = await _toolkit.openAppStoreSearch(query);
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('App Store opened with search for "$query"'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Failed to open App Store'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error opening App Store: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -277,6 +311,18 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
+            if (_searchController.text.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () => _searchInAppStore(_searchController.text),
+                icon: const Icon(Icons.store),
+                label: const Text('Search in App Store'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                ),
+              ),
+            ],
           ],
         ),
       );

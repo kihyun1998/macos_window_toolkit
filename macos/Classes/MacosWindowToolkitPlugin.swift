@@ -4,6 +4,7 @@ import FlutterMacOS
 public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   private let windowHandler = WindowHandler()
   private let permissionHandler = PermissionHandler()
+  private let applicationHandler = ApplicationHandler()
 
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(
@@ -66,6 +67,8 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       getAllInstalledApplications(result: result)
     case "getApplicationByName":
       getApplicationByName(call: call, result: result)
+    case "openAppStoreSearch":
+      openAppStoreSearch(call: call, result: result)
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -630,7 +633,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
 
   /// Gets all installed applications on the system
   private func getAllInstalledApplications(result: @escaping FlutterResult) {
-    let appsResult = windowHandler.getAllInstalledApplications()
+    let appsResult = applicationHandler.getAllInstalledApplications()
     switch appsResult {
     case .success(let applications):
       result(applications)
@@ -656,7 +659,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       return
     }
 
-    let appsResult = windowHandler.getApplicationByName(name)
+    let appsResult = applicationHandler.getApplicationByName(name)
     switch appsResult {
     case .success(let applications):
       result(applications)
@@ -664,6 +667,32 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       result(
         FlutterError(
           code: "GET_APPLICATIONS_ERROR",
+          message: error.localizedDescription,
+          details: nil))
+    }
+  }
+
+  /// Opens Mac App Store with search query
+  private func openAppStoreSearch(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let arguments = call.arguments as? [String: Any],
+      let searchTerm = arguments["searchTerm"] as? String
+    else {
+      result(
+        FlutterError(
+          code: "INVALID_ARGUMENTS",
+          message: "searchTerm parameter is required",
+          details: nil))
+      return
+    }
+
+    let searchResult = applicationHandler.openAppStoreSearch(searchTerm)
+    switch searchResult {
+    case .success(let success):
+      result(success)
+    case .failure(let error):
+      result(
+        FlutterError(
+          code: "OPEN_APP_STORE_ERROR",
           message: error.localizedDescription,
           details: nil))
     }

@@ -1036,6 +1036,53 @@ class MacosWindowToolkit {
     }
   }
 
+  /// Opens Mac App Store with search query for the specified application name.
+  ///
+  /// Returns `true` if the App Store was successfully opened with the search query,
+  /// `false` otherwise.
+  ///
+  /// This method is useful when an application is not found on the system and you
+  /// want to help users find and install it from the App Store.
+  ///
+  /// [searchTerm] The application name or keywords to search for in the App Store
+  ///
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  ///
+  /// // Try to find an application first
+  /// final result = await toolkit.getApplicationByName('NonExistentApp');
+  /// switch (result) {
+  ///   case ApplicationSuccess(applications: final apps):
+  ///     if (apps.isEmpty) {
+  ///       // App not found, offer to search in App Store
+  ///       final opened = await toolkit.openAppStoreSearch('NonExistentApp');
+  ///       if (opened) {
+  ///         print('App Store opened for search');
+  ///       } else {
+  ///         print('Failed to open App Store');
+  ///       }
+  ///     } else {
+  ///       print('Found ${apps.length} matching applications');
+  ///     }
+  ///   case ApplicationFailure():
+  ///     print('Search failed: ${result.userMessage}');
+  /// }
+  ///
+  /// // Direct App Store search
+  /// final opened = await toolkit.openAppStoreSearch('Xcode');
+  /// if (opened) {
+  ///   print('App Store opened with Xcode search');
+  /// }
+  /// ```
+  ///
+  /// Throws [PlatformException] if unable to open the App Store due to system errors.
+  /// Returns `false` if the URL scheme is not supported or App Store is not available.
+  Future<bool> openAppStoreSearch(String searchTerm) async {
+    return await MacosWindowToolkitPlatform.instance
+        .openAppStoreSearch(searchTerm);
+  }
+
   // MARK: - Permission Monitoring
 
   /// Starts monitoring permissions at the specified interval.

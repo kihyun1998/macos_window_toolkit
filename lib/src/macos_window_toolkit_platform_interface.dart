@@ -688,4 +688,38 @@ abstract class MacosWindowToolkitPlatform extends PlatformInterface {
     throw UnimplementedError(
         'getApplicationByName() has not been implemented.');
   }
+
+  /// Opens Mac App Store with search query for the specified application name.
+  ///
+  /// Returns `true` if the App Store was successfully opened with the search query,
+  /// `false` otherwise.
+  ///
+  /// This method is useful when an application is not found on the system and you
+  /// want to help users find and install it from the App Store.
+  ///
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  /// final result = await toolkit.getApplicationByName('NonExistentApp');
+  /// 
+  /// switch (result) {
+  ///   case ApplicationSuccess(applications: final apps):
+  ///     if (apps.isEmpty) {
+  ///       // App not found, offer to search in App Store
+  ///       final opened = await toolkit.openAppStoreSearch('NonExistentApp');
+  ///       if (opened) {
+  ///         print('App Store opened for search');
+  ///       }
+  ///     }
+  ///   case ApplicationFailure():
+  ///     // Handle error
+  ///     break;
+  /// }
+  /// ```
+  ///
+  /// Throws [PlatformException] if unable to open the App Store.
+  Future<bool> openAppStoreSearch(String searchTerm) {
+    throw UnimplementedError(
+        'openAppStoreSearch() has not been implemented.');
+  }
 }

@@ -386,6 +386,15 @@ class MethodChannelMacosWindowToolkit extends MacosWindowToolkitPlatform {
         .toList();
   }
 
+  @override
+  Future<bool> openAppStoreSearch(String searchTerm) async {
+    final result = await methodChannel.invokeMethod<bool>(
+      'openAppStoreSearch',
+      {'searchTerm': searchTerm},
+    );
+    return result ?? false;
+  }
+
   /// Helper method to parse capture result from native response
   CaptureResult _parseCaptureResult(Map<dynamic, dynamic> result) {
     final success = result['success'] as bool? ?? false;
