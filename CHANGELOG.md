@@ -1,3 +1,9 @@
+## 1.2.1
+
+### Changed
+- **REFACTOR**: Split platform interface and method channel into modular files by operation type
+- **REFACTOR**: Organized code into `platform_interface/` and `method_channel/` directories with separate files for permissions, windows, captures, applications, and system info
+
 ## 1.2.0
 
 ### Added

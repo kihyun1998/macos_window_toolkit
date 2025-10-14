@@ -1,7 +1,6 @@
 import 'dart:async';
 
-import 'macos_window_toolkit_platform_interface.dart';
-import 'models/permission_status.dart';
+import '../macos_window_toolkit.dart';
 
 /// A singleton class that monitors permission changes using a periodic timer.
 ///

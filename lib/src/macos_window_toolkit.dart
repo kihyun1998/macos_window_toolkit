@@ -1,6 +1,6 @@
 library;
 
-import 'macos_window_toolkit_platform_interface.dart';
+import 'platform_interface/macos_window_toolkit_platform_interface.dart';
 import 'models/capturable_window_info.dart';
 import 'models/capture_result.dart';
 import 'models/macos_application_info.dart';
@@ -9,8 +9,8 @@ import 'models/macos_window_info.dart';
 import 'models/permission_status.dart';
 import 'permission_watcher.dart';
 
-export 'macos_window_toolkit_method_channel.dart';
-export 'macos_window_toolkit_platform_interface.dart';
+export 'method_channel/macos_window_toolkit_method_channel.dart';
+export 'platform_interface/macos_window_toolkit_platform_interface.dart';
 export 'models/capturable_window_info.dart';
 export 'models/capture_result.dart';
 export 'models/macos_application_info.dart';
