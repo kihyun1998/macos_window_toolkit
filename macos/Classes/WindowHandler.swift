@@ -88,6 +88,17 @@ class WindowHandler {
                 window["processId"] = pid.intValue
             }
 
+            // Extract role and subrole using Accessibility API (requires permission)
+            if let pid = windowInfo[kCGWindowOwnerPID as String] as? NSNumber {
+                let roleInfo = getWindowRole(processId: pid.intValue, windowName: windowName)
+                if let role = roleInfo.role {
+                    window["role"] = role
+                }
+                if let subrole = roleInfo.subrole {
+                    window["subrole"] = subrole
+                }
+            }
+
             // Extract additional properties
 
             // Store type
@@ -227,6 +238,18 @@ class WindowHandler {
                     window["processId"] = pid.intValue
                 }
 
+                // Extract role and subrole using Accessibility API (requires permission)
+                if let pid = windowInfo[kCGWindowOwnerPID as String] as? NSNumber {
+                    let windowName = windowInfo[kCGWindowName as String] as? String ?? ""
+                    let roleInfo = getWindowRole(processId: pid.intValue, windowName: windowName)
+                    if let role = roleInfo.role {
+                        window["role"] = role
+                    }
+                    if let subrole = roleInfo.subrole {
+                        window["subrole"] = subrole
+                    }
+                }
+
                 // Extract additional properties
 
                 // Store type
@@ -276,6 +299,62 @@ class WindowHandler {
     }
 
     // MARK: - Private Helper Methods for Accessibility API
+
+    /// Retrieves the role and subrole of a window using Accessibility API
+    /// Returns a tuple with (role, subrole), both can be nil if unavailable
+    /// Requires Accessibility permission to work properly
+    private func getWindowRole(processId: Int, windowName: String) -> (role: String?, subrole: String?) {
+        // Create AXUIElement for the application using process ID
+        let appElement = AXUIElementCreateApplication(pid_t(processId))
+
+        // Get all windows from the application
+        var windowsRef: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(
+            appElement, kAXWindowsAttribute as CFString, &windowsRef)
+
+        guard result == .success,
+            let windowsArray = windowsRef as? [AXUIElement]
+        else {
+            return (nil, nil)
+        }
+
+        // Find the specific window by comparing window titles
+        for windowElement in windowsArray {
+            var titleRef: CFTypeRef?
+            let titleResult = AXUIElementCopyAttributeValue(
+                windowElement, kAXTitleAttribute as CFString, &titleRef)
+
+            if titleResult == .success,
+                let title = titleRef as? String
+            {
+                // If window name is empty or matches, get role/subrole for this window
+                if windowName.isEmpty || title == windowName {
+                    var role: String?
+                    var subrole: String?
+
+                    // Get role
+                    var roleRef: CFTypeRef?
+                    let roleResult = AXUIElementCopyAttributeValue(
+                        windowElement, kAXRoleAttribute as CFString, &roleRef)
+                    if roleResult == .success, let roleValue = roleRef as? String {
+                        role = roleValue
+                    }
+
+                    // Get subrole
+                    var subroleRef: CFTypeRef?
+                    let subroleResult = AXUIElementCopyAttributeValue(
+                        windowElement, kAXSubroleAttribute as CFString, &subroleRef)
+                    if subroleResult == .success, let subroleValue = subroleRef as? String {
+                        subrole = subroleValue
+                    }
+
+                    return (role, subrole)
+                }
+            }
+        }
+
+        return (nil, nil)
+    }
 
     /// Finds the AXUIElement for a window using process ID and window information
     /// This is the first step in Accessibility API - we need to get the app's UI element first

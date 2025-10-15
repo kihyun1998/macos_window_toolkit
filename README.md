@@ -15,6 +15,7 @@ A Flutter plugin for macOS that provides comprehensive window management and app
   - Window layer level
   - Visibility status
   - Process ID
+  - Window role and subrole (via Accessibility API)
 - 📱 **Application Discovery**: Discover and search installed applications with type-safe APIs
   - Get all installed applications system-wide
   - Search applications by name with case-insensitive matching
@@ -58,7 +59,7 @@ Add this package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  macos_window_toolkit: ^1.2.1
+  macos_window_toolkit: ^1.3.0
 ```
 
 Then run:
@@ -309,14 +310,19 @@ class MacosApplicationInfo {
 Each window object contains the following properties:
 
 ```dart
-class WindowInfo {
+class MacosWindowInfo {
   final int windowId;        // Unique window identifier
   final String name;         // Window title
   final String ownerName;    // Application name that owns the window
-  final List<double> bounds; // [x, y, width, height]
+  final double x;            // X coordinate
+  final double y;            // Y coordinate
+  final double width;        // Width
+  final double height;       // Height
   final int layer;           // Window layer level
   final bool isOnScreen;     // Whether window is visible
   final int processId;       // Process ID of the owning application
+  final String? role;        // Window role (e.g., "AXWindow", "AXDialog")
+  final String? subrole;     // Window subrole (e.g., "AXStandardWindow")
 }
 ```
 
@@ -480,10 +486,15 @@ Data class representing a window's information.
 | `windowId` | `int` | Unique system window identifier |
 | `name` | `String` | Window title or name |
 | `ownerName` | `String` | Name of the application that owns the window |
-| `bounds` | `List<double>` | Window bounds as [x, y, width, height] |
+| `x` | `double` | X coordinate of the window |
+| `y` | `double` | Y coordinate of the window |
+| `width` | `double` | Width of the window |
+| `height` | `double` | Height of the window |
 | `layer` | `int` | Window layer level (higher = more front) |
 | `isOnScreen` | `bool` | Whether the window is currently visible |
 | `processId` | `int` | Process ID of the owning application |
+| `role` | `String?` | Window role (requires Accessibility permission) |
+| `subrole` | `String?` | Window subrole (requires Accessibility permission) |
 
 ## Performance Considerations
 

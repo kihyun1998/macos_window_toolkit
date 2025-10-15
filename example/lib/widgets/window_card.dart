@@ -139,6 +139,18 @@ class WindowCard extends StatelessWidget {
                       icon: Icons.memory,
                       label: formatBytes(window.memoryUsage!),
                     ),
+                  if (window.role != null)
+                    _PropertyChip(
+                      colorScheme: colorScheme,
+                      icon: Icons.window,
+                      label: window.role!.replaceAll('AX', ''),
+                    ),
+                  if (window.subrole != null)
+                    _PropertyChip(
+                      colorScheme: colorScheme,
+                      icon: Icons.category,
+                      label: window.subrole!.replaceAll('AX', ''),
+                    ),
                 ],
               ),
             ],

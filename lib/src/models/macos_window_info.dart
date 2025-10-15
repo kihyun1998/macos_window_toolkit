@@ -46,6 +46,14 @@ class MacosWindowInfo {
   /// Whether the window buffer is stored in video memory
   final bool? isInVideoMemory;
 
+  /// Window role (e.g., "AXWindow", "AXDialog", "AXSheet")
+  /// Requires Accessibility permission to retrieve
+  final String? role;
+
+  /// Window subrole (e.g., "AXStandardWindow", "AXDialog", "AXFloatingWindow")
+  /// Requires Accessibility permission to retrieve
+  final String? subrole;
+
   const MacosWindowInfo({
     required this.windowId,
     required this.name,
@@ -62,6 +70,8 @@ class MacosWindowInfo {
     this.alpha,
     this.memoryUsage,
     this.isInVideoMemory,
+    this.role,
+    this.subrole,
   });
 
   /// Creates a [MacosWindowInfo] from a map (typically from platform channel)
@@ -82,6 +92,8 @@ class MacosWindowInfo {
       alpha: map['alpha']?.toDouble(),
       memoryUsage: map['memoryUsage'],
       isInVideoMemory: map['isInVideoMemory'],
+      role: map['role'],
+      subrole: map['subrole'],
     );
   }
 
@@ -103,6 +115,8 @@ class MacosWindowInfo {
       if (alpha != null) 'alpha': alpha,
       if (memoryUsage != null) 'memoryUsage': memoryUsage,
       if (isInVideoMemory != null) 'isInVideoMemory': isInVideoMemory,
+      if (role != null) 'role': role,
+      if (subrole != null) 'subrole': subrole,
     };
   }
 
@@ -122,6 +136,8 @@ class MacosWindowInfo {
         '${alpha != null ? ', alpha: $alpha' : ''}'
         '${memoryUsage != null ? ', memoryUsage: $memoryUsage' : ''}'
         '${isInVideoMemory != null ? ', isInVideoMemory: $isInVideoMemory' : ''}'
+        '${role != null ? ', role: $role' : ''}'
+        '${subrole != null ? ', subrole: $subrole' : ''}'
         ')';
   }
 
@@ -144,7 +160,9 @@ class MacosWindowInfo {
         other.sharingState == sharingState &&
         other.alpha == alpha &&
         other.memoryUsage == memoryUsage &&
-        other.isInVideoMemory == isInVideoMemory;
+        other.isInVideoMemory == isInVideoMemory &&
+        other.role == role &&
+        other.subrole == subrole;
   }
 
   @override
@@ -165,6 +183,8 @@ class MacosWindowInfo {
       alpha,
       memoryUsage,
       isInVideoMemory,
+      role,
+      subrole,
     );
   }
 }

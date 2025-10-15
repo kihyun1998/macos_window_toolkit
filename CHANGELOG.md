@@ -1,3 +1,18 @@
+## 1.3.0
+
+### Added
+- **FEAT**: Window role and subrole information using Accessibility API
+  - Added `role` property to `MacosWindowInfo` (e.g., "AXWindow", "AXDialog", "AXSheet")
+  - Added `subrole` property to `MacosWindowInfo` (e.g., "AXStandardWindow", "AXDialog", "AXFloatingWindow")
+  - Enables differentiation between window types similar to Windows Window Class
+  - Requires Accessibility permission for full functionality
+- **FEAT**: New `getWindowRole()` helper method in WindowHandler.swift for retrieving window role/subrole via Accessibility API
+- **UI**: Updated example app to display role and subrole information in window cards and detail sheets
+
+### Changed
+- **ENHANCEMENT**: Window information now includes Accessibility API data for better window type identification
+- **MODEL**: Extended `MacosWindowInfo` model with optional `role` and `subrole` fields
+
 ## 1.2.1
 
 ### Changed

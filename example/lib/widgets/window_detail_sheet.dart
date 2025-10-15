@@ -1063,6 +1063,10 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                 label: 'Memory Usage',
                 value: widget.formatBytes(widget.window.memoryUsage!),
               ),
+            if (widget.window.role != null)
+              _DetailItem(label: 'Role', value: widget.window.role!),
+            if (widget.window.subrole != null)
+              _DetailItem(label: 'Subrole', value: widget.window.subrole!),
           ],
         ),
       ),

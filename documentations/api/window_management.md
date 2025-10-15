@@ -417,6 +417,8 @@ Complete information about a macOS window.
 | `alpha` | `double?` | Transparency (0.0=transparent, 1.0=opaque) |
 | `memoryUsage` | `int?` | Memory usage in bytes |
 | `isInVideoMemory` | `bool?` | Whether stored in video memory |
+| `role` | `String?` | Window role via Accessibility API (e.g., "AXWindow", "AXDialog") |
+| `subrole` | `String?` | Window subrole via Accessibility API (e.g., "AXStandardWindow", "AXFloatingWindow") |
 
 ### Constructor
 
@@ -437,6 +439,8 @@ const MacosWindowInfo({
   this.alpha,
   this.memoryUsage,
   this.isInVideoMemory,
+  this.role,
+  this.subrole,
 });
 ```
 
@@ -472,6 +476,15 @@ if (window.memoryUsage != null) {
 
 if (window.isInVideoMemory != null) {
   print('Video memory: ${window.isInVideoMemory}');
+}
+
+// Window type information (requires Accessibility permission)
+if (window.role != null) {
+  print('Window role: ${window.role}');
+}
+
+if (window.subrole != null) {
+  print('Window subrole: ${window.subrole}');
 }
 ```
 
