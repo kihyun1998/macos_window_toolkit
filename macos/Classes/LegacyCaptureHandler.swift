@@ -14,7 +14,8 @@ class LegacyCaptureHandler {
 
     // Window capture using CGWindowListCreateImage (macOS 10.5+)
     static func captureWindow(
-        windowId: Int, excludeTitlebar: Bool = false, customTitlebarHeight: CGFloat? = nil
+        windowId: Int, excludeTitlebar: Bool = false, customTitlebarHeight: CGFloat? = nil,
+        targetWidth: Int? = nil, targetHeight: Int? = nil, preserveAspectRatio: Bool = false
     ) throws -> Data {
         // Check Screen Recording permission (macOS 10.15+)
         if #available(macOS 10.15, *) {
@@ -91,8 +92,36 @@ class LegacyCaptureHandler {
             finalImage = cgImage
         }
 
+        // Resize if targetWidth and targetHeight are provided
+        let imageToConvert: CGImage
+        if let width = targetWidth, let height = targetHeight {
+            let resized: CGImage?
+            if preserveAspectRatio {
+                // Preserve aspect ratio, fill extra space with black
+                resized = resizeImagePreservingAspectRatio(
+                    finalImage,
+                    targetWidth: width,
+                    targetHeight: height
+                )
+            } else {
+                // Force exact size (may distort image)
+                resized = resizeImageToExactSize(
+                    finalImage,
+                    targetWidth: width,
+                    targetHeight: height
+                )
+            }
+
+            guard let finalResized = resized else {
+                throw LegacyCaptureError.captureFailed("Failed to resize image")
+            }
+            imageToConvert = finalResized
+        } else {
+            imageToConvert = finalImage
+        }
+
         // CGImage를 PNG 데이터로 변환
-        guard let pngData = convertCGImageToPNG(finalImage) else {
+        guard let pngData = convertCGImageToPNG(imageToConvert) else {
             throw LegacyCaptureError.noImageData
         }
 
@@ -184,6 +213,92 @@ class LegacyCaptureHandler {
     private static func convertCGImageToPNG(_ cgImage: CGImage) -> Data? {
         let bitmapRep = NSBitmapImageRep(cgImage: cgImage)
         return bitmapRep.representation(using: .png, properties: [:])
+    }
+
+    // Resize CGImage to exact target size (ignoring aspect ratio)
+    private static func resizeImageToExactSize(
+        _ image: CGImage,
+        targetWidth: Int,
+        targetHeight: Int
+    ) -> CGImage? {
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+
+        guard let context = CGContext(
+            data: nil,
+            width: targetWidth,
+            height: targetHeight,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
+            return nil
+        }
+
+        // High quality interpolation for smooth resizing
+        context.interpolationQuality = .high
+
+        // Draw the image at exact target size
+        context.draw(
+            image,
+            in: CGRect(x: 0, y: 0, width: targetWidth, height: targetHeight)
+        )
+
+        return context.makeImage()
+    }
+
+    // Resize CGImage while preserving aspect ratio (fills extra space with black)
+    private static func resizeImagePreservingAspectRatio(
+        _ image: CGImage,
+        targetWidth: Int,
+        targetHeight: Int
+    ) -> CGImage? {
+        let sourceWidth = CGFloat(image.width)
+        let sourceHeight = CGFloat(image.height)
+        let targetW = CGFloat(targetWidth)
+        let targetH = CGFloat(targetHeight)
+
+        // Calculate aspect ratio scaling
+        let widthRatio = targetW / sourceWidth
+        let heightRatio = targetH / sourceHeight
+        let scaleFactor = min(widthRatio, heightRatio)
+
+        // Calculate scaled dimensions
+        let scaledWidth = sourceWidth * scaleFactor
+        let scaledHeight = sourceHeight * scaleFactor
+
+        // Calculate offset to center the image
+        let xOffset = (targetW - scaledWidth) / 2.0
+        let yOffset = (targetH - scaledHeight) / 2.0
+
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+
+        guard let context = CGContext(
+            data: nil,
+            width: targetWidth,
+            height: targetHeight,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
+            return nil
+        }
+
+        // Fill background with black
+        context.setFillColor(CGColor(red: 0, green: 0, blue: 0, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: targetWidth, height: targetHeight))
+
+        // High quality interpolation for smooth resizing
+        context.interpolationQuality = .high
+
+        // Draw the image centered with preserved aspect ratio
+        context.draw(
+            image,
+            in: CGRect(x: xOffset, y: yOffset, width: scaledWidth, height: scaledHeight)
+        )
+
+        return context.makeImage()
     }
 
     // 캡쳐 가능한 윈도우 목록 반환 (CGWindowListCopyWindowInfo 사용)

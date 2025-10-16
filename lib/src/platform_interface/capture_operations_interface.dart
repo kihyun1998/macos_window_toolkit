@@ -12,6 +12,10 @@ abstract class CaptureOperationsInterface {
   /// [customTitlebarHeight] specifies a custom titlebar height to remove (in points).
   /// If null and excludeTitlebar is true, uses the default 28pt titlebar height.
   /// Must be non-negative and not larger than the window height.
+  /// [targetWidth] if specified, resizes the captured image to this width.
+  /// [targetHeight] if specified, resizes the captured image to this height.
+  /// Both targetWidth and targetHeight must be provided together or both null.
+  /// When specified, the image will be resized to exact dimensions (aspect ratio may change).
   ///
   /// Returns:
   /// - `CaptureSuccess` with image data on successful capture
@@ -38,6 +42,9 @@ abstract class CaptureOperationsInterface {
     int windowId, {
     bool excludeTitlebar = false,
     double? customTitlebarHeight,
+    int? targetWidth,
+    int? targetHeight,
+    bool preserveAspectRatio = false,
   }) {
     throw UnimplementedError('captureWindow() has not been implemented.');
   }
@@ -68,6 +75,10 @@ abstract class CaptureOperationsInterface {
   /// [customTitlebarHeight] specifies a custom titlebar height to remove (in points).
   /// If null and excludeTitlebar is true, uses the default 28pt titlebar height.
   /// Must be non-negative and not larger than the window height.
+  /// [targetWidth] if specified, resizes the captured image to this width.
+  /// [targetHeight] if specified, resizes the captured image to this height.
+  /// Both targetWidth and targetHeight must be provided together or both null.
+  /// When specified, the image will be resized to exact dimensions (aspect ratio may change).
   ///
   /// This method uses the legacy CGWindowListCreateImage API which is available
   /// on all macOS versions (10.5+) but may have lower quality or performance
@@ -95,6 +106,9 @@ abstract class CaptureOperationsInterface {
     int windowId, {
     bool excludeTitlebar = false,
     double? customTitlebarHeight,
+    int? targetWidth,
+    int? targetHeight,
+    bool preserveAspectRatio = false,
   }) {
     throw UnimplementedError('captureWindowLegacy() has not been implemented.');
   }
@@ -128,6 +142,10 @@ abstract class CaptureOperationsInterface {
   /// [customTitlebarHeight] specifies a custom titlebar height to remove (in points).
   /// If null and excludeTitlebar is true, uses the default 28pt titlebar height.
   /// Must be non-negative and not larger than the window height.
+  /// [targetWidth] if specified, resizes the captured image to this width.
+  /// [targetHeight] if specified, resizes the captured image to this height.
+  /// Both targetWidth and targetHeight must be provided together or both null.
+  /// When specified, the image will be resized to exact dimensions (aspect ratio may change).
   ///
   /// This is the recommended method for window capture as it provides the best
   /// experience across all macOS versions.
@@ -157,6 +175,9 @@ abstract class CaptureOperationsInterface {
     int windowId, {
     bool excludeTitlebar = false,
     double? customTitlebarHeight,
+    int? targetWidth,
+    int? targetHeight,
+    bool preserveAspectRatio = false,
   }) {
     throw UnimplementedError('captureWindowAuto() has not been implemented.');
   }

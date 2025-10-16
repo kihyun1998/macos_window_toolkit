@@ -12,13 +12,23 @@ mixin CaptureOperationsChannel {
     int windowId, {
     bool excludeTitlebar = false,
     double? customTitlebarHeight,
+    int? targetWidth,
+    int? targetHeight,
+    bool preserveAspectRatio = false,
   }) async {
     final arguments = <String, dynamic>{
       'windowId': windowId,
       'excludeTitlebar': excludeTitlebar,
+      'preserveAspectRatio': preserveAspectRatio,
     };
     if (customTitlebarHeight != null) {
       arguments['customTitlebarHeight'] = customTitlebarHeight;
+    }
+    if (targetWidth != null) {
+      arguments['targetWidth'] = targetWidth;
+    }
+    if (targetHeight != null) {
+      arguments['targetHeight'] = targetHeight;
     }
 
     try {
@@ -60,13 +70,23 @@ mixin CaptureOperationsChannel {
     int windowId, {
     bool excludeTitlebar = false,
     double? customTitlebarHeight,
+    int? targetWidth,
+    int? targetHeight,
+    bool preserveAspectRatio = false,
   }) async {
     final arguments = <String, dynamic>{
       'windowId': windowId,
       'excludeTitlebar': excludeTitlebar,
+      'preserveAspectRatio': preserveAspectRatio,
     };
     if (customTitlebarHeight != null) {
       arguments['customTitlebarHeight'] = customTitlebarHeight;
+    }
+    if (targetWidth != null) {
+      arguments['targetWidth'] = targetWidth;
+    }
+    if (targetHeight != null) {
+      arguments['targetHeight'] = targetHeight;
     }
 
     try {
@@ -108,13 +128,23 @@ mixin CaptureOperationsChannel {
     int windowId, {
     bool excludeTitlebar = false,
     double? customTitlebarHeight,
+    int? targetWidth,
+    int? targetHeight,
+    bool preserveAspectRatio = false,
   }) async {
     final arguments = <String, dynamic>{
       'windowId': windowId,
       'excludeTitlebar': excludeTitlebar,
+      'preserveAspectRatio': preserveAspectRatio,
     };
     if (customTitlebarHeight != null) {
       arguments['customTitlebarHeight'] = customTitlebarHeight;
+    }
+    if (targetWidth != null) {
+      arguments['targetWidth'] = targetWidth;
+    }
+    if (targetHeight != null) {
+      arguments['targetHeight'] = targetHeight;
     }
 
     try {

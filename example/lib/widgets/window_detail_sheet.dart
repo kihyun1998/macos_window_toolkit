@@ -1,3 +1,7 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:macos_window_toolkit/macos_window_toolkit.dart';
@@ -46,11 +50,15 @@ enum CaptureType { screenCaptureKit, legacy, smart }
 class _WindowDetailSheetState extends State<WindowDetailSheet> {
   final _macosWindowToolkit = MacosWindowToolkit();
   final _titlebarHeightController = TextEditingController();
+  final _targetWidthController = TextEditingController();
+  final _targetHeightController = TextEditingController();
 
   bool _isCapturing = false;
   String? _captureError;
   MacosVersionInfo? _versionInfo;
   bool _excludeTitlebar = false;
+  bool _enableResize = false;
+  bool _preserveAspectRatio = false;
   CaptureType _captureType = CaptureType.smart;
   bool? _isWindowAlive;
   bool _isCheckingAlive = false;
@@ -68,6 +76,8 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
   @override
   void dispose() {
     _titlebarHeightController.dispose();
+    _targetWidthController.dispose();
+    _targetHeightController.dispose();
     super.dispose();
   }
 
@@ -115,6 +125,16 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
         customHeight = double.tryParse(_titlebarHeightController.text);
       }
 
+      int? targetWidth;
+      int? targetHeight;
+      if (_enableResize) {
+        targetWidth = int.tryParse(_targetWidthController.text);
+        targetHeight = int.tryParse(_targetHeightController.text);
+        print('📐 Resize enabled: ${targetWidth}x$targetHeight, preserveAspectRatio: $_preserveAspectRatio');
+      } else {
+        print('📐 Resize disabled (original size)');
+      }
+
       CaptureResult result;
 
       switch (_captureType) {
@@ -123,6 +143,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
             widget.window.windowId,
             excludeTitlebar: _excludeTitlebar,
             customTitlebarHeight: customHeight,
+            targetWidth: targetWidth,
+            targetHeight: targetHeight,
+            preserveAspectRatio: _preserveAspectRatio,
           );
           break;
         case CaptureType.legacy:
@@ -130,6 +153,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
             widget.window.windowId,
             excludeTitlebar: _excludeTitlebar,
             customTitlebarHeight: customHeight,
+            targetWidth: targetWidth,
+            targetHeight: targetHeight,
+            preserveAspectRatio: _preserveAspectRatio,
           );
           break;
         case CaptureType.smart:
@@ -137,6 +163,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
             widget.window.windowId,
             excludeTitlebar: _excludeTitlebar,
             customTitlebarHeight: customHeight,
+            targetWidth: targetWidth,
+            targetHeight: targetHeight,
+            preserveAspectRatio: _preserveAspectRatio,
           );
           break;
       }
@@ -251,9 +280,16 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
   }
 
   void _showCaptureResultDialog(Uint8List imageBytes) {
+    // Debug: Print image byte size
+    print('🖼️ Captured image size: ${imageBytes.length} bytes');
+
     showDialog(
       context: context,
-      builder: (context) => CaptureResultDialog(imageBytes: imageBytes),
+      builder: (context) => CaptureResultDialog(
+        imageBytes: imageBytes,
+        targetWidth: _enableResize ? int.tryParse(_targetWidthController.text) : null,
+        targetHeight: _enableResize ? int.tryParse(_targetHeightController.text) : null,
+      ),
     );
   }
 
@@ -931,6 +967,130 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                         ],
 
                         const SizedBox(height: 16),
+                        const Divider(),
+                        const SizedBox(height: 16),
+
+                        // Resize Options
+                        Row(
+                          children: [
+                            Switch(
+                              value: _enableResize,
+                              onChanged: _isCapturing
+                                  ? null
+                                  : (value) {
+                                      setState(() {
+                                        _enableResize = value;
+                                      });
+                                    },
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Resize Image',
+                              style: TextStyle(
+                                color: _isCapturing ? Colors.grey : null,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        if (_enableResize) ...[
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _targetWidthController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Target Width',
+                                    hintText: '800',
+                                    helperText: 'pixels',
+                                    border: OutlineInputBorder(),
+                                    isDense: true,
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  enabled: !_isCapturing,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: TextField(
+                                  controller: _targetHeightController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Target Height',
+                                    hintText: '600',
+                                    helperText: 'pixels',
+                                    border: OutlineInputBorder(),
+                                    isDense: true,
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  enabled: !_isCapturing,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _preserveAspectRatio,
+                                onChanged: _isCapturing
+                                    ? null
+                                    : (value) {
+                                        setState(() {
+                                          _preserveAspectRatio = value ?? false;
+                                        });
+                                      },
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Preserve aspect ratio (fills extra space with black)',
+                                  style: TextStyle(
+                                    color: _isCapturing ? Colors.grey : null,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: _preserveAspectRatio
+                                  ? Colors.green.withValues(alpha: 0.1)
+                                  : Colors.orange.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: _preserveAspectRatio
+                                    ? Colors.green.withValues(alpha: 0.3)
+                                    : Colors.orange.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.info_outline,
+                                    color: _preserveAspectRatio ? Colors.green : Colors.orange,
+                                    size: 16),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _preserveAspectRatio
+                                        ? 'Aspect ratio will be maintained, extra space filled with black'
+                                        : 'Image will be stretched to exact dimensions (may distort)',
+                                    style: TextStyle(
+                                      color: _preserveAspectRatio ? Colors.green : Colors.orange,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+
+                        const SizedBox(height: 16),
 
                         // Capture Button and Status
                         if (!_canCapture) ...[
@@ -1108,10 +1268,109 @@ class _DetailItem extends StatelessWidget {
   }
 }
 
-class CaptureResultDialog extends StatelessWidget {
+class CaptureResultDialog extends StatefulWidget {
   final Uint8List imageBytes;
+  final int? targetWidth;
+  final int? targetHeight;
 
-  const CaptureResultDialog({super.key, required this.imageBytes});
+  const CaptureResultDialog({
+    super.key,
+    required this.imageBytes,
+    this.targetWidth,
+    this.targetHeight,
+  });
+
+  @override
+  State<CaptureResultDialog> createState() => _CaptureResultDialogState();
+}
+
+class _CaptureResultDialogState extends State<CaptureResultDialog> {
+  int? imageWidth;
+  int? imageHeight;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _decodeImageSize();
+  }
+
+  Future<void> _decodeImageSize() async {
+    final codec = await ui.instantiateImageCodec(widget.imageBytes);
+    final frame = await codec.getNextFrame();
+    setState(() {
+      imageWidth = frame.image.width;
+      imageHeight = frame.image.height;
+    });
+    // ignore: avoid_print
+    print('✅ Decoded image size: ${imageWidth}x$imageHeight');
+  }
+
+  Future<void> _saveImage() async {
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      // Generate default filename with timestamp
+      final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-').split('.')[0];
+      final defaultFileName = 'screenshot_$timestamp.png';
+
+      // Show save dialog
+      final FileSaveLocation? saveLocation = await getSaveLocation(
+        suggestedName: defaultFileName,
+        acceptedTypeGroups: [
+          const XTypeGroup(
+            label: 'PNG Images',
+            extensions: ['png'],
+          ),
+        ],
+      );
+
+      if (saveLocation == null) {
+        // User cancelled
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Save cancelled'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Save the file
+      final file = File(saveLocation.path);
+      await file.writeAsBytes(widget.imageBytes);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Image saved to: ${saveLocation.path}'),
+            duration: const Duration(seconds: 3),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save image: $e'),
+            duration: const Duration(seconds: 3),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1121,7 +1380,17 @@ class CaptureResultDialog extends StatelessWidget {
       child: Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(
-          title: const Text('Captured Window'),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Captured Window'),
+              if (imageWidth != null && imageHeight != null)
+                Text(
+                  '${imageWidth}x$imageHeight px${widget.targetWidth != null ? " (resized from ${widget.targetWidth}x${widget.targetHeight})" : ""}',
+                  style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                ),
+            ],
+          ),
           backgroundColor: colorScheme.surface.withValues(alpha: 0.9),
           foregroundColor: colorScheme.onSurface,
           leading: IconButton(
@@ -1141,39 +1410,90 @@ class CaptureResultDialog extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Image.memory(imageBytes, fit: BoxFit.contain),
+              child: Image.memory(widget.imageBytes, fit: BoxFit.contain),
             ),
           ),
         ),
         bottomNavigationBar: Container(
           padding: const EdgeInsets.all(16),
           color: colorScheme.surface.withValues(alpha: 0.9),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              ElevatedButton.icon(
-                onPressed: () {
-                  Clipboard.setData(
-                    ClipboardData(text: 'Image copied to clipboard'),
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Image size copied to clipboard'),
-                      duration: Duration(seconds: 2),
+              if (imageWidth != null && imageHeight != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.blue.withValues(alpha: 0.3),
+                      ),
                     ),
-                  );
-                },
-                icon: const Icon(Icons.copy),
-                label: const Text('Copy Info'),
-              ),
-              ElevatedButton.icon(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.close),
-                label: const Text('Close'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.photo_size_select_large, color: Colors.blue, size: 16),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Image Size: ${imageWidth}x$imageHeight pixels',
+                          style: TextStyle(
+                            color: Colors.blue,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        if (widget.targetWidth != null) ...[
+                          const SizedBox(width: 8),
+                          Icon(Icons.check_circle, color: Colors.green, size: 16),
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: _isSaving ? null : _saveImage,
+                    icon: _isSaving
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.save),
+                    label: Text(_isSaving ? 'Saving...' : 'Save'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      final text = 'Image Size: ${imageWidth}x$imageHeight pixels (${widget.imageBytes.length} bytes)';
+                      Clipboard.setData(ClipboardData(text: text));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Copied: $text'),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.copy),
+                    label: const Text('Copy Info'),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                    label: const Text('Close'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

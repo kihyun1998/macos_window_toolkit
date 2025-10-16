@@ -402,11 +402,17 @@ class MacosWindowToolkit {
     int windowId, {
     bool excludeTitlebar = false,
     double? customTitlebarHeight,
+    int? targetWidth,
+    int? targetHeight,
+    bool preserveAspectRatio = false,
   }) async {
     return await MacosWindowToolkitPlatform.instance.captureWindow(
       windowId,
       excludeTitlebar: excludeTitlebar,
       customTitlebarHeight: customTitlebarHeight,
+      targetWidth: targetWidth,
+      targetHeight: targetHeight,
+      preserveAspectRatio: preserveAspectRatio,
     );
   }
 
@@ -489,11 +495,17 @@ class MacosWindowToolkit {
     int windowId, {
     bool excludeTitlebar = false,
     double? customTitlebarHeight,
+    int? targetWidth,
+    int? targetHeight,
+    bool preserveAspectRatio = false,
   }) async {
     return await MacosWindowToolkitPlatform.instance.captureWindowLegacy(
       windowId,
       excludeTitlebar: excludeTitlebar,
       customTitlebarHeight: customTitlebarHeight,
+      targetWidth: targetWidth,
+      targetHeight: targetHeight,
+      preserveAspectRatio: preserveAspectRatio,
     );
   }
 
@@ -574,11 +586,17 @@ class MacosWindowToolkit {
     int windowId, {
     bool excludeTitlebar = false,
     double? customTitlebarHeight,
+    int? targetWidth,
+    int? targetHeight,
+    bool preserveAspectRatio = false,
   }) async {
     return await MacosWindowToolkitPlatform.instance.captureWindowAuto(
       windowId,
       excludeTitlebar: excludeTitlebar,
       customTitlebarHeight: customTitlebarHeight,
+      targetWidth: targetWidth,
+      targetHeight: targetHeight,
+      preserveAspectRatio: preserveAspectRatio,
     );
   }
 

@@ -17,7 +17,8 @@ class CaptureHandler {
     }
 
     static func captureWindow(
-        windowId: Int, excludeTitlebar: Bool = false, customTitlebarHeight: CGFloat? = nil
+        windowId: Int, excludeTitlebar: Bool = false, customTitlebarHeight: CGFloat? = nil,
+        targetWidth: Int? = nil, targetHeight: Int? = nil, preserveAspectRatio: Bool = false
     ) async throws -> Data {
         // Check Screen Recording permission
         let permissionHandler = PermissionHandler()
@@ -54,11 +55,22 @@ class CaptureHandler {
 
             // Capture configuration
             let configuration = SCStreamConfiguration()
-            configuration.width = Int(targetWindow.frame.width)
-            configuration.height = Int(targetWindow.frame.height)
+
+            // Set capture size: use targetWidth/targetHeight if provided, otherwise use original window size
+            if let width = targetWidth, let height = targetHeight {
+                configuration.width = width
+                configuration.height = height
+                // preserveAspectRatio = true: maintains aspect ratio, fills extra space with black
+                // preserveAspectRatio = false: forces exact dimensions (may distort image)
+                configuration.scalesToFit = preserveAspectRatio
+            } else {
+                configuration.width = Int(targetWindow.frame.width)
+                configuration.height = Int(targetWindow.frame.height)
+                configuration.scalesToFit = false
+            }
+
             configuration.capturesAudio = false  // macOS 14.0+에서는 문제없음
             configuration.showsCursor = false
-            configuration.scalesToFit = false
             configuration.minimumFrameInterval = CMTime(value: 1, timescale: 60)
 
             // Set capture filter (capture specific window only)

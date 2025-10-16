@@ -17,7 +17,8 @@ class SmartCaptureHandler {
     /// - Uses ScreenCaptureKit on macOS 14.0+ for best quality
     /// - Falls back to CGWindowListCreateImage on older versions
     static func captureWindowAuto(
-        windowId: Int, excludeTitlebar: Bool = false, customTitlebarHeight: CGFloat? = nil
+        windowId: Int, excludeTitlebar: Bool = false, customTitlebarHeight: CGFloat? = nil,
+        targetWidth: Int? = nil, targetHeight: Int? = nil, preserveAspectRatio: Bool = false
     ) async throws -> Data {
         // Check Screen Recording permission (macOS 10.15+)
         if #available(macOS 10.15, *) {
@@ -32,7 +33,9 @@ class SmartCaptureHandler {
                     // Try ScreenCaptureKit first
                     return try await CaptureHandler.captureWindow(
                         windowId: windowId, excludeTitlebar: excludeTitlebar,
-                        customTitlebarHeight: customTitlebarHeight)
+                        customTitlebarHeight: customTitlebarHeight,
+                        targetWidth: targetWidth, targetHeight: targetHeight,
+                        preserveAspectRatio: preserveAspectRatio)
                 } catch let error as CaptureHandler.CaptureError {
                     // Re-throw minimized window error without fallback
                     if case .windowMinimized = error {
@@ -41,24 +44,30 @@ class SmartCaptureHandler {
                     // For other ScreenCaptureKit errors, fall back to legacy method
                     return try LegacyCaptureHandler.captureWindow(
                         windowId: windowId, excludeTitlebar: excludeTitlebar,
-                        customTitlebarHeight: customTitlebarHeight)
+                        customTitlebarHeight: customTitlebarHeight,
+                        targetWidth: targetWidth, targetHeight: targetHeight,
+                        preserveAspectRatio: preserveAspectRatio)
                 } catch {
                     // For unknown errors, fall back to legacy method
                     return try LegacyCaptureHandler.captureWindow(
                         windowId: windowId, excludeTitlebar: excludeTitlebar,
-                        customTitlebarHeight: customTitlebarHeight)
+                        customTitlebarHeight: customTitlebarHeight,
+                        targetWidth: targetWidth, targetHeight: targetHeight,
+                        preserveAspectRatio: preserveAspectRatio)
                 }
             } else {
                 // This shouldn't happen as shouldUseScreenCaptureKit() checks version
                 return try LegacyCaptureHandler.captureWindow(
                     windowId: windowId, excludeTitlebar: excludeTitlebar,
-                    customTitlebarHeight: customTitlebarHeight)
+                    customTitlebarHeight: customTitlebarHeight,
+                    targetWidth: targetWidth, targetHeight: targetHeight)
             }
         } else {
             // Use legacy method for older macOS versions
             return try LegacyCaptureHandler.captureWindow(
                 windowId: windowId, excludeTitlebar: excludeTitlebar,
-                customTitlebarHeight: customTitlebarHeight)
+                customTitlebarHeight: customTitlebarHeight,
+                targetWidth: targetWidth, targetHeight: targetHeight)
         }
     }
 

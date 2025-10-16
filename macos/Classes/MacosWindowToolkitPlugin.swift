@@ -228,14 +228,19 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
 
     let excludeTitlebar = arguments["excludeTitlebar"] as? Bool ?? false
     let customTitlebarHeight = arguments["customTitlebarHeight"] as? CGFloat
+    let targetWidth = arguments["targetWidth"] as? Int
+    let targetHeight = arguments["targetHeight"] as? Int
+    let preserveAspectRatio = arguments["preserveAspectRatio"] as? Bool ?? false
 
     if #available(macOS 12.3, *) {
       Task {
         do {
           let imageData = try await CaptureHandler.captureWindow(
             windowId: windowId, excludeTitlebar: excludeTitlebar,
-            customTitlebarHeight: customTitlebarHeight)
-          
+            customTitlebarHeight: customTitlebarHeight,
+            targetWidth: targetWidth, targetHeight: targetHeight,
+            preserveAspectRatio: preserveAspectRatio)
+
           // Return success result
           result([
             "success": true,
@@ -328,11 +333,16 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
 
     let excludeTitlebar = arguments["excludeTitlebar"] as? Bool ?? false
     let customTitlebarHeight = arguments["customTitlebarHeight"] as? CGFloat
+    let targetWidth = arguments["targetWidth"] as? Int
+    let targetHeight = arguments["targetHeight"] as? Int
+    let preserveAspectRatio = arguments["preserveAspectRatio"] as? Bool ?? false
 
     do {
       let imageData = try LegacyCaptureHandler.captureWindow(
         windowId: windowId, excludeTitlebar: excludeTitlebar,
-        customTitlebarHeight: customTitlebarHeight)
+        customTitlebarHeight: customTitlebarHeight,
+        targetWidth: targetWidth, targetHeight: targetHeight,
+        preserveAspectRatio: preserveAspectRatio)
       
       // Return success result
       result([
@@ -389,12 +399,18 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
 
     let excludeTitlebar = arguments["excludeTitlebar"] as? Bool ?? false
     let customTitlebarHeight = arguments["customTitlebarHeight"] as? CGFloat
+    let targetWidth = arguments["targetWidth"] as? Int
+    let targetHeight = arguments["targetHeight"] as? Int
+    let preserveAspectRatio = arguments["preserveAspectRatio"] as? Bool ?? false
 
     if #available(macOS 10.15, *) {
       Task {
         do {
           let imageData = try await SmartCaptureHandler.captureWindowAuto(
-            windowId: windowId, excludeTitlebar: excludeTitlebar)
+            windowId: windowId, excludeTitlebar: excludeTitlebar,
+            customTitlebarHeight: customTitlebarHeight,
+            targetWidth: targetWidth, targetHeight: targetHeight,
+            preserveAspectRatio: preserveAspectRatio)
           
           // Return success result
           result([
@@ -434,7 +450,9 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       do {
         let imageData = try LegacyCaptureHandler.captureWindow(
           windowId: windowId, excludeTitlebar: excludeTitlebar,
-          customTitlebarHeight: customTitlebarHeight)
+          customTitlebarHeight: customTitlebarHeight,
+          targetWidth: targetWidth, targetHeight: targetHeight,
+          preserveAspectRatio: preserveAspectRatio)
         
         // Return success result
         result([
