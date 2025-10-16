@@ -17,7 +17,8 @@ class AdvancedFilterSection extends StatefulWidget {
     double? y,
     double? width,
     double? height,
-  }) onApplyFilters;
+  })
+  onApplyFilters;
   final bool isLoading;
 
   const AdvancedFilterSection({
@@ -94,10 +95,7 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: colorScheme.outlineVariant,
-          width: 1,
-        ),
+        border: Border.all(color: colorScheme.outlineVariant, width: 1),
       ),
       child: Column(
         children: [
@@ -109,11 +107,7 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.filter_list,
-                    color: colorScheme.primary,
-                    size: 20,
-                  ),
+                  Icon(Icons.filter_list, color: colorScheme.primary, size: 20),
                   const SizedBox(width: 12),
                   Text(
                     'Advanced Filters',
@@ -192,22 +186,37 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
                         children: [
                           Expanded(
                             child: CheckboxListTile(
-                              title: const Text('Exact Match', style: TextStyle(fontSize: 13)),
+                              title: const Text(
+                                'Exact Match',
+                                style: TextStyle(fontSize: 13),
+                              ),
                               value: _nameExactMatch,
-                              onChanged: widget.isLoading ? null : (value) {
-                                setState(() => _nameExactMatch = value ?? false);
-                              },
+                              onChanged: widget.isLoading
+                                  ? null
+                                  : (value) {
+                                      setState(
+                                        () => _nameExactMatch = value ?? false,
+                                      );
+                                    },
                               dense: true,
                               contentPadding: EdgeInsets.zero,
                             ),
                           ),
                           Expanded(
                             child: CheckboxListTile(
-                              title: const Text('Case Sensitive', style: TextStyle(fontSize: 13)),
+                              title: const Text(
+                                'Case Sensitive',
+                                style: TextStyle(fontSize: 13),
+                              ),
                               value: _nameCaseSensitive,
-                              onChanged: widget.isLoading ? null : (value) {
-                                setState(() => _nameCaseSensitive = value ?? true);
-                              },
+                              onChanged: widget.isLoading
+                                  ? null
+                                  : (value) {
+                                      setState(
+                                        () =>
+                                            _nameCaseSensitive = value ?? true,
+                                      );
+                                    },
                               dense: true,
                               contentPadding: EdgeInsets.zero,
                             ),
@@ -227,22 +236,38 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
                         children: [
                           Expanded(
                             child: CheckboxListTile(
-                              title: const Text('Exact Match', style: TextStyle(fontSize: 13)),
+                              title: const Text(
+                                'Exact Match',
+                                style: TextStyle(fontSize: 13),
+                              ),
                               value: _ownerNameExactMatch,
-                              onChanged: widget.isLoading ? null : (value) {
-                                setState(() => _ownerNameExactMatch = value ?? false);
-                              },
+                              onChanged: widget.isLoading
+                                  ? null
+                                  : (value) {
+                                      setState(
+                                        () => _ownerNameExactMatch =
+                                            value ?? false,
+                                      );
+                                    },
                               dense: true,
                               contentPadding: EdgeInsets.zero,
                             ),
                           ),
                           Expanded(
                             child: CheckboxListTile(
-                              title: const Text('Case Sensitive', style: TextStyle(fontSize: 13)),
+                              title: const Text(
+                                'Case Sensitive',
+                                style: TextStyle(fontSize: 13),
+                              ),
                               value: _ownerNameCaseSensitive,
-                              onChanged: widget.isLoading ? null : (value) {
-                                setState(() => _ownerNameCaseSensitive = value ?? true);
-                              },
+                              onChanged: widget.isLoading
+                                  ? null
+                                  : (value) {
+                                      setState(
+                                        () => _ownerNameCaseSensitive =
+                                            value ?? true,
+                                      );
+                                    },
                               dense: true,
                               contentPadding: EdgeInsets.zero,
                             ),
@@ -269,7 +294,8 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
                     icon: Icons.aspect_ratio,
                     isExpanded: _showPositionFilters,
                     onToggle: () => setState(
-                        () => _showPositionFilters = !_showPositionFilters),
+                      () => _showPositionFilters = !_showPositionFilters,
+                    ),
                     colorScheme: colorScheme,
                     children: [
                       Row(
@@ -338,7 +364,8 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
                     icon: Icons.tune,
                     isExpanded: _showAdvancedFilters,
                     onToggle: () => setState(
-                        () => _showAdvancedFilters = !_showAdvancedFilters),
+                      () => _showAdvancedFilters = !_showAdvancedFilters,
+                    ),
                     colorScheme: colorScheme,
                     children: [
                       DropdownButtonFormField<String>(
@@ -417,7 +444,9 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withOpacity(0.3),
+                      color: colorScheme.primaryContainer.withValues(
+                        alpha: 0.3,
+                      ),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -462,7 +491,7 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(
-          color: colorScheme.outlineVariant.withOpacity(0.5),
+          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -524,10 +553,8 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
           : TextInputType.text,
       inputFormatters: isNumeric
           ? isDecimal
-              ? [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-                ]
-              : [FilteringTextInputFormatter.digitsOnly]
+                ? [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))]
+                : [FilteringTextInputFormatter.digitsOnly]
           : null,
       decoration: InputDecoration(
         labelText: label,
@@ -542,9 +569,7 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
                 },
               )
             : null,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         filled: true,
         fillColor: colorScheme.surface,
         contentPadding: const EdgeInsets.symmetric(
@@ -563,25 +588,35 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
           : null,
       name: _nameController.text.isNotEmpty ? _nameController.text : null,
       nameExactMatch: _nameController.text.isNotEmpty ? _nameExactMatch : null,
-      nameCaseSensitive: _nameController.text.isNotEmpty ? _nameCaseSensitive : null,
+      nameCaseSensitive: _nameController.text.isNotEmpty
+          ? _nameCaseSensitive
+          : null,
       ownerName: _ownerNameController.text.isNotEmpty
           ? _ownerNameController.text
           : null,
-      ownerNameExactMatch: _ownerNameController.text.isNotEmpty ? _ownerNameExactMatch : null,
-      ownerNameCaseSensitive: _ownerNameController.text.isNotEmpty ? _ownerNameCaseSensitive : null,
+      ownerNameExactMatch: _ownerNameController.text.isNotEmpty
+          ? _ownerNameExactMatch
+          : null,
+      ownerNameCaseSensitive: _ownerNameController.text.isNotEmpty
+          ? _ownerNameCaseSensitive
+          : null,
       processId: _processIdController.text.isNotEmpty
           ? int.tryParse(_processIdController.text)
           : null,
       isOnScreen: _isOnScreenValue == 'any'
           ? null
           : _isOnScreenValue == 'yes'
-              ? true
-              : false,
+          ? true
+          : false,
       layer: _layerController.text.isNotEmpty
           ? int.tryParse(_layerController.text)
           : null,
-      x: _xController.text.isNotEmpty ? double.tryParse(_xController.text) : null,
-      y: _yController.text.isNotEmpty ? double.tryParse(_yController.text) : null,
+      x: _xController.text.isNotEmpty
+          ? double.tryParse(_xController.text)
+          : null,
+      y: _yController.text.isNotEmpty
+          ? double.tryParse(_yController.text)
+          : null,
       width: _widthController.text.isNotEmpty
           ? double.tryParse(_widthController.text)
           : null,

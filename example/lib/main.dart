@@ -357,7 +357,9 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
         if (ownerName != null) {
           String ownerFilter = 'App: "$ownerName"';
           if (ownerNameExactMatch == true) ownerFilter += ' (exact)';
-          if (ownerNameCaseSensitive == false) ownerFilter += ' (case-insensitive)';
+          if (ownerNameCaseSensitive == false) {
+            ownerFilter += ' (case-insensitive)';
+          }
           filters.add(ownerFilter);
         }
         if (processId != null) filters.add('PID: $processId');

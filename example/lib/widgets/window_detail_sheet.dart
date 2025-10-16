@@ -130,9 +130,6 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
       if (_enableResize) {
         targetWidth = int.tryParse(_targetWidthController.text);
         targetHeight = int.tryParse(_targetHeightController.text);
-        print('📐 Resize enabled: ${targetWidth}x$targetHeight, preserveAspectRatio: $_preserveAspectRatio');
-      } else {
-        print('📐 Resize disabled (original size)');
       }
 
       CaptureResult result;
@@ -280,15 +277,16 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
   }
 
   void _showCaptureResultDialog(Uint8List imageBytes) {
-    // Debug: Print image byte size
-    print('🖼️ Captured image size: ${imageBytes.length} bytes');
-
     showDialog(
       context: context,
       builder: (context) => CaptureResultDialog(
         imageBytes: imageBytes,
-        targetWidth: _enableResize ? int.tryParse(_targetWidthController.text) : null,
-        targetHeight: _enableResize ? int.tryParse(_targetHeightController.text) : null,
+        targetWidth: _enableResize
+            ? int.tryParse(_targetWidthController.text)
+            : null,
+        targetHeight: _enableResize
+            ? int.tryParse(_targetHeightController.text)
+            : null,
       ),
     );
   }
@@ -1070,9 +1068,13 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                             ),
                             child: Row(
                               children: [
-                                Icon(Icons.info_outline,
-                                    color: _preserveAspectRatio ? Colors.green : Colors.orange,
-                                    size: 16),
+                                Icon(
+                                  Icons.info_outline,
+                                  color: _preserveAspectRatio
+                                      ? Colors.green
+                                      : Colors.orange,
+                                  size: 16,
+                                ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
@@ -1080,7 +1082,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                                         ? 'Aspect ratio will be maintained, extra space filled with black'
                                         : 'Image will be stretched to exact dimensions (may distort)',
                                     style: TextStyle(
-                                      color: _preserveAspectRatio ? Colors.green : Colors.orange,
+                                      color: _preserveAspectRatio
+                                          ? Colors.green
+                                          : Colors.orange,
                                       fontSize: 11,
                                     ),
                                   ),
@@ -1313,17 +1317,17 @@ class _CaptureResultDialogState extends State<CaptureResultDialog> {
 
     try {
       // Generate default filename with timestamp
-      final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-').split('.')[0];
+      final timestamp = DateTime.now()
+          .toIso8601String()
+          .replaceAll(':', '-')
+          .split('.')[0];
       final defaultFileName = 'screenshot_$timestamp.png';
 
       // Show save dialog
       final FileSaveLocation? saveLocation = await getSaveLocation(
         suggestedName: defaultFileName,
         acceptedTypeGroups: [
-          const XTypeGroup(
-            label: 'PNG Images',
-            extensions: ['png'],
-          ),
+          const XTypeGroup(label: 'PNG Images', extensions: ['png']),
         ],
       );
 
@@ -1387,7 +1391,10 @@ class _CaptureResultDialogState extends State<CaptureResultDialog> {
               if (imageWidth != null && imageHeight != null)
                 Text(
                   '${imageWidth}x$imageHeight px${widget.targetWidth != null ? " (resized from ${widget.targetWidth}x${widget.targetHeight})" : ""}',
-                  style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
             ],
           ),
@@ -1435,7 +1442,11 @@ class _CaptureResultDialogState extends State<CaptureResultDialog> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.photo_size_select_large, color: Colors.blue, size: 16),
+                        Icon(
+                          Icons.photo_size_select_large,
+                          color: Colors.blue,
+                          size: 16,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'Image Size: ${imageWidth}x$imageHeight pixels',
@@ -1446,7 +1457,11 @@ class _CaptureResultDialogState extends State<CaptureResultDialog> {
                         ),
                         if (widget.targetWidth != null) ...[
                           const SizedBox(width: 8),
-                          Icon(Icons.check_circle, color: Colors.green, size: 16),
+                          Icon(
+                            Icons.check_circle,
+                            color: Colors.green,
+                            size: 16,
+                          ),
                         ],
                       ],
                     ),
@@ -1472,7 +1487,8 @@ class _CaptureResultDialogState extends State<CaptureResultDialog> {
                   ),
                   ElevatedButton.icon(
                     onPressed: () {
-                      final text = 'Image Size: ${imageWidth}x$imageHeight pixels (${widget.imageBytes.length} bytes)';
+                      final text =
+                          'Image Size: ${imageWidth}x$imageHeight pixels (${widget.imageBytes.length} bytes)';
                       Clipboard.setData(ClipboardData(text: text));
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
