@@ -216,7 +216,11 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
 
     let windowId = arguments["windowId"] as? Int
     let name = arguments["name"] as? String
+    let nameExactMatch = arguments["nameExactMatch"] as? Bool
+    let nameCaseSensitive = arguments["nameCaseSensitive"] as? Bool
     let ownerName = arguments["ownerName"] as? String
+    let ownerNameExactMatch = arguments["ownerNameExactMatch"] as? Bool
+    let ownerNameCaseSensitive = arguments["ownerNameCaseSensitive"] as? Bool
     let processId = arguments["processId"] as? Int
     let isOnScreen = arguments["isOnScreen"] as? Bool
     let layer = arguments["layer"] as? Int
@@ -228,7 +232,11 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     let windowResult = windowHandler.getWindowsAdvanced(
       windowId: windowId,
       name: name,
+      nameExactMatch: nameExactMatch,
+      nameCaseSensitive: nameCaseSensitive,
       ownerName: ownerName,
+      ownerNameExactMatch: ownerNameExactMatch,
+      ownerNameCaseSensitive: ownerNameCaseSensitive,
       processId: processId,
       isOnScreen: isOnScreen,
       layer: layer,

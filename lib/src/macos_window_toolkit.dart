@@ -340,8 +340,12 @@ class MacosWindowToolkit {
   ///
   /// Parameters:
   /// - [windowId]: Filter by exact window ID
-  /// - [name]: Filter by window title (substring match, case-sensitive)
-  /// - [ownerName]: Filter by application name (substring match, case-sensitive)
+  /// - [name]: Filter by window title (substring match by default)
+  /// - [nameExactMatch]: If true, name must match exactly. If false (default), uses substring matching.
+  /// - [nameCaseSensitive]: If true (default), name matching is case sensitive.
+  /// - [ownerName]: Filter by application name (substring match by default)
+  /// - [ownerNameExactMatch]: If true, ownerName must match exactly. If false (default), uses substring matching.
+  /// - [ownerNameCaseSensitive]: If true (default), ownerName matching is case sensitive.
   /// - [processId]: Filter by exact process ID
   /// - [isOnScreen]: Filter by visibility on screen (true/false)
   /// - [layer]: Filter by exact window layer level
@@ -372,19 +376,23 @@ class MacosWindowToolkit {
   ///   name: 'Gmail',
   /// );
   ///
-  /// // Find windows at a specific position and size
-  /// final specificWindows = await toolkit.getWindowsAdvanced(
-  ///   x: 100,
-  ///   y: 200,
-  ///   width: 800,
-  ///   height: 600,
+  /// // Find Chrome with exact match (only "Google Chrome", not "Chrome Helper")
+  /// final exactChrome = await toolkit.getWindowsAdvanced(
+  ///   name: 'Google Chrome',
+  ///   nameExactMatch: true,
   /// );
   ///
-  /// // Combine multiple criteria
-  /// final targetWindows = await toolkit.getWindowsAdvanced(
-  ///   ownerName: 'Safari',
-  ///   isOnScreen: true,
-  ///   layer: 0,
+  /// // Find "chrome" case-insensitively (matches "Chrome", "CHROME", "chrome")
+  /// final anyCaseChrome = await toolkit.getWindowsAdvanced(
+  ///   name: 'chrome',
+  ///   nameCaseSensitive: false,
+  /// );
+  ///
+  /// // Exact match + case insensitive
+  /// final exactInsensitive = await toolkit.getWindowsAdvanced(
+  ///   ownerName: 'safari',
+  ///   ownerNameExactMatch: true,
+  ///   ownerNameCaseSensitive: false,
   /// );
   /// ```
   ///
@@ -392,7 +400,11 @@ class MacosWindowToolkit {
   Future<List<MacosWindowInfo>> getWindowsAdvanced({
     int? windowId,
     String? name,
+    bool? nameExactMatch,
+    bool? nameCaseSensitive,
     String? ownerName,
+    bool? ownerNameExactMatch,
+    bool? ownerNameCaseSensitive,
     int? processId,
     bool? isOnScreen,
     int? layer,
@@ -405,7 +417,11 @@ class MacosWindowToolkit {
         await MacosWindowToolkitPlatform.instance.getWindowsAdvanced(
       windowId: windowId,
       name: name,
+      nameExactMatch: nameExactMatch,
+      nameCaseSensitive: nameCaseSensitive,
       ownerName: ownerName,
+      ownerNameExactMatch: ownerNameExactMatch,
+      ownerNameCaseSensitive: ownerNameCaseSensitive,
       processId: processId,
       isOnScreen: isOnScreen,
       layer: layer,

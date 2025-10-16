@@ -75,8 +75,12 @@ abstract class WindowOperationsInterface {
   ///
   /// Parameters:
   /// - [windowId]: Filter by exact window ID
-  /// - [name]: Filter by window title (substring match)
-  /// - [ownerName]: Filter by application name (substring match)
+  /// - [name]: Filter by window title (substring match by default)
+  /// - [nameExactMatch]: If true, name must match exactly. If false (default), uses substring matching.
+  /// - [nameCaseSensitive]: If true (default), name matching is case sensitive.
+  /// - [ownerName]: Filter by application name (substring match by default)
+  /// - [ownerNameExactMatch]: If true, ownerName must match exactly. If false (default), uses substring matching.
+  /// - [ownerNameCaseSensitive]: If true (default), ownerName matching is case sensitive.
   /// - [processId]: Filter by exact process ID
   /// - [isOnScreen]: Filter by visibility on screen
   /// - [layer]: Filter by exact window layer level
@@ -107,7 +111,11 @@ abstract class WindowOperationsInterface {
   Future<List<Map<String, dynamic>>> getWindowsAdvanced({
     int? windowId,
     String? name,
+    bool? nameExactMatch,
+    bool? nameCaseSensitive,
     String? ownerName,
+    bool? ownerNameExactMatch,
+    bool? ownerNameCaseSensitive,
     int? processId,
     bool? isOnScreen,
     int? layer,

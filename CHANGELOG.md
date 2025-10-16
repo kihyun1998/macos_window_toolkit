@@ -1,4 +1,4 @@
-## Unreleased
+## 1.4.0
 
 ### Added
 - **FEAT**: Window capture resize functionality with aspect ratio control
@@ -7,12 +7,17 @@
   - `preserveAspectRatio=true`: Maintains aspect ratio with black letterboxing (resizeImagePreservingAspectRatio)
   - `preserveAspectRatio=false`: Exact size resize that may distort image (resizeImageToExactSize)
   - Resize is applied after titlebar cropping for consistent results
+- **FEAT**: String matching options for advanced window filters
+  - Added `nameExactMatch` and `nameCaseSensitive` parameters for window title filtering
+  - Added `ownerNameExactMatch` and `ownerNameCaseSensitive` parameters for owner name filtering
+  - Supports 4 matching modes: exact/contains × case-sensitive/case-insensitive
+  - Default behavior: contains match with case sensitivity (backward compatible)
 - **FEAT**: Advanced window filtering with `getWindowsAdvanced()` method
-  - Supports 10 optional filter parameters: windowId, name, ownerName, processId, isOnScreen, layer, x, y, width, height
+  - Supports 14 optional filter parameters: windowId, name, nameExactMatch, nameCaseSensitive, ownerName, ownerNameExactMatch, ownerNameCaseSensitive, processId, isOnScreen, layer, x, y, width, height
   - All parameters are optional and combined with AND logic
-  - String filters (name, ownerName) use substring matching
+  - String filters (name, ownerName) support flexible matching with exact/contains and case-sensitive/insensitive options
   - Numeric filters use exact matching
-- **UI**: Advanced filter section in example app with expandable UI for testing new filtering methods
+- **UI**: Advanced filter section in example app with expandable UI and matching option checkboxes for testing new filtering methods
 
 ### Changed
 - **REFACTOR**: SCStreamConfiguration now captures at original window size with manual resize applied afterward for better control

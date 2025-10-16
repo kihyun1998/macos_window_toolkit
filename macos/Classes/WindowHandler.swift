@@ -176,7 +176,11 @@ class WindowHandler {
     func getWindowsAdvanced(
         windowId: Int? = nil,
         name: String? = nil,
+        nameExactMatch: Bool? = nil,
+        nameCaseSensitive: Bool? = nil,
         ownerName: String? = nil,
+        ownerNameExactMatch: Bool? = nil,
+        ownerNameCaseSensitive: Bool? = nil,
         processId: Int? = nil,
         isOnScreen: Bool? = nil,
         layer: Int? = nil,
@@ -194,18 +198,24 @@ class WindowHandler {
                 }
             }
 
-            // Check name if specified (contains match)
+            // Check name if specified
             if let name = name {
                 let windowName = windowInfo[kCGWindowName as String] as? String ?? ""
-                if !windowName.contains(name) {
+                let exactMatch = nameExactMatch ?? false
+                let caseSensitive = nameCaseSensitive ?? true
+
+                if !matchString(windowName, pattern: name, exactMatch: exactMatch, caseSensitive: caseSensitive) {
                     return false
                 }
             }
 
-            // Check ownerName if specified (contains match)
+            // Check ownerName if specified
             if let ownerName = ownerName {
                 let windowOwnerName = windowInfo[kCGWindowOwnerName as String] as? String ?? ""
-                if !windowOwnerName.contains(ownerName) {
+                let exactMatch = ownerNameExactMatch ?? false
+                let caseSensitive = ownerNameCaseSensitive ?? true
+
+                if !matchString(windowOwnerName, pattern: ownerName, exactMatch: exactMatch, caseSensitive: caseSensitive) {
                     return false
                 }
             }
@@ -784,6 +794,18 @@ class WindowHandler {
             return .success(true)
         } else {
             return .failure(.terminationFailed)
+        }
+    }
+
+    /// Helper function for string matching with exact/contains and case-sensitive/insensitive options
+    private func matchString(_ text: String, pattern: String, exactMatch: Bool, caseSensitive: Bool) -> Bool {
+        let compareText = caseSensitive ? text : text.lowercased()
+        let comparePattern = caseSensitive ? pattern : pattern.lowercased()
+
+        if exactMatch {
+            return compareText == comparePattern
+        } else {
+            return compareText.contains(comparePattern)
         }
     }
 

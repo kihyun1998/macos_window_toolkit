@@ -39,6 +39,9 @@ Future<CaptureResult> captureWindowAuto(
   int windowId, {
   bool excludeTitlebar = false,
   double? customTitlebarHeight,
+  int? targetWidth,
+  int? targetHeight,
+  bool preserveAspectRatio = false,
 })
 ```
 
@@ -46,6 +49,9 @@ Future<CaptureResult> captureWindowAuto(
 - `windowId` - Unique window identifier from window listing methods
 - `excludeTitlebar` (optional) - If `true`, removes titlebar from capture. Defaults to `false`.
 - `customTitlebarHeight` (optional) - Custom titlebar height in points. Uses 28pt default if null.
+- `targetWidth` (optional) - Target width for output image. If specified, image will be resized.
+- `targetHeight` (optional) - Target height for output image. If specified, image will be resized.
+- `preserveAspectRatio` (optional) - If `true`, maintains aspect ratio with letterboxing. If `false`, resizes to exact dimensions. Defaults to `false`.
 
 **Returns:**
 - `Future<CaptureResult>` - Success with image data or failure with detailed reason
@@ -118,6 +124,41 @@ final result = await toolkit.captureWindowAuto(
   windowId,
   excludeTitlebar: true,
   customTitlebarHeight: 32.0, // Larger titlebar
+);
+```
+
+**Resize Functionality (New in 1.4.0):**
+```dart
+// Resize to specific dimensions (may distort)
+final result = await toolkit.captureWindowAuto(
+  windowId,
+  targetWidth: 1920,
+  targetHeight: 1080,
+);
+
+// Resize maintaining aspect ratio with letterboxing
+final result = await toolkit.captureWindowAuto(
+  windowId,
+  targetWidth: 1920,
+  targetHeight: 1080,
+  preserveAspectRatio: true, // Black bars added to maintain aspect ratio
+);
+
+// Create thumbnail
+final thumbnail = await toolkit.captureWindowAuto(
+  windowId,
+  targetWidth: 200,
+  targetHeight: 150,
+  preserveAspectRatio: true,
+);
+
+// Combine with titlebar removal
+final resized = await toolkit.captureWindowAuto(
+  windowId,
+  excludeTitlebar: true,
+  targetWidth: 800,
+  targetHeight: 600,
+  preserveAspectRatio: true,
 );
 ```
 
@@ -215,6 +256,9 @@ Future<CaptureResult> captureWindow(
   int windowId, {
   bool excludeTitlebar = false,
   double? customTitlebarHeight,
+  int? targetWidth,
+  int? targetHeight,
+  bool preserveAspectRatio = false,
 })
 ```
 
@@ -337,6 +381,9 @@ Future<CaptureResult> captureWindowLegacy(
   int windowId, {
   bool excludeTitlebar = false,
   double? customTitlebarHeight,
+  int? targetWidth,
+  int? targetHeight,
+  bool preserveAspectRatio = false,
 })
 ```
 

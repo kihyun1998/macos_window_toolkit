@@ -79,7 +79,11 @@ mixin WindowOperationsChannel {
   Future<List<Map<String, dynamic>>> getWindowsAdvanced({
     int? windowId,
     String? name,
+    bool? nameExactMatch,
+    bool? nameCaseSensitive,
     String? ownerName,
+    bool? ownerNameExactMatch,
+    bool? ownerNameCaseSensitive,
     int? processId,
     bool? isOnScreen,
     int? layer,
@@ -92,7 +96,11 @@ mixin WindowOperationsChannel {
 
     if (windowId != null) args['windowId'] = windowId;
     if (name != null) args['name'] = name;
+    if (nameExactMatch != null) args['nameExactMatch'] = nameExactMatch;
+    if (nameCaseSensitive != null) args['nameCaseSensitive'] = nameCaseSensitive;
     if (ownerName != null) args['ownerName'] = ownerName;
+    if (ownerNameExactMatch != null) args['ownerNameExactMatch'] = ownerNameExactMatch;
+    if (ownerNameCaseSensitive != null) args['ownerNameCaseSensitive'] = ownerNameCaseSensitive;
     if (processId != null) args['processId'] = processId;
     if (isOnScreen != null) args['isOnScreen'] = isOnScreen;
     if (layer != null) args['layer'] = layer;

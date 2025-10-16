@@ -5,7 +5,11 @@ class AdvancedFilterSection extends StatefulWidget {
   final Function({
     int? windowId,
     String? name,
+    bool? nameExactMatch,
+    bool? nameCaseSensitive,
     String? ownerName,
+    bool? ownerNameExactMatch,
+    bool? ownerNameCaseSensitive,
     int? processId,
     bool? isOnScreen,
     int? layer,
@@ -45,6 +49,12 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
 
   // Dropdown value for isOnScreen
   String _isOnScreenValue = 'any'; // 'any', 'yes', 'no'
+
+  // Matching options
+  bool _nameExactMatch = false;
+  bool _nameCaseSensitive = true;
+  bool _ownerNameExactMatch = false;
+  bool _ownerNameCaseSensitive = true;
 
   @override
   void dispose() {
@@ -177,6 +187,33 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
                         icon: Icons.title,
                         colorScheme: colorScheme,
                       ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: CheckboxListTile(
+                              title: const Text('Exact Match', style: TextStyle(fontSize: 13)),
+                              value: _nameExactMatch,
+                              onChanged: widget.isLoading ? null : (value) {
+                                setState(() => _nameExactMatch = value ?? false);
+                              },
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+                          Expanded(
+                            child: CheckboxListTile(
+                              title: const Text('Case Sensitive', style: TextStyle(fontSize: 13)),
+                              value: _nameCaseSensitive,
+                              onChanged: widget.isLoading ? null : (value) {
+                                setState(() => _nameCaseSensitive = value ?? true);
+                              },
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 12),
                       _buildTextField(
                         controller: _ownerNameController,
@@ -184,6 +221,33 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
                         hint: 'e.g., Chrome, Safari',
                         icon: Icons.app_settings_alt,
                         colorScheme: colorScheme,
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: CheckboxListTile(
+                              title: const Text('Exact Match', style: TextStyle(fontSize: 13)),
+                              value: _ownerNameExactMatch,
+                              onChanged: widget.isLoading ? null : (value) {
+                                setState(() => _ownerNameExactMatch = value ?? false);
+                              },
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+                          Expanded(
+                            child: CheckboxListTile(
+                              title: const Text('Case Sensitive', style: TextStyle(fontSize: 13)),
+                              value: _ownerNameCaseSensitive,
+                              onChanged: widget.isLoading ? null : (value) {
+                                setState(() => _ownerNameCaseSensitive = value ?? true);
+                              },
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 12),
                       _buildTextField(
@@ -498,9 +562,13 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
           ? int.tryParse(_windowIdController.text)
           : null,
       name: _nameController.text.isNotEmpty ? _nameController.text : null,
+      nameExactMatch: _nameController.text.isNotEmpty ? _nameExactMatch : null,
+      nameCaseSensitive: _nameController.text.isNotEmpty ? _nameCaseSensitive : null,
       ownerName: _ownerNameController.text.isNotEmpty
           ? _ownerNameController.text
           : null,
+      ownerNameExactMatch: _ownerNameController.text.isNotEmpty ? _ownerNameExactMatch : null,
+      ownerNameCaseSensitive: _ownerNameController.text.isNotEmpty ? _ownerNameCaseSensitive : null,
       processId: _processIdController.text.isNotEmpty
           ? int.tryParse(_processIdController.text)
           : null,
@@ -533,6 +601,12 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
     _yController.clear();
     _widthController.clear();
     _heightController.clear();
-    setState(() => _isOnScreenValue = 'any');
+    setState(() {
+      _isOnScreenValue = 'any';
+      _nameExactMatch = false;
+      _nameCaseSensitive = true;
+      _ownerNameExactMatch = false;
+      _ownerNameCaseSensitive = true;
+    });
   }
 }

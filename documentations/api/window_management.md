@@ -15,6 +15,7 @@ The Window Management API provides comprehensive functionality for discovering a
 | [`getWindowsByOwnerName()`](#getwindowsbyownername) | Filter windows by application | `ownerName` | `Future<List<MacosWindowInfo>>` |
 | [`getWindowById()`](#getwindowbyid) | Get specific window | `windowId` | `Future<List<MacosWindowInfo>>` |
 | [`getWindowsByProcessId()`](#getwindowsbyprocessid) | Filter windows by process | `processId` | `Future<List<MacosWindowInfo>>` |
+| [`getWindowsAdvanced()`](#getwindowsadvanced) | Advanced filtering with multiple criteria | 14 optional parameters | `Future<List<MacosWindowInfo>>` |
 | [`isWindowAlive()`](#iswindowalive) | Check window existence | `windowId` | `Future<bool>` |
 | [`closeWindow()`](#closewindow) | Close window via AppleScript | `windowId` | `Future<bool>` |
 
@@ -258,6 +259,123 @@ print('Found ${windowsByApp.length} applications with windows');
 - Finding all windows for a specific application
 - Grouping windows by application
 - Process-based window management
+
+---
+
+### `getWindowsAdvanced()`
+
+Retrieves windows with advanced filtering options.
+
+**Signature:**
+```dart
+Future<List<MacosWindowInfo>> getWindowsAdvanced({
+  int? windowId,
+  String? name,
+  bool? nameExactMatch,
+  bool? nameCaseSensitive,
+  String? ownerName,
+  bool? ownerNameExactMatch,
+  bool? ownerNameCaseSensitive,
+  int? processId,
+  bool? isOnScreen,
+  int? layer,
+  double? x,
+  double? y,
+  double? width,
+  double? height,
+})
+```
+
+**Parameters:**
+All parameters are optional. Only non-null parameters are used for filtering.
+- `windowId` - Filter by exact window ID
+- `name` - Filter by window title (substring match by default)
+- `nameExactMatch` - If true, name must match exactly. If false (default), uses substring matching
+- `nameCaseSensitive` - If true (default), name matching is case sensitive
+- `ownerName` - Filter by application name (substring match by default)
+- `ownerNameExactMatch` - If true, ownerName must match exactly. If false (default), uses substring matching
+- `ownerNameCaseSensitive` - If true (default), ownerName matching is case sensitive
+- `processId` - Filter by exact process ID
+- `isOnScreen` - Filter by visibility on screen
+- `layer` - Filter by exact window layer level
+- `x` - Filter by exact x coordinate
+- `y` - Filter by exact y coordinate
+- `width` - Filter by exact width
+- `height` - Filter by exact height
+
+**Returns:**
+- `Future<List<MacosWindowInfo>>` - List of windows matching all specified criteria (AND logic)
+
+**Throws:**
+- `PlatformException` - If unable to retrieve window information
+
+**Example:**
+```dart
+final toolkit = MacosWindowToolkit();
+
+// Find all visible Chrome windows
+final chromeWindows = await toolkit.getWindowsAdvanced(
+  ownerName: 'Chrome',
+  isOnScreen: true,
+);
+
+// Find exact match (only "Google Chrome", not "Chrome Helper")
+final exactChrome = await toolkit.getWindowsAdvanced(
+  ownerName: 'Google Chrome',
+  ownerNameExactMatch: true,
+);
+
+// Case-insensitive search (matches "chrome", "Chrome", "CHROME")
+final anyCaseChrome = await toolkit.getWindowsAdvanced(
+  ownerName: 'chrome',
+  ownerNameCaseSensitive: false,
+);
+
+// Exact match + case insensitive
+final exactInsensitive = await toolkit.getWindowsAdvanced(
+  ownerName: 'safari',
+  ownerNameExactMatch: true,
+  ownerNameCaseSensitive: false,
+);
+
+// Complex filtering: visible Chrome windows with specific size
+final specificWindows = await toolkit.getWindowsAdvanced(
+  ownerName: 'Chrome',
+  isOnScreen: true,
+  width: 1920.0,
+  height: 1080.0,
+);
+
+// Find window by title with flexible matching
+final gmailWindows = await toolkit.getWindowsAdvanced(
+  name: 'Gmail',
+  nameCaseSensitive: false,  // Case insensitive
+  isOnScreen: true,
+);
+```
+
+**String Matching Modes:**
+
+The method supports 4 matching modes for string filters (name, ownerName):
+
+| Mode | exactMatch | caseSensitive | Behavior |
+|------|------------|---------------|----------|
+| Contains (case-sensitive) | false | true | Default. "Chrome" matches "Google Chrome" |
+| Contains (case-insensitive) | false | false | "chrome" matches "Google Chrome" |
+| Exact (case-sensitive) | true | true | "Google Chrome" matches only "Google Chrome" |
+| Exact (case-insensitive) | true | false | "google chrome" matches "Google Chrome" |
+
+**Notes:**
+- All conditions are combined with AND logic
+- String filters default to contains match with case sensitivity (backward compatible)
+- Numeric filters (x, y, width, height, layer, processId) use exact matching
+- Empty parameter list returns all windows (same as getAllWindows())
+
+**Use Cases:**
+- Precise window targeting for automation
+- Complex filtering combining multiple criteria
+- Case-insensitive application name searches
+- Window discovery with specific dimensions or positions
 
 ---
 

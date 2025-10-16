@@ -302,7 +302,11 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
   Future<void> _applyAdvancedFilters({
     int? windowId,
     String? name,
+    bool? nameExactMatch,
+    bool? nameCaseSensitive,
     String? ownerName,
+    bool? ownerNameExactMatch,
+    bool? ownerNameCaseSensitive,
     int? processId,
     bool? isOnScreen,
     int? layer,
@@ -320,7 +324,11 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
       final windows = await plugin.getWindowsAdvanced(
         windowId: windowId,
         name: name,
+        nameExactMatch: nameExactMatch,
+        nameCaseSensitive: nameCaseSensitive,
         ownerName: ownerName,
+        ownerNameExactMatch: ownerNameExactMatch,
+        ownerNameCaseSensitive: ownerNameCaseSensitive,
         processId: processId,
         isOnScreen: isOnScreen,
         layer: layer,
@@ -340,8 +348,18 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
         // Build filter description
         final filters = <String>[];
         if (windowId != null) filters.add('ID: $windowId');
-        if (name != null) filters.add('Title: "$name"');
-        if (ownerName != null) filters.add('App: "$ownerName"');
+        if (name != null) {
+          String nameFilter = 'Title: "$name"';
+          if (nameExactMatch == true) nameFilter += ' (exact)';
+          if (nameCaseSensitive == false) nameFilter += ' (case-insensitive)';
+          filters.add(nameFilter);
+        }
+        if (ownerName != null) {
+          String ownerFilter = 'App: "$ownerName"';
+          if (ownerNameExactMatch == true) ownerFilter += ' (exact)';
+          if (ownerNameCaseSensitive == false) ownerFilter += ' (case-insensitive)';
+          filters.add(ownerFilter);
+        }
         if (processId != null) filters.add('PID: $processId');
         if (isOnScreen != null) {
           filters.add('OnScreen: ${isOnScreen ? "Yes" : "No"}');
