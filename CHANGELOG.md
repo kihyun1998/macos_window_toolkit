@@ -1,3 +1,16 @@
+## Unreleased
+
+### Added
+- **FEAT**: Window capture resize functionality with aspect ratio control
+  - Added `targetWidth` and `targetHeight` parameters to `captureWindow()` for custom output dimensions
+  - Added `preserveAspectRatio` parameter to control resize behavior
+  - `preserveAspectRatio=true`: Maintains aspect ratio with black letterboxing (resizeImagePreservingAspectRatio)
+  - `preserveAspectRatio=false`: Exact size resize that may distort image (resizeImageToExactSize)
+  - Resize is applied after titlebar cropping for consistent results
+
+### Changed
+- **REFACTOR**: SCStreamConfiguration now captures at original window size with manual resize applied afterward for better control
+
 ## 1.3.0
 
 ### Added
