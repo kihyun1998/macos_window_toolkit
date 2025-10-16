@@ -403,11 +403,24 @@ class WindowHandler {
 
     /// Checks if a window with the specified ID is currently alive/exists
     /// Returns true if the window exists, false otherwise
-    func isWindowAlive(_ windowId: Int) -> Bool {
+    /// If expectedName is provided, also verifies that the window name matches
+    func isWindowAlive(_ windowId: Int, expectedName: String? = nil) -> Bool {
         let result = getWindowById(windowId)
         switch result {
         case .success(let windows):
-            return !windows.isEmpty
+            guard !windows.isEmpty else {
+                return false
+            }
+
+            // If expectedName is provided, verify the window name matches
+            if let expectedName = expectedName,
+               let window = windows.first,
+               let actualName = window["name"] as? String {
+                return actualName == expectedName
+            }
+
+            // No name verification needed or no name to verify
+            return true
         case .failure(_):
             return false
         }

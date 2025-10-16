@@ -61,7 +61,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
   bool _preserveAspectRatio = false;
   CaptureType _captureType = CaptureType.smart;
   bool? _isWindowAlive;
+  bool? _isWindowAliveWithName;
   bool _isCheckingAlive = false;
+  bool _isCheckingAliveWithName = false;
   bool _isClosingWindow = false;
   bool _isTerminatingApp = false;
   bool _isTerminatingTree = false;
@@ -109,6 +111,28 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
       setState(() {
         _isWindowAlive = null;
         _isCheckingAlive = false;
+      });
+    }
+  }
+
+  Future<void> _checkWindowAliveWithName() async {
+    setState(() {
+      _isCheckingAliveWithName = true;
+    });
+
+    try {
+      final isAlive = await _macosWindowToolkit.isWindowAlive(
+        widget.window.windowId,
+        expectedName: widget.window.name,
+      );
+      setState(() {
+        _isWindowAliveWithName = isAlive;
+        _isCheckingAliveWithName = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isWindowAliveWithName = null;
+        _isCheckingAliveWithName = false;
       });
     }
   }
@@ -652,7 +676,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                   Row(
                     children: [
                       Text(
-                        'Status: ',
+                        'Status (ID): ',
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
                           color: colorScheme.onSurfaceVariant,
@@ -673,6 +697,120 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                               ? Colors.red
                               : colorScheme.onSurface,
                           fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Divider(),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Verify with Name (prevents ID reuse issues)',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurfaceVariant,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.label_outline,
+                                size: 16,
+                                color: colorScheme.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  widget.window.name.isEmpty
+                                      ? '(No name)'
+                                      : widget.window.name,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontFamily: 'monospace',
+                                    color: widget.window.name.isEmpty
+                                        ? colorScheme.onSurfaceVariant
+                                              .withValues(alpha: 0.5)
+                                        : colorScheme.onSurface,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        onPressed:
+                            (_isCheckingAliveWithName ||
+                                widget.window.name.isEmpty)
+                            ? null
+                            : _checkWindowAliveWithName,
+                        icon: _isCheckingAliveWithName
+                            ? SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Icon(Icons.verified, size: 16),
+                        label: Text('Check'),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: Size(80, 32),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          backgroundColor: Colors.blue.withValues(alpha: 0.1),
+                          foregroundColor: Colors.blue,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Text(
+                        'Status (ID + Name): ',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          _isCheckingAliveWithName
+                              ? 'Checking...'
+                              : _isWindowAliveWithName == true
+                              ? 'Match - Window exists and name matches'
+                              : _isWindowAliveWithName == false
+                              ? 'No match - Window not found or name changed'
+                              : 'Not checked yet',
+                          style: TextStyle(
+                            color: _isWindowAliveWithName == true
+                                ? Colors.green
+                                : _isWindowAliveWithName == false
+                                ? Colors.orange
+                                : colorScheme.onSurface,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 12,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],

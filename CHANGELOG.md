@@ -1,3 +1,11 @@
+## 1.4.1
+
+### Added
+- **FEAT**: Add optional `expectedName` parameter to `isWindowAlive()` method for safer window existence verification
+  - Prevents false positives when window IDs are reused by the system
+  - Verifies both window ID and window name match when `expectedName` is provided
+  - Backward compatible - existing code works without changes
+
 ## 1.4.0
 
 ### Added

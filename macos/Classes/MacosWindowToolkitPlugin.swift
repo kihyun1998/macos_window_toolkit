@@ -578,7 +578,8 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       return
     }
 
-    let isAlive = windowHandler.isWindowAlive(windowId)
+    let expectedName = arguments["expectedName"] as? String
+    let isAlive = windowHandler.isWindowAlive(windowId, expectedName: expectedName)
     result(isAlive)
   }
 

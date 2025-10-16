@@ -127,10 +127,14 @@ mixin WindowOperationsChannel {
         .toList();
   }
 
-  Future<bool> isWindowAlive(int windowId) async {
-    final result = await methodChannel.invokeMethod<bool>('isWindowAlive', {
-      'windowId': windowId,
-    });
+  Future<bool> isWindowAlive(int windowId, {String? expectedName}) async {
+    final args = <String, dynamic>{'windowId': windowId};
+    if (expectedName != null) {
+      args['expectedName'] = expectedName;
+    }
+
+    final result =
+        await methodChannel.invokeMethod<bool>('isWindowAlive', args);
     return result ?? false;
   }
 

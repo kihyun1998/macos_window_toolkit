@@ -786,6 +786,11 @@ class MacosWindowToolkit {
   /// [windowId] is the unique identifier of the window to check, which can be
   /// obtained from [getAllWindows], [getWindowsByName], or other window listing methods.
   ///
+  /// [expectedName] is an optional window name to verify. If provided, the method
+  /// will also check that the window's name matches this value. This is useful
+  /// for ensuring the window ID hasn't been reused by a different window, as
+  /// macOS may reuse window IDs after a window is closed.
+  ///
   /// This method is useful for verifying if a window is still valid before
   /// attempting operations like capture or other window manipulations. It's
   /// particularly important for long-running applications where windows may
@@ -797,7 +802,7 @@ class MacosWindowToolkit {
   /// final windows = await toolkit.getAllWindows();
   ///
   /// for (final window in windows) {
-  ///   // Check if window is still alive before capturing
+  ///   // Check if window is still alive before capturing (ID only)
   ///   final isAlive = await toolkit.isWindowAlive(window.windowId);
   ///   if (isAlive) {
   ///     try {
@@ -810,12 +815,27 @@ class MacosWindowToolkit {
   ///     print('Window ${window.name} is no longer available');
   ///   }
   /// }
+  ///
+  /// // For more safety, verify both ID and name to prevent window ID reuse issues
+  /// final window = windows.first;
+  /// final isAliveWithName = await toolkit.isWindowAlive(
+  ///   window.windowId,
+  ///   expectedName: window.name,
+  /// );
+  /// if (isAliveWithName) {
+  ///   print('Window exists and name matches - safe to proceed');
+  /// } else {
+  ///   print('Window not found or name changed (ID may have been reused)');
+  /// }
   /// ```
   ///
   /// This method is lightweight and fast as it performs a simple existence check
   /// without retrieving full window information.
-  Future<bool> isWindowAlive(int windowId) async {
-    return await MacosWindowToolkitPlatform.instance.isWindowAlive(windowId);
+  Future<bool> isWindowAlive(int windowId, {String? expectedName}) async {
+    return await MacosWindowToolkitPlatform.instance.isWindowAlive(
+      windowId,
+      expectedName: expectedName,
+    );
   }
 
   /// Closes a window by its window ID using AppleScript.

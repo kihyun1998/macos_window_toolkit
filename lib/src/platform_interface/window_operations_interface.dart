@@ -134,11 +134,17 @@ abstract class WindowOperationsInterface {
   ///
   /// [windowId] is the unique identifier of the window to check.
   ///
+  /// [expectedName] is an optional window name to verify. If provided, the method
+  /// will also check that the window's name matches this value. This is useful
+  /// for ensuring the window ID hasn't been reused by a different window, as
+  /// macOS may reuse window IDs after a window is closed.
+  ///
   /// This method is useful for verifying if a window is still valid before
   /// attempting operations like capture or manipulation.
   ///
   /// Example usage:
   /// ```dart
+  /// // Check if window exists by ID only
   /// final isAlive = await toolkit.isWindowAlive(12345);
   /// if (isAlive) {
   ///   // Window exists, safe to perform operations
@@ -146,8 +152,19 @@ abstract class WindowOperationsInterface {
   /// } else {
   ///   print('Window no longer exists');
   /// }
+  ///
+  /// // Check if window exists AND has the expected name (safer)
+  /// final isAliveWithName = await toolkit.isWindowAlive(
+  ///   12345,
+  ///   expectedName: 'My Document',
+  /// );
+  /// if (isAliveWithName) {
+  ///   print('Window exists and name matches');
+  /// } else {
+  ///   print('Window not found or name changed (ID may have been reused)');
+  /// }
   /// ```
-  Future<bool> isWindowAlive(int windowId) {
+  Future<bool> isWindowAlive(int windowId, {String? expectedName}) {
     throw UnimplementedError('isWindowAlive() has not been implemented.');
   }
 
