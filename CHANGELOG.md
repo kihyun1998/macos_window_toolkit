@@ -7,6 +7,12 @@
   - `preserveAspectRatio=true`: Maintains aspect ratio with black letterboxing (resizeImagePreservingAspectRatio)
   - `preserveAspectRatio=false`: Exact size resize that may distort image (resizeImageToExactSize)
   - Resize is applied after titlebar cropping for consistent results
+- **FEAT**: Advanced window filtering with `getWindowsAdvanced()` method
+  - Supports 10 optional filter parameters: windowId, name, ownerName, processId, isOnScreen, layer, x, y, width, height
+  - All parameters are optional and combined with AND logic
+  - String filters (name, ownerName) use substring matching
+  - Numeric filters use exact matching
+- **UI**: Advanced filter section in example app with expandable UI for testing new filtering methods
 
 ### Changed
 - **REFACTOR**: SCStreamConfiguration now captures at original window size with manual resize applied afterward for better control

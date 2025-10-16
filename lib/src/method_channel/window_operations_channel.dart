@@ -76,6 +76,43 @@ mixin WindowOperationsChannel {
         .toList();
   }
 
+  Future<List<Map<String, dynamic>>> getWindowsAdvanced({
+    int? windowId,
+    String? name,
+    String? ownerName,
+    int? processId,
+    bool? isOnScreen,
+    int? layer,
+    double? x,
+    double? y,
+    double? width,
+    double? height,
+  }) async {
+    final args = <String, dynamic>{};
+
+    if (windowId != null) args['windowId'] = windowId;
+    if (name != null) args['name'] = name;
+    if (ownerName != null) args['ownerName'] = ownerName;
+    if (processId != null) args['processId'] = processId;
+    if (isOnScreen != null) args['isOnScreen'] = isOnScreen;
+    if (layer != null) args['layer'] = layer;
+    if (x != null) args['x'] = x;
+    if (y != null) args['y'] = y;
+    if (width != null) args['width'] = width;
+    if (height != null) args['height'] = height;
+
+    final result = await methodChannel.invokeMethod<List<dynamic>>(
+      'getWindowsAdvanced',
+      args.isEmpty ? null : args,
+    );
+    if (result == null) {
+      return [];
+    }
+    return result
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+  }
+
   Future<bool> isWindowAlive(int windowId) async {
     final result = await methodChannel.invokeMethod<bool>('isWindowAlive', {
       'windowId': windowId,

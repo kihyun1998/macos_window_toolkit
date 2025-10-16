@@ -328,6 +328,95 @@ class MacosWindowToolkit {
     return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
   }
 
+  /// Retrieves windows with advanced filtering options.
+  ///
+  /// Returns a list of [MacosWindowInfo] objects for windows that match all
+  /// specified filter criteria. All parameters are optional - only non-null
+  /// parameters are used for filtering, and all conditions are combined with AND logic.
+  ///
+  /// This method provides flexible window filtering, allowing you to combine
+  /// multiple criteria to find exactly the windows you need. It's more powerful
+  /// and convenient than using individual filter methods.
+  ///
+  /// Parameters:
+  /// - [windowId]: Filter by exact window ID
+  /// - [name]: Filter by window title (substring match, case-sensitive)
+  /// - [ownerName]: Filter by application name (substring match, case-sensitive)
+  /// - [processId]: Filter by exact process ID
+  /// - [isOnScreen]: Filter by visibility on screen (true/false)
+  /// - [layer]: Filter by exact window layer level
+  /// - [x]: Filter by exact x coordinate
+  /// - [y]: Filter by exact y coordinate
+  /// - [width]: Filter by exact width
+  /// - [height]: Filter by exact height
+  ///
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  ///
+  /// // Find all visible Chrome windows
+  /// final chromeWindows = await toolkit.getWindowsAdvanced(
+  ///   ownerName: 'Chrome',
+  ///   isOnScreen: true,
+  /// );
+  ///
+  /// // Find a specific window by ID and verify it's visible
+  /// final windows = await toolkit.getWindowsAdvanced(
+  ///   windowId: 12345,
+  ///   isOnScreen: true,
+  /// );
+  ///
+  /// // Find windows from a specific process with a title containing "Gmail"
+  /// final gmailWindows = await toolkit.getWindowsAdvanced(
+  ///   processId: 67890,
+  ///   name: 'Gmail',
+  /// );
+  ///
+  /// // Find windows at a specific position and size
+  /// final specificWindows = await toolkit.getWindowsAdvanced(
+  ///   x: 100,
+  ///   y: 200,
+  ///   width: 800,
+  ///   height: 600,
+  /// );
+  ///
+  /// // Combine multiple criteria
+  /// final targetWindows = await toolkit.getWindowsAdvanced(
+  ///   ownerName: 'Safari',
+  ///   isOnScreen: true,
+  ///   layer: 0,
+  /// );
+  /// ```
+  ///
+  /// Throws [PlatformException] if unable to retrieve window information.
+  Future<List<MacosWindowInfo>> getWindowsAdvanced({
+    int? windowId,
+    String? name,
+    String? ownerName,
+    int? processId,
+    bool? isOnScreen,
+    int? layer,
+    double? x,
+    double? y,
+    double? width,
+    double? height,
+  }) async {
+    final List<Map<String, dynamic>> windowMaps =
+        await MacosWindowToolkitPlatform.instance.getWindowsAdvanced(
+      windowId: windowId,
+      name: name,
+      ownerName: ownerName,
+      processId: processId,
+      isOnScreen: isOnScreen,
+      layer: layer,
+      x: x,
+      y: y,
+      width: width,
+      height: height,
+    );
+    return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
+  }
+
   /// Gets macOS version information.
   ///
   /// Returns a [MacosVersionInfo] object containing:

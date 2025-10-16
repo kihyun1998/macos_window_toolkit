@@ -170,6 +170,111 @@ class WindowHandler {
         }
     }
 
+    /// Retrieves windows with advanced filtering options
+    /// All parameters are optional - nil values are ignored in filtering
+    /// Returns an array of windows that match all specified criteria (AND condition)
+    func getWindowsAdvanced(
+        windowId: Int? = nil,
+        name: String? = nil,
+        ownerName: String? = nil,
+        processId: Int? = nil,
+        isOnScreen: Bool? = nil,
+        layer: Int? = nil,
+        x: Double? = nil,
+        y: Double? = nil,
+        width: Double? = nil,
+        height: Double? = nil
+    ) -> Result<[[String: Any]], WindowError> {
+        return getFilteredWindows { windowInfo in
+            // Check windowId if specified
+            if let windowId = windowId {
+                let id = windowInfo[kCGWindowNumber as String] as? NSNumber
+                if id?.intValue != windowId {
+                    return false
+                }
+            }
+
+            // Check name if specified (contains match)
+            if let name = name {
+                let windowName = windowInfo[kCGWindowName as String] as? String ?? ""
+                if !windowName.contains(name) {
+                    return false
+                }
+            }
+
+            // Check ownerName if specified (contains match)
+            if let ownerName = ownerName {
+                let windowOwnerName = windowInfo[kCGWindowOwnerName as String] as? String ?? ""
+                if !windowOwnerName.contains(ownerName) {
+                    return false
+                }
+            }
+
+            // Check processId if specified
+            if let processId = processId {
+                let pid = windowInfo[kCGWindowOwnerPID as String] as? NSNumber
+                if pid?.intValue != processId {
+                    return false
+                }
+            }
+
+            // Check isOnScreen if specified
+            if let isOnScreen = isOnScreen {
+                let onScreen = windowInfo[kCGWindowIsOnscreen as String] as? NSNumber
+                if onScreen?.boolValue != isOnScreen {
+                    return false
+                }
+            }
+
+            // Check layer if specified
+            if let layer = layer {
+                let windowLayer = windowInfo[kCGWindowLayer as String] as? NSNumber
+                if windowLayer?.intValue != layer {
+                    return false
+                }
+            }
+
+            // Check bounds (x, y, width, height) if specified
+            if x != nil || y != nil || width != nil || height != nil {
+                if let boundsDict = windowInfo[kCGWindowBounds as String] as? [String: Any] {
+                    if let x = x {
+                        let windowX = boundsDict["X"] as? Double ?? 0
+                        if windowX != x {
+                            return false
+                        }
+                    }
+
+                    if let y = y {
+                        let windowY = boundsDict["Y"] as? Double ?? 0
+                        if windowY != y {
+                            return false
+                        }
+                    }
+
+                    if let width = width {
+                        let windowWidth = boundsDict["Width"] as? Double ?? 0
+                        if windowWidth != width {
+                            return false
+                        }
+                    }
+
+                    if let height = height {
+                        let windowHeight = boundsDict["Height"] as? Double ?? 0
+                        if windowHeight != height {
+                            return false
+                        }
+                    }
+                } else {
+                    // If bounds info is not available but we're filtering by bounds, exclude this window
+                    return false
+                }
+            }
+
+            // All specified conditions passed
+            return true
+        }
+    }
+
     /// Internal helper method to filter windows based on a predicate
     private func getFilteredWindows(filter: ([String: Any]) -> Bool) -> Result<
         [[String: Any]], WindowError

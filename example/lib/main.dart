@@ -12,6 +12,7 @@ import 'services/permission_service.dart';
 import 'services/version_service.dart';
 import 'services/window_service.dart';
 import 'test_permission_monitoring.dart';
+import 'widgets/advanced_filter_section.dart';
 import 'widgets/search_controls.dart';
 import 'widgets/version_info_card.dart';
 import 'widgets/window_detail_sheet.dart';
@@ -298,6 +299,78 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
     }
   }
 
+  Future<void> _applyAdvancedFilters({
+    int? windowId,
+    String? name,
+    String? ownerName,
+    int? processId,
+    bool? isOnScreen,
+    int? layer,
+    double? x,
+    double? y,
+    double? width,
+    double? height,
+  }) async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final plugin = MacosWindowToolkit();
+      final windows = await plugin.getWindowsAdvanced(
+        windowId: windowId,
+        name: name,
+        ownerName: ownerName,
+        processId: processId,
+        isOnScreen: isOnScreen,
+        layer: layer,
+        x: x,
+        y: y,
+        width: width,
+        height: height,
+      );
+
+      setState(() {
+        _windows = windows;
+        _isLoading = false;
+      });
+      _filterWindows();
+
+      if (mounted) {
+        // Build filter description
+        final filters = <String>[];
+        if (windowId != null) filters.add('ID: $windowId');
+        if (name != null) filters.add('Title: "$name"');
+        if (ownerName != null) filters.add('App: "$ownerName"');
+        if (processId != null) filters.add('PID: $processId');
+        if (isOnScreen != null) {
+          filters.add('OnScreen: ${isOnScreen ? "Yes" : "No"}');
+        }
+        if (layer != null) filters.add('Layer: $layer');
+        if (x != null) filters.add('X: $x');
+        if (y != null) filters.add('Y: $y');
+        if (width != null) filters.add('Width: $width');
+        if (height != null) filters.add('Height: $height');
+
+        NotificationService.showSuccess(
+          context,
+          'Found ${windows.length} window(s) matching: ${filters.join(", ")}',
+        );
+      }
+    } on PlatformException catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        NotificationService.handlePlatformException(
+          context,
+          e,
+          'applying advanced filters',
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -380,6 +453,12 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
                     filteredWindows: _filteredWindows.length,
                     autoRefresh: WindowService.isAutoRefreshEnabled,
                     onToggleAutoRefresh: _toggleAutoRefresh,
+                  ),
+
+                  // Advanced Filters
+                  AdvancedFilterSection(
+                    onApplyFilters: _applyAdvancedFilters,
+                    isLoading: _isLoading,
                   ),
 
                   // Windows List

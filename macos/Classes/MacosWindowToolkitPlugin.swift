@@ -25,6 +25,8 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       getWindowById(call: call, result: result)
     case "getWindowsByProcessId":
       getWindowsByProcessId(call: call, result: result)
+    case "getWindowsAdvanced":
+      getWindowsAdvanced(call: call, result: result)
     case "hasScreenRecordingPermission":
       hasScreenRecordingPermission(result: result)
     case "requestScreenRecordingPermission":
@@ -204,6 +206,37 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     }
 
     let windowResult = windowHandler.getWindowsByProcessId(processId)
+    handleWindowResult(windowResult, result: result)
+  }
+
+  /// Retrieves windows with advanced filtering options
+  /// All filter parameters are optional - nil values are ignored
+  private func getWindowsAdvanced(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    let arguments = call.arguments as? [String: Any] ?? [:]
+
+    let windowId = arguments["windowId"] as? Int
+    let name = arguments["name"] as? String
+    let ownerName = arguments["ownerName"] as? String
+    let processId = arguments["processId"] as? Int
+    let isOnScreen = arguments["isOnScreen"] as? Bool
+    let layer = arguments["layer"] as? Int
+    let x = arguments["x"] as? Double
+    let y = arguments["y"] as? Double
+    let width = arguments["width"] as? Double
+    let height = arguments["height"] as? Double
+
+    let windowResult = windowHandler.getWindowsAdvanced(
+      windowId: windowId,
+      name: name,
+      ownerName: ownerName,
+      processId: processId,
+      isOnScreen: isOnScreen,
+      layer: layer,
+      x: x,
+      y: y,
+      width: width,
+      height: height
+    )
     handleWindowResult(windowResult, result: result)
   }
 

@@ -68,6 +68,57 @@ abstract class WindowOperationsInterface {
     );
   }
 
+  /// Retrieves windows with advanced filtering options.
+  ///
+  /// All parameters are optional. Only non-null parameters are used for filtering.
+  /// All specified conditions are combined with AND logic.
+  ///
+  /// Parameters:
+  /// - [windowId]: Filter by exact window ID
+  /// - [name]: Filter by window title (substring match)
+  /// - [ownerName]: Filter by application name (substring match)
+  /// - [processId]: Filter by exact process ID
+  /// - [isOnScreen]: Filter by visibility on screen
+  /// - [layer]: Filter by exact window layer level
+  /// - [x]: Filter by exact x coordinate
+  /// - [y]: Filter by exact y coordinate
+  /// - [width]: Filter by exact width
+  /// - [height]: Filter by exact height
+  ///
+  /// Returns a list of maps containing window properties for windows that match
+  /// all specified criteria.
+  ///
+  /// Example usage:
+  /// ```dart
+  /// // Find all visible windows from Chrome
+  /// final windows = await toolkit.getWindowsAdvanced(
+  ///   ownerName: 'Chrome',
+  ///   isOnScreen: true,
+  /// );
+  ///
+  /// // Find a specific window by ID and verify it's visible
+  /// final window = await toolkit.getWindowsAdvanced(
+  ///   windowId: 12345,
+  ///   isOnScreen: true,
+  /// );
+  /// ```
+  ///
+  /// Throws [PlatformException] if unable to retrieve window information.
+  Future<List<Map<String, dynamic>>> getWindowsAdvanced({
+    int? windowId,
+    String? name,
+    String? ownerName,
+    int? processId,
+    bool? isOnScreen,
+    int? layer,
+    double? x,
+    double? y,
+    double? width,
+    double? height,
+  }) {
+    throw UnimplementedError('getWindowsAdvanced() has not been implemented.');
+  }
+
   /// Checks if a window with the specified ID is currently alive/exists.
   ///
   /// Returns `true` if the window exists and is currently available on the system,
