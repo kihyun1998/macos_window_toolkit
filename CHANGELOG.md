@@ -1,3 +1,14 @@
+## 1.4.2
+
+### Changed
+- **REFACTOR**: Example app error handling now uses enum-based approach instead of string comparison
+  - Updated window_service.dart, window_detail_sheet.dart, and notification_service.dart to use `PlatformErrorCode` enum
+  - Uses `errorCode` extension property and `userMessage` for type-safe error handling
+  - Reduced code duplication and improved maintainability
+- **DOCS**: Updated documentation examples to demonstrate enum-based error handling
+  - Updated error_handling.md, process_management.md, and troubleshooting.md with enum-based patterns
+  - Added recommended enum-based examples alongside legacy string-based approaches
+
 ## 1.4.1
 
 ### Added

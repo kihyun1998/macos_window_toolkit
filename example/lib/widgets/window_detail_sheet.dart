@@ -209,41 +209,21 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
     } catch (e) {
       setState(() {
         _isCapturing = false;
+
+        // Get user-friendly error message
         if (e is PlatformException) {
-          switch (e.code) {
-            case 'UNSUPPORTED_MACOS_VERSION':
-              _captureError =
-                  'macOS version not supported for this capture method';
-              break;
-            case 'INVALID_WINDOW_ID':
-              _captureError = 'Window not found or not capturable';
-              break;
-            case 'WINDOW_MINIMIZED':
-              _captureError =
-                  'Window is minimized and cannot be captured. Please restore the window first.';
-              break;
-            case 'CAPTURE_FAILED':
-              _captureError = 'Capture failed: ${e.message}';
-              break;
-            case 'NO_COMPATIBLE_CAPTURE_METHOD':
-              _captureError = 'No compatible capture method available';
-              break;
-            case 'SCREEN_RECORDING_PERMISSION_DENIED':
-              _captureError =
-                  'Screen recording permission required. Please enable it in System Settings.';
-              // Show permission dialog
-              if (mounted) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  Navigator.pushNamed(context, '/permission');
-                });
-              }
-              break;
-            case 'REQUIRES_MACOS_14':
-              _captureError =
-                  'This capture method requires macOS 14.0 or later';
-              break;
-            default:
-              _captureError = 'Capture error: ${e.message}';
+          final errorCode = e.errorCode;
+          _captureError =
+              errorCode?.userMessage ?? e.message ?? 'Unknown error';
+
+          // Handle special case: screen recording permission
+          if (errorCode ==
+              PlatformErrorCode.captureScreenRecordingPermissionDenied) {
+            if (mounted) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Navigator.pushNamed(context, '/permission');
+              });
+            }
           }
         } else {
           _captureError = 'Unexpected error: $e';
@@ -349,30 +329,20 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Unknown error occurred';
+        String errorMessage;
+
         if (e is PlatformException) {
-          switch (e.code) {
-            case 'WINDOW_NOT_FOUND':
-              errorMessage = 'Window not found';
-              break;
-            case 'INSUFFICIENT_WINDOW_INFO':
-              errorMessage = 'Not enough window information';
-              break;
-            case 'APPLESCRIPT_EXECUTION_FAILED':
-              errorMessage = 'AppleScript execution failed';
-              break;
-            case 'ACCESSIBILITY_PERMISSION_DENIED':
-              errorMessage = 'Accessibility permission required';
-              // Navigate to permission settings
-              if (mounted) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  Navigator.pushNamed(context, '/permission');
-                });
-              }
-              break;
-            default:
-              errorMessage = 'Error: ${e.message}';
+          final errorCode = e.errorCode;
+          errorMessage = errorCode?.userMessage ?? e.message ?? 'Unknown error';
+
+          // Handle special case: accessibility permission
+          if (errorCode == PlatformErrorCode.accessibilityPermissionDenied) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.pushNamed(context, '/permission');
+            });
           }
+        } else {
+          errorMessage = 'Unknown error occurred';
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -428,22 +398,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Unknown error occurred';
-        if (e is PlatformException) {
-          switch (e.code) {
-            case 'PROCESS_NOT_FOUND':
-              errorMessage = 'Process not found';
-              break;
-            case 'TERMINATION_FAILED':
-              errorMessage = 'Termination failed';
-              break;
-            case 'TERMINATE_APP_ERROR':
-              errorMessage = 'Application termination error';
-              break;
-            default:
-              errorMessage = 'Error: ${e.message}';
-          }
-        }
+        final errorMessage = e is PlatformException
+            ? e.errorCode?.userMessage ?? e.message ?? 'Unknown error'
+            : 'Unknown error occurred';
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -498,22 +455,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Unknown error occurred';
-        if (e is PlatformException) {
-          switch (e.code) {
-            case 'PROCESS_NOT_FOUND':
-              errorMessage = 'Process not found';
-              break;
-            case 'FAILED_TO_GET_PROCESS_LIST':
-              errorMessage = 'Failed to get process list';
-              break;
-            case 'TERMINATE_TREE_ERROR':
-              errorMessage = 'Process tree termination error';
-              break;
-            default:
-              errorMessage = 'Error: ${e.message}';
-          }
-        }
+        final errorMessage = e is PlatformException
+            ? e.errorCode?.userMessage ?? e.message ?? 'Unknown error'
+            : 'Unknown error occurred';
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

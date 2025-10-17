@@ -13,12 +13,7 @@ class WindowService {
   static Future<List<MacosWindowInfo>> getAllWindows() async {
     try {
       return await _plugin.getAllWindows();
-    } on PlatformException catch (e) {
-      // Handle screen recording permission errors specifically
-      if (e.code == 'SCREEN_RECORDING_PERMISSION_DENIED') {
-        // Return empty list but let the caller handle the error
-        rethrow;
-      }
+    } on PlatformException {
       rethrow;
     }
   }
@@ -27,12 +22,7 @@ class WindowService {
   static Future<List<MacosWindowInfo>> getNamedWindows() async {
     try {
       return await _plugin.getAllWindows(excludeEmptyNames: true);
-    } on PlatformException catch (e) {
-      // Handle screen recording permission errors specifically
-      if (e.code == 'SCREEN_RECORDING_PERMISSION_DENIED') {
-        // Return empty list but let the caller handle the error
-        rethrow;
-      }
+    } on PlatformException {
       rethrow;
     }
   }

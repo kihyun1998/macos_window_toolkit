@@ -121,23 +121,27 @@ Future<bool> safeTerminateApplication(
     }
     
   } on PlatformException catch (e) {
-    switch (e.code) {
-      case 'PROCESS_NOT_FOUND':
-        print('Process $processId no longer exists');
-        return true; // Consider it successful if already gone
-        
-      case 'TERMINATION_FAILED':
-        print('System failed to terminate process: ${e.message}');
-        return false;
-        
-      case 'TERMINATE_APP_ERROR':
-        print('Application termination error: ${e.message}');
-        return false;
-        
-      default:
-        print('Unexpected error: ${e.code} - ${e.message}');
-        return false;
+    final errorCode = e.errorCode;
+
+    if (errorCode == PlatformErrorCode.processNotFound) {
+      print('Process $processId no longer exists');
+      return true; // Consider it successful if already gone
     }
+
+    if (errorCode == PlatformErrorCode.terminationFailed) {
+      print('System failed to terminate process: ${errorCode.userMessage}');
+      return false;
+    }
+
+    if (errorCode == PlatformErrorCode.terminateAppError) {
+      print('Application termination error: ${errorCode.userMessage}');
+      return false;
+    }
+
+    // Use user-friendly error message
+    final message = errorCode?.userMessage ?? e.message ?? 'Unknown error';
+    print('Unexpected error: $message');
+    return false;
   } catch (e) {
     print('Unexpected error terminating process: $e');
     return false;
@@ -235,15 +239,16 @@ try {
   }
   
 } on PlatformException catch (e) {
-  switch (e.code) {
-    case 'PROCESS_NOT_FOUND':
-      print('Parent process no longer exists');
-      break;
-    case 'FAILED_TO_GET_PROCESS_LIST':
-      print('Unable to query system process list');
-      break;
-    default:
-      print('Error: ${e.code} - ${e.message}');
+  final errorCode = e.errorCode;
+
+  if (errorCode == PlatformErrorCode.processNotFound) {
+    print('Parent process no longer exists');
+  } else if (errorCode == PlatformErrorCode.failedToGetProcessList) {
+    print('Unable to query system process list');
+  } else {
+    // Use user-friendly error message
+    final message = errorCode?.userMessage ?? e.message ?? 'Unknown error';
+    print('Error: $message');
   }
 }
 ```
@@ -422,12 +427,14 @@ try {
   }
   
 } on PlatformException catch (e) {
-  switch (e.code) {
-    case 'FAILED_TO_GET_PROCESS_LIST':
-      print('Unable to access system process list');
-      break;
-    default:
-      print('Error getting child processes: ${e.code} - ${e.message}');
+  final errorCode = e.errorCode;
+
+  if (errorCode == PlatformErrorCode.failedToGetProcessList) {
+    print('Unable to access system process list');
+  } else {
+    // Use user-friendly error message
+    final message = errorCode?.userMessage ?? e.message ?? 'Unknown error';
+    print('Error getting child processes: $message');
   }
 }
 ```
@@ -1054,16 +1061,19 @@ Future<void> terminateWithRetry(
         return;
       }
     } on PlatformException catch (e) {
-      if (e.code == 'PROCESS_NOT_FOUND') {
+      final errorCode = e.errorCode;
+
+      if (errorCode == PlatformErrorCode.processNotFound) {
         print('Process already terminated');
         return;
       }
-      
+
       if (attempt == maxRetries - 1) {
-        print('❌ Final attempt failed: ${e.message}');
+        final message = errorCode?.userMessage ?? e.message ?? 'Unknown error';
+        print('❌ Final attempt failed: $message');
         rethrow;
       }
-      
+
       print('⚠️ Attempt ${attempt + 1} failed, retrying...');
       await Future.delayed(retryDelay);
     }

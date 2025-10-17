@@ -120,7 +120,11 @@ Common issues and solutions when using macOS Window Toolkit.
        final windows = await MacosWindowToolkit.getAllWindows();
        // Success - permissions are OK
      } on PlatformException catch (e) {
-       if (e.code == 'PERMISSION_DENIED') {
+       final errorCode = e.errorCode;
+
+       // Check for permission-related errors
+       if (errorCode == PlatformErrorCode.accessibilityPermissionDenied ||
+           errorCode == PlatformErrorCode.captureScreenRecordingPermissionDenied) {
          _showPermissionDialog();
        }
      }

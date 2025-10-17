@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:macos_window_toolkit/macos_window_toolkit.dart';
 
 class NotificationService {
   /// Show error message
@@ -79,38 +80,50 @@ class NotificationService {
     PlatformException exception,
     String operation,
   ) {
+    final errorCode = exception.errorCode;
+
     // Handle special cases for better user experience
-    switch (exception.code) {
-      case 'WINDOW_MINIMIZED':
-        showWarning(
-          context,
-          'Cannot capture minimized window. Please restore the window first.',
-          duration: const Duration(seconds: 4),
-        );
-        return;
-      case 'SCREEN_RECORDING_PERMISSION_DENIED':
-        _showPermissionErrorDialog(context, 'Screen Recording');
-        return;
-      case 'ACCESSIBILITY_PERMISSION_DENIED':
-        _showPermissionErrorDialog(context, 'Accessibility');
-        return;
-      case 'REQUIRES_MACOS_14':
-        showWarning(
-          context,
-          'This capture method requires macOS 14.0 or later. Your system may not support this feature.',
-          duration: const Duration(seconds: 5),
-        );
-        return;
-      case 'UNSUPPORTED_MACOS_VERSION':
-        showWarning(
-          context,
-          'Your macOS version does not support this feature. Please update to a newer version.',
-          duration: const Duration(seconds: 5),
-        );
-        return;
+    if (errorCode == PlatformErrorCode.captureWindowMinimized) {
+      showWarning(
+        context,
+        'Cannot capture minimized window. Please restore the window first.',
+        duration: const Duration(seconds: 4),
+      );
+      return;
     }
 
-    showError(context, 'Error $operation: ${exception.message}');
+    if (errorCode == PlatformErrorCode.captureScreenRecordingPermissionDenied) {
+      _showPermissionErrorDialog(context, 'Screen Recording');
+      return;
+    }
+
+    if (errorCode == PlatformErrorCode.accessibilityPermissionDenied) {
+      _showPermissionErrorDialog(context, 'Accessibility');
+      return;
+    }
+
+    if (errorCode == PlatformErrorCode.captureRequiresMacOS14) {
+      showWarning(
+        context,
+        'This capture method requires macOS 14.0 or later. Your system may not support this feature.',
+        duration: const Duration(seconds: 5),
+      );
+      return;
+    }
+
+    if (errorCode == PlatformErrorCode.captureUnsupportedMacOSVersion) {
+      showWarning(
+        context,
+        'Your macOS version does not support this feature. Please update to a newer version.',
+        duration: const Duration(seconds: 5),
+      );
+      return;
+    }
+
+    // For other errors, use the enum's user message
+    final errorMessage =
+        errorCode?.userMessage ?? exception.message ?? 'Unknown error';
+    showError(context, 'Error $operation: $errorMessage');
   }
 
   /// Show permission error dialog with action buttons

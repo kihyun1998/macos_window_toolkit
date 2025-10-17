@@ -65,7 +65,39 @@ Represented as sealed classes or enums for specific failure scenarios (e.g., `Ca
 
 ## Error Handling Patterns
 
-### Basic Exception Handling
+### Type-Safe Error Handling with Enums
+
+The plugin provides `PlatformErrorCode` enum and `PlatformExceptionExtension` for type-safe error handling:
+
+```dart
+import 'package:macos_window_toolkit/macos_window_toolkit.dart';
+
+try {
+  final windows = await toolkit.getAllWindows();
+  // Process windows
+} on PlatformException catch (e) {
+  final errorCode = e.errorCode; // Get typed error code
+
+  if (errorCode == PlatformErrorCode.captureScreenRecordingPermissionDenied) {
+    await _handlePermissionDenied();
+  } else {
+    // Use user-friendly message from enum
+    final message = errorCode?.userMessage ?? e.message ?? 'Unknown error';
+    await _handleError(message);
+  }
+} catch (e) {
+  // Handle unexpected errors
+  print('Unexpected error: $e');
+}
+```
+
+**Extension Properties:**
+- `errorCode`: Returns `PlatformErrorCode?` for type-safe error checking
+- `userFriendlyMessage`: Returns user-friendly error message from enum or falls back to exception message
+
+### Basic Exception Handling (Legacy String-Based)
+
+> **Note:** String-based error handling is still supported but enum-based approach is recommended.
 
 ```dart
 try {
@@ -90,6 +122,47 @@ try {
 
 ### Permission-Specific Error Handling
 
+**Recommended (Enum-based):**
+```dart
+Future<List<MacosWindowInfo>> getWindowsSafely() async {
+  try {
+    return await toolkit.getAllWindows();
+  } on PlatformException catch (e) {
+    final errorCode = e.errorCode;
+
+    if (errorCode == PlatformErrorCode.captureScreenRecordingPermissionDenied) {
+      print('Screen recording permission required');
+
+      // Guide user to grant permission
+      final granted = await toolkit.requestScreenRecordingPermission();
+      if (!granted) {
+        await toolkit.openScreenRecordingSettings();
+      }
+
+      return <MacosWindowInfo>[];
+    }
+
+    if (errorCode == PlatformErrorCode.accessibilityPermissionDenied) {
+      print('Accessibility permission required for full functionality');
+      await toolkit.requestAccessibilityPermission();
+
+      // Try again with limited functionality
+      try {
+        return await toolkit.getAllWindows();
+      } catch (_) {
+        return <MacosWindowInfo>[];
+      }
+    }
+
+    // Use user-friendly error message
+    final message = errorCode?.userMessage ?? e.message ?? 'Unknown error';
+    print('Window retrieval failed: $message');
+    return <MacosWindowInfo>[];
+  }
+}
+```
+
+**Legacy (String-based):**
 ```dart
 Future<List<MacosWindowInfo>> getWindowsSafely() async {
   try {
@@ -98,27 +171,27 @@ Future<List<MacosWindowInfo>> getWindowsSafely() async {
     switch (e.code) {
       case 'SCREEN_RECORDING_PERMISSION_DENIED':
         print('Screen recording permission required');
-        
+
         // Guide user to grant permission
         final granted = await toolkit.requestScreenRecordingPermission();
         if (!granted) {
           await toolkit.openScreenRecordingSettings();
         }
-        
+
         // Return empty list for now
         return <MacosWindowInfo>[];
-        
+
       case 'ACCESSIBILITY_PERMISSION_DENIED':
         print('Accessibility permission required for full functionality');
         await toolkit.requestAccessibilityPermission();
-        
+
         // Try again with limited functionality
         try {
           return await toolkit.getAllWindows();
         } catch (_) {
           return <MacosWindowInfo>[];
         }
-        
+
       default:
         print('Window retrieval failed: ${e.code} - ${e.message}');
         return <MacosWindowInfo>[];
@@ -194,32 +267,36 @@ Future<Uint8List?> _handleCaptureException(
   int windowId,
   PlatformException e,
 ) async {
-  switch (e.code) {
-    case 'UNSUPPORTED_MACOS_VERSION':
-      print('ScreenCaptureKit not supported, trying legacy method...');
-      try {
-        final result = await toolkit.captureWindowLegacy(windowId);
-        if (result is CaptureSuccess) {
-          return result.imageData;
-        }
-      } catch (_) {
-        print('Legacy capture also failed');
+  final errorCode = e.errorCode;
+
+  if (errorCode == PlatformErrorCode.captureUnsupportedMacOSVersion) {
+    print('ScreenCaptureKit not supported, trying legacy method...');
+    try {
+      final result = await toolkit.captureWindowLegacy(windowId);
+      if (result is CaptureSuccess) {
+        return result.imageData;
       }
-      return null;
-      
-    case 'WINDOW_NOT_FOUND':
-      print('Window not found for capture');
-      return null;
-      
-    default:
-      print('Capture system error: ${e.code} - ${e.message}');
-      return null;
+    } catch (_) {
+      print('Legacy capture also failed');
+    }
+    return null;
   }
+
+  if (errorCode == PlatformErrorCode.windowNotFound) {
+    print('Window not found for capture');
+    return null;
+  }
+
+  // Use user-friendly error message
+  final message = errorCode?.userMessage ?? e.message ?? 'Unknown error';
+  print('Capture system error: $message');
+  return null;
 }
 ```
 
 ### Process Management Error Handling
 
+**Recommended (Enum-based):**
 ```dart
 Future<bool> terminateProcessSafely(int processId) async {
   try {
@@ -228,26 +305,67 @@ Future<bool> terminateProcessSafely(int processId) async {
     if (success) {
       return true;
     }
-    
+
     // Try force termination if graceful failed
     return await toolkit.terminateApplicationByPID(processId, force: true);
-    
+
+  } on PlatformException catch (e) {
+    final errorCode = e.errorCode;
+
+    if (errorCode == PlatformErrorCode.processNotFound) {
+      print('Process $processId no longer exists');
+      return true; // Consider it successful if already gone
+    }
+
+    if (errorCode == PlatformErrorCode.terminationFailed) {
+      print('Unable to terminate process $processId: ${errorCode.userMessage}');
+
+      // Could try alternative methods
+      return await _tryAlternativeTermination(processId);
+    }
+
+    if (errorCode == PlatformErrorCode.terminateAppError) {
+      print('Application termination error: ${errorCode.userMessage}');
+      return false;
+    }
+
+    // Use user-friendly error message
+    final message = errorCode?.userMessage ?? e.message ?? 'Unknown error';
+    print('Unexpected termination error: $message');
+    return false;
+  }
+}
+```
+
+**Legacy (String-based):**
+```dart
+Future<bool> terminateProcessSafely(int processId) async {
+  try {
+    // Try graceful termination first
+    bool success = await toolkit.terminateApplicationByPID(processId);
+    if (success) {
+      return true;
+    }
+
+    // Try force termination if graceful failed
+    return await toolkit.terminateApplicationByPID(processId, force: true);
+
   } on PlatformException catch (e) {
     switch (e.code) {
       case 'PROCESS_NOT_FOUND':
         print('Process $processId no longer exists');
         return true; // Consider it successful if already gone
-        
+
       case 'TERMINATION_FAILED':
         print('Unable to terminate process $processId: ${e.message}');
-        
+
         // Could try alternative methods
         return await _tryAlternativeTermination(processId);
-        
+
       case 'TERMINATE_APP_ERROR':
         print('Application termination error: ${e.message}');
         return false;
-        
+
       default:
         print('Unexpected termination error: ${e.code} - ${e.message}');
         return false;
@@ -314,40 +432,45 @@ class ErrorHandler {
     PlatformException e,
     String operationName,
   ) async {
-    switch (e.code) {
-      // Permission errors - guide user to fix
-      case 'SCREEN_RECORDING_PERMISSION_DENIED':
-        await _handleScreenRecordingPermission();
-        return ErrorHandlingResult(shouldRetry: false);
-        
-      case 'ACCESSIBILITY_PERMISSION_DENIED':
-        await _handleAccessibilityPermission();
-        return ErrorHandlingResult(shouldRetry: false);
-        
-      // System errors - can retry
-      case 'SYSTEM_ERROR':
-      case 'CAPTURE_FAILED':
-        return ErrorHandlingResult(shouldRetry: true);
-        
-      // Resource not found - don't retry
-      case 'WINDOW_NOT_FOUND':
-      case 'PROCESS_NOT_FOUND':
-        return ErrorHandlingResult(shouldRetry: false);
-        
-      // Version incompatibility - try fallback
-      case 'UNSUPPORTED_MACOS_VERSION':
-      case 'REQUIRES_MACOS_14':
-        return await _handleVersionIncompatibility(operationName);
-        
-      // Temporary states - can retry
-      case 'WINDOW_MINIMIZED':
-      case 'CAPTURE_IN_PROGRESS':
-        return ErrorHandlingResult(shouldRetry: true);
-        
-      default:
-        print('Unhandled error code: ${e.code}');
-        return ErrorHandlingResult(shouldRetry: false);
+    final errorCode = e.errorCode;
+
+    // Permission errors - guide user to fix
+    if (errorCode == PlatformErrorCode.captureScreenRecordingPermissionDenied) {
+      await _handleScreenRecordingPermission();
+      return ErrorHandlingResult(shouldRetry: false);
     }
+
+    if (errorCode == PlatformErrorCode.accessibilityPermissionDenied) {
+      await _handleAccessibilityPermission();
+      return ErrorHandlingResult(shouldRetry: false);
+    }
+
+    // System errors - can retry
+    if (errorCode == PlatformErrorCode.captureFailed) {
+      return ErrorHandlingResult(shouldRetry: true);
+    }
+
+    // Resource not found - don't retry
+    if (errorCode == PlatformErrorCode.windowNotFound ||
+        errorCode == PlatformErrorCode.processNotFound) {
+      return ErrorHandlingResult(shouldRetry: false);
+    }
+
+    // Version incompatibility - try fallback
+    if (errorCode == PlatformErrorCode.captureUnsupportedMacOSVersion ||
+        errorCode == PlatformErrorCode.captureRequiresMacOS14) {
+      return await _handleVersionIncompatibility(operationName);
+    }
+
+    // Temporary states - can retry
+    if (errorCode == PlatformErrorCode.captureWindowMinimized) {
+      return ErrorHandlingResult(shouldRetry: true);
+    }
+
+    // Unhandled error
+    final message = errorCode?.userMessage ?? e.message ?? 'Unknown error';
+    print('Unhandled error: $message');
+    return ErrorHandlingResult(shouldRetry: false);
   }
   
   static Future<void> _handleScreenRecordingPermission() async {
@@ -423,24 +546,28 @@ class SafeWindowManager {
     try {
       return await toolkit.closeWindow(windowId);
     } on PlatformException catch (e) {
-      switch (e.code) {
-        case 'WINDOW_NOT_FOUND':
-          print('Window already closed');
-          return true; // Consider success
-          
-        case 'APPLESCRIPT_EXECUTION_FAILED':
-          print('AppleScript failed, window may not support closing');
-          return false;
-          
-        case 'ACCESSIBILITY_PERMISSION_DENIED':
-          print('Need accessibility permission for window closing');
-          await toolkit.requestAccessibilityPermission();
-          return false;
-          
-        default:
-          print('Failed to close window: ${e.code} - ${e.message}');
-          return false;
+      final errorCode = e.errorCode;
+
+      if (errorCode == PlatformErrorCode.windowNotFound) {
+        print('Window already closed');
+        return true; // Consider success
       }
+
+      if (errorCode == PlatformErrorCode.appleScriptExecutionFailed) {
+        print('AppleScript failed, window may not support closing');
+        return false;
+      }
+
+      if (errorCode == PlatformErrorCode.accessibilityPermissionDenied) {
+        print('Need accessibility permission for window closing');
+        await toolkit.requestAccessibilityPermission();
+        return false;
+      }
+
+      // Use user-friendly error message
+      final message = errorCode?.userMessage ?? e.message ?? 'Unknown error';
+      print('Failed to close window: $message');
+      return false;
     }
   }
 }
@@ -521,19 +648,18 @@ class RobustCaptureSystem {
     int windowId,
     PlatformException e,
   ) async {
-    switch (e.code) {
-      case 'UNSUPPORTED_MACOS_VERSION':
-        return await _tryLegacyCapture(windowId);
-        
-      case 'SCREENCAPTUREKIT_NOT_AVAILABLE':
-        return await _tryLegacyCapture(windowId);
-        
-      default:
-        return CaptureAttemptResult.failure(
-          'System error: ${e.message}',
-          canRetry: true,
-        );
+    final errorCode = e.errorCode;
+
+    if (errorCode == PlatformErrorCode.captureUnsupportedMacOSVersion) {
+      return await _tryLegacyCapture(windowId);
     }
+
+    // Use user-friendly error message
+    final message = errorCode?.userMessage ?? e.message ?? 'System error';
+    return CaptureAttemptResult.failure(
+      message,
+      canRetry: true,
+    );
   }
   
   Future<CaptureAttemptResult> _tryLegacyCapture(int windowId) async {
@@ -591,6 +717,29 @@ class CaptureAttemptResult {
 
 ## User-Friendly Error Messages
 
+**Recommended (Enum-based):**
+
+The plugin provides built-in user-friendly messages via the `userMessage` property of `PlatformErrorCode` enum. You can simply use:
+
+```dart
+class UserErrorMessages {
+  static String getHumanReadableError(PlatformException e) {
+    // Use built-in enum messages
+    final errorCode = e.errorCode;
+    return errorCode?.userMessage ?? e.message ?? 'An unexpected error occurred';
+  }
+
+  // Or use the extension method directly
+  static String getErrorMessage(Exception e) {
+    return e.userFriendlyMessage;
+  }
+}
+```
+
+**Custom (String-based):**
+
+If you need custom messages beyond the built-in ones:
+
 ```dart
 class UserErrorMessages {
   static String getHumanReadableError(PlatformException e) {
@@ -598,57 +747,59 @@ class UserErrorMessages {
       case 'SCREEN_RECORDING_PERMISSION_DENIED':
         return 'This app needs screen recording permission to access window information. '
                'You can grant this in System Preferences > Privacy & Security > Screen Recording.';
-      
+
       case 'ACCESSIBILITY_PERMISSION_DENIED':
         return 'This app needs accessibility permission to control windows. '
                'You can grant this in System Preferences > Privacy & Security > Accessibility.';
-      
+
       case 'WINDOW_MINIMIZED':
         return 'The selected window is minimized. Please restore it from the Dock and try again.';
-      
+
       case 'WINDOW_NOT_FOUND':
         return 'The window you\'re trying to access has been closed or is no longer available.';
-      
+
       case 'PROCESS_NOT_FOUND':
         return 'The application you\'re trying to control is no longer running.';
-      
+
       case 'UNSUPPORTED_MACOS_VERSION':
         return 'This feature requires a newer version of macOS. Please update your system for the best experience.';
-      
+
       case 'REQUIRES_MACOS_14':
         return 'This advanced feature requires macOS 14.0 or later.';
-      
+
       case 'APPLESCRIPT_EXECUTION_FAILED':
         return 'Unable to control this window. The application may not support this operation.';
-      
+
       case 'TERMINATION_FAILED':
         return 'Unable to close the application. It may be protected by the system or require administrator privileges.';
-      
+
       case 'SYSTEM_ERROR':
         return 'A system error occurred. Please try again, or restart the application if the problem persists.';
-      
+
       default:
         return 'An unexpected error occurred: ${e.message ?? e.code}';
     }
   }
-  
-  static String getSuggestion(String errorCode) {
+
+  static String getSuggestion(PlatformErrorCode? errorCode) {
+    if (errorCode == null) return 'Try the operation again or restart the app';
+
     switch (errorCode) {
-      case 'SCREEN_RECORDING_PERMISSION_DENIED':
+      case PlatformErrorCode.captureScreenRecordingPermissionDenied:
         return 'Open System Preferences and enable screen recording for this app';
-      
-      case 'ACCESSIBILITY_PERMISSION_DENIED':
+
+      case PlatformErrorCode.accessibilityPermissionDenied:
         return 'Open System Preferences and enable accessibility for this app';
-      
-      case 'WINDOW_MINIMIZED':
+
+      case PlatformErrorCode.captureWindowMinimized:
         return 'Restore the window from the Dock or use Cmd+Tab';
-      
-      case 'UNSUPPORTED_MACOS_VERSION':
+
+      case PlatformErrorCode.captureUnsupportedMacOSVersion:
         return 'Update to macOS 12.3+ for enhanced features';
-      
-      case 'APPLESCRIPT_EXECUTION_FAILED':
+
+      case PlatformErrorCode.appleScriptExecutionFailed:
         return 'Try using the application\'s own close button';
-      
+
       default:
         return 'Try the operation again or restart the app';
     }
@@ -825,7 +976,17 @@ class ErrorConditionTester {
 ### Error Recovery Patterns
 
 ```dart
-// ✅ Good: Specific error handling with fallback
+// ✅ Good: Type-safe error handling with enum
+try {
+  return await toolkit.captureWindowAuto(windowId);
+} on PlatformException catch (e) {
+  if (e.errorCode == PlatformErrorCode.captureUnsupportedMacOSVersion) {
+    return await toolkit.captureWindowLegacy(windowId);
+  }
+  rethrow;
+}
+
+// ✅ Also Good: String-based (legacy but still supported)
 try {
   return await toolkit.captureWindowAuto(windowId);
 } on PlatformException catch (e) {
