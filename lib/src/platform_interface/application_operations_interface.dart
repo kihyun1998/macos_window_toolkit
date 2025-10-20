@@ -1,44 +1,50 @@
+import '../models/window_operation_result.dart';
+
 /// Platform interface for application management operations.
 abstract class ApplicationOperationsInterface {
   /// Terminates an application by its process ID.
   ///
   /// This method will terminate the entire application, not just a specific window.
   ///
+  /// Returns a [WindowOperationResult] indicating success or failure with details.
+  ///
   /// [processId] is the process ID of the application to terminate.
   /// [force] determines the termination method:
   /// - `false` (default): Graceful termination (SIGTERM or NSRunningApplication.terminate())
   /// - `true`: Force termination (SIGKILL or NSRunningApplication.forceTerminate())
   ///
-  /// Returns `true` if the application was successfully terminated, `false` otherwise.
-  ///
   /// This method tries the following approaches in order:
   /// 1. NSRunningApplication terminate/forceTerminate (more graceful)
   /// 2. Signal-based termination (SIGTERM/SIGKILL) as fallback
   ///
-  /// Note: This method does NOT require accessibility permissions, making it suitable
+  /// **Note**: This method does NOT require accessibility permissions, making it suitable
   /// for security applications where accessibility permissions might be disabled.
   ///
-  /// Throws [PlatformException] with appropriate error codes:
-  /// - `TERMINATE_APP_ERROR`: Application termination failed
-  /// - `PROCESS_NOT_FOUND`: Process with the specified ID does not exist
-  /// - `TERMINATION_FAILED`: System call to terminate process failed
+  /// Returns:
+  /// - [OperationSuccess] if the application was successfully terminated
+  /// - [OperationFailure] with one of the following reasons:
+  ///   - [WindowOperationFailureReason.processNotFound]: Process does not exist
+  ///   - [WindowOperationFailureReason.unknown]: Other failure states
+  ///
+  /// Throws [PlatformException] only for system errors (invalid arguments, internal errors).
   ///
   /// Example usage:
   /// ```dart
-  /// try {
-  ///   // Graceful termination
-  ///   final success = await toolkit.terminateApplicationByPID(1234);
-  ///   if (!success) {
-  ///     // Try force termination if graceful failed
-  ///     final forceSuccess = await toolkit.terminateApplicationByPID(1234, force: true);
-  ///   }
-  /// } catch (e) {
-  ///   if (e is PlatformException) {
-  ///     print('Error: ${e.code} - ${e.message}');
-  ///   }
+  /// final result = await toolkit.terminateApplicationByPID(1234);
+  /// switch (result) {
+  ///   case OperationSuccess():
+  ///     print('Application terminated successfully');
+  ///   case OperationFailure(:final reason):
+  ///     if (reason == WindowOperationFailureReason.processNotFound) {
+  ///       print('Process already terminated');
+  ///     } else {
+  ///       // Try force termination
+  ///       final forceResult = await toolkit.terminateApplicationByPID(1234, force: true);
+  ///     }
   /// }
   /// ```
-  Future<bool> terminateApplicationByPID(int processId, {bool force = false}) {
+  Future<WindowOperationResult> terminateApplicationByPID(int processId,
+      {bool force = false}) {
     throw UnimplementedError(
       'terminateApplicationByPID() has not been implemented.',
     );
@@ -49,38 +55,39 @@ abstract class ApplicationOperationsInterface {
   /// This method first identifies all child processes of the target application,
   /// then terminates them in bottom-up order (children first, then parent).
   ///
+  /// Returns a [WindowOperationResult] indicating success or failure with details.
+  ///
   /// [processId] is the process ID of the parent application to terminate.
   /// [force] determines the termination method for all processes:
   /// - `false` (default): Graceful termination
   /// - `true`: Force termination
   ///
-  /// Returns `true` if all processes were successfully terminated, `false` if any failed.
-  ///
   /// This method is particularly useful for security applications where you need
   /// to ensure that spawned child processes are also terminated when the parent
   /// application is closed.
   ///
-  /// Note: This method does NOT require accessibility permissions.
+  /// **Note**: This method does NOT require accessibility permissions.
   ///
-  /// Throws [PlatformException] with appropriate error codes:
-  /// - `TERMINATE_TREE_ERROR`: Process tree termination failed
-  /// - `PROCESS_NOT_FOUND`: Parent process with the specified ID does not exist
-  /// - `FAILED_TO_GET_PROCESS_LIST`: Unable to retrieve system process list
+  /// Returns:
+  /// - [OperationSuccess] if all processes were successfully terminated
+  /// - [OperationFailure] with one of the following reasons:
+  ///   - [WindowOperationFailureReason.processNotFound]: Parent process does not exist
+  ///   - [WindowOperationFailureReason.unknown]: Other failure states (including partial failures)
+  ///
+  /// Throws [PlatformException] only for system errors (invalid arguments, internal errors).
   ///
   /// Example usage:
   /// ```dart
-  /// try {
-  ///   final success = await toolkit.terminateApplicationTree(1234);
-  ///   if (success) {
+  /// final result = await toolkit.terminateApplicationTree(1234);
+  /// switch (result) {
+  ///   case OperationSuccess():
   ///     print('Application and all child processes terminated');
-  ///   }
-  /// } catch (e) {
-  ///   if (e is PlatformException) {
-  ///     print('Error: ${e.code} - ${e.message}');
-  ///   }
+  ///   case OperationFailure(:final message):
+  ///     print('Termination failed: $message');
   /// }
   /// ```
-  Future<bool> terminateApplicationTree(int processId, {bool force = false}) {
+  Future<WindowOperationResult> terminateApplicationTree(int processId,
+      {bool force = false}) {
     throw UnimplementedError(
       'terminateApplicationTree() has not been implemented.',
     );

@@ -6,4 +6,5 @@ export 'src/models/macos_window_info.dart';
 export 'src/models/platform_error_code.dart';
 export 'src/models/capture_result.dart';
 export 'src/models/permission_status.dart';
+export 'src/models/window_operation_result.dart';
 export 'src/permission_watcher.dart';

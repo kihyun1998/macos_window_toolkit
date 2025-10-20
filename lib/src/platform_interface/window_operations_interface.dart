@@ -1,3 +1,5 @@
+import '../models/window_operation_result.dart';
+
 /// Platform interface for window-related operations.
 abstract class WindowOperationsInterface {
   /// Retrieves information about all windows currently open on the system.
@@ -168,43 +170,44 @@ abstract class WindowOperationsInterface {
     throw UnimplementedError('isWindowAlive() has not been implemented.');
   }
 
-  /// Closes a window by its window ID using AppleScript.
+  /// Closes a window by its window ID using Accessibility API.
   ///
-  /// Returns `true` if the window was successfully closed, `false` otherwise.
+  /// Returns a [WindowOperationResult] indicating success or failure with details.
   ///
   /// [windowId] is the unique identifier of the window to close.
   ///
-  /// This method uses AppleScript to interact with the application's window
-  /// close button. It first retrieves the window information to get the
-  /// application name and window title, then executes an AppleScript to
-  /// click the close button.
+  /// This method uses the Accessibility API to interact with the application's
+  /// window close button. It first retrieves the window information to get the
+  /// application name and window title, then attempts to close the window.
   ///
-  /// Note: This method requires accessibility permissions on some systems
-  /// and may not work with all applications depending on their AppleScript
-  /// support and window structure.
+  /// **Note**: This method requires accessibility permissions.
   ///
-  /// Throws [PlatformException] with appropriate error codes:
-  /// - `CLOSE_WINDOW_ERROR`: General window closing error
-  /// - `WINDOW_NOT_FOUND`: Window with the specified ID was not found
-  /// - `INSUFFICIENT_WINDOW_INFO`: Not enough window information to close the window
-  /// - `APPLESCRIPT_EXECUTION_FAILED`: AppleScript execution failed
+  /// Returns:
+  /// - [OperationSuccess] if the window was successfully closed
+  /// - [OperationFailure] with one of the following reasons:
+  ///   - [WindowOperationFailureReason.windowNotFound]: Window no longer exists
+  ///   - [WindowOperationFailureReason.accessibilityPermissionDenied]: Permission not granted
+  ///   - [WindowOperationFailureReason.closeButtonNotFound]: Unable to find close button
+  ///   - [WindowOperationFailureReason.unknown]: Other failure states
+  ///
+  /// Throws [PlatformException] only for system errors (invalid arguments, internal errors).
   ///
   /// Example usage:
   /// ```dart
-  /// try {
-  ///   final success = await toolkit.closeWindow(12345);
-  ///   if (success) {
+  /// final result = await toolkit.closeWindow(12345);
+  /// switch (result) {
+  ///   case OperationSuccess():
   ///     print('Window closed successfully');
-  ///   } else {
-  ///     print('Failed to close window');
-  ///   }
-  /// } catch (e) {
-  ///   if (e is PlatformException) {
-  ///     print('Error: ${e.code} - ${e.message}');
-  ///   }
+  ///   case OperationFailure(:final reason, :final message):
+  ///     if (reason == WindowOperationFailureReason.accessibilityPermissionDenied) {
+  ///       print('Need accessibility permission: $message');
+  ///       await toolkit.requestAccessibilityPermission();
+  ///     } else {
+  ///       print('Failed to close window: $message');
+  ///     }
   /// }
   /// ```
-  Future<bool> closeWindow(int windowId) {
+  Future<WindowOperationResult> closeWindow(int windowId) {
     throw UnimplementedError('closeWindow() has not been implemented.');
   }
 }

@@ -7,6 +7,7 @@ import 'models/macos_application_info.dart';
 import 'models/macos_version_info.dart';
 import 'models/macos_window_info.dart';
 import 'models/permission_status.dart';
+import 'models/window_operation_result.dart';
 import 'permission_watcher.dart';
 
 export 'method_channel/macos_window_toolkit_method_channel.dart';
@@ -838,23 +839,31 @@ class MacosWindowToolkit {
     );
   }
 
-  /// Closes a window by its window ID using AppleScript.
+  /// Closes a window by its window ID using Accessibility API.
   ///
-  /// Returns `true` if the window was successfully closed, `false` otherwise.
+  /// Returns a [WindowOperationResult] indicating success or failure with details.
   ///
   /// [windowId] is the unique identifier of the window to close, which can be
   /// obtained from [getAllWindows], [getWindowsByName], or other window listing methods.
   ///
-  /// This method uses AppleScript to interact with the application's window
-  /// close button. It first retrieves the window information to get the
-  /// application name and window title, then executes an AppleScript to
-  /// click the close button.
+  /// This method uses the Accessibility API to interact with the application's
+  /// window close button. It first retrieves the window information to get the
+  /// application name and window title, then attempts to close the window.
   ///
   /// **Important Notes:**
-  /// - This method may require accessibility permissions on some systems
-  /// - It may not work with all applications depending on their AppleScript support
+  /// - This method requires accessibility permissions
   /// - The success depends on the application's window structure and close button availability
   /// - Some applications may show confirmation dialogs before closing
+  ///
+  /// Returns:
+  /// - [OperationSuccess] if the window was successfully closed
+  /// - [OperationFailure] with one of the following reasons:
+  ///   - [WindowOperationFailureReason.windowNotFound]: Window no longer exists
+  ///   - [WindowOperationFailureReason.accessibilityPermissionDenied]: Permission not granted
+  ///   - [WindowOperationFailureReason.closeButtonNotFound]: Unable to find close button
+  ///   - [WindowOperationFailureReason.unknown]: Other failure states
+  ///
+  /// Throws [PlatformException] only for system errors (invalid arguments, internal errors).
   ///
   /// Example usage:
   /// ```dart
@@ -863,28 +872,22 @@ class MacosWindowToolkit {
   ///
   /// for (final window in windows) {
   ///   if (window.name.contains('Untitled')) {
-  ///     try {
-  ///       final success = await toolkit.closeWindow(window.windowId);
-  ///       if (success) {
+  ///     final result = await toolkit.closeWindow(window.windowId);
+  ///     switch (result) {
+  ///       case OperationSuccess():
   ///         print('Successfully closed window: ${window.name}');
-  ///       } else {
-  ///         print('Failed to close window: ${window.name}');
-  ///       }
-  ///     } catch (e) {
-  ///       if (e is PlatformException) {
-  ///         print('Error closing window: ${e.code} - ${e.message}');
-  ///       }
+  ///       case OperationFailure(:final reason, :final message):
+  ///         if (reason == WindowOperationFailureReason.accessibilityPermissionDenied) {
+  ///           print('Need accessibility permission');
+  ///           await toolkit.requestAccessibilityPermission();
+  ///         } else {
+  ///           print('Failed to close window: $message');
+  ///         }
   ///     }
   ///   }
   /// }
   /// ```
-  ///
-  /// Throws [PlatformException] with the following error codes:
-  /// - `CLOSE_WINDOW_ERROR`: General window closing error
-  /// - `WINDOW_NOT_FOUND`: Window with the specified ID was not found
-  /// - `INSUFFICIENT_WINDOW_INFO`: Not enough window information to close the window
-  /// - `APPLESCRIPT_EXECUTION_FAILED`: AppleScript execution failed
-  Future<bool> closeWindow(int windowId) async {
+  Future<WindowOperationResult> closeWindow(int windowId) async {
     return await MacosWindowToolkitPlatform.instance.closeWindow(windowId);
   }
 
@@ -894,6 +897,8 @@ class MacosWindowToolkit {
   /// Unlike [closeWindow], this method works at the process level and does not
   /// require accessibility permissions, making it suitable for security applications.
   ///
+  /// Returns a [WindowOperationResult] indicating success or failure with details.
+  ///
   /// [processId] is the process ID of the application to terminate, which can be
   /// obtained from window information returned by [getAllWindows] or other window
   /// retrieval methods.
@@ -902,11 +907,17 @@ class MacosWindowToolkit {
   /// - `false` (default): Graceful termination - allows the application to clean up
   /// - `true`: Force termination - immediately kills the process
   ///
-  /// Returns `true` if the application was successfully terminated, `false` otherwise.
-  ///
   /// This method tries multiple approaches:
   /// 1. NSRunningApplication API (preferred, more graceful)
   /// 2. Signal-based termination (SIGTERM/SIGKILL) as fallback
+  ///
+  /// Returns:
+  /// - [OperationSuccess] if the application was successfully terminated
+  /// - [OperationFailure] with one of the following reasons:
+  ///   - [WindowOperationFailureReason.processNotFound]: Process does not exist
+  ///   - [WindowOperationFailureReason.unknown]: Other failure states
+  ///
+  /// Throws [PlatformException] only for system errors (invalid arguments, internal errors).
   ///
   /// Example usage:
   /// ```dart
@@ -917,24 +928,24 @@ class MacosWindowToolkit {
   /// final targetWindow = windows.firstWhere((w) => w.ownerName.contains('Safari'));
   ///
   /// // Try graceful termination first
-  /// bool success = await toolkit.terminateApplicationByPID(targetWindow.processId);
+  /// var result = await toolkit.terminateApplicationByPID(targetWindow.processId);
   ///
-  /// if (!success) {
+  /// if (result is OperationFailure) {
   ///   // If graceful termination failed, try force termination
-  ///   success = await toolkit.terminateApplicationByPID(
+  ///   result = await toolkit.terminateApplicationByPID(
   ///     targetWindow.processId,
   ///     force: true
   ///   );
   /// }
   ///
-  /// print(success ? 'Application terminated' : 'Termination failed');
+  /// switch (result) {
+  ///   case OperationSuccess():
+  ///     print('Application terminated');
+  ///   case OperationFailure(:final message):
+  ///     print('Termination failed: $message');
+  /// }
   /// ```
-  ///
-  /// Throws [PlatformException] with appropriate error codes:
-  /// - `TERMINATE_APP_ERROR`: Application termination failed
-  /// - `PROCESS_NOT_FOUND`: Process with the specified ID does not exist
-  /// - `TERMINATION_FAILED`: System call to terminate process failed
-  Future<bool> terminateApplicationByPID(
+  Future<WindowOperationResult> terminateApplicationByPID(
     int processId, {
     bool force = false,
   }) async {
@@ -950,6 +961,8 @@ class MacosWindowToolkit {
   /// all child processes spawned by the target application, then terminating them
   /// in the correct order (children first, then parent).
   ///
+  /// Returns a [WindowOperationResult] indicating success or failure with details.
+  ///
   /// This is particularly useful for security applications where you need to ensure
   /// that all related processes are terminated, preventing potential security bypasses
   /// where child processes might continue running after the parent is terminated.
@@ -959,12 +972,18 @@ class MacosWindowToolkit {
   /// - `false` (default): Graceful termination for all processes
   /// - `true`: Force termination for all processes
   ///
-  /// Returns `true` if all processes were successfully terminated, `false` if any failed.
-  ///
   /// The termination process:
   /// 1. Discovers all child processes using system process list
   /// 2. Terminates child processes first (bottom-up approach)
   /// 3. Finally terminates the parent process
+  ///
+  /// Returns:
+  /// - [OperationSuccess] if all processes were successfully terminated
+  /// - [OperationFailure] with one of the following reasons:
+  ///   - [WindowOperationFailureReason.processNotFound]: Parent process does not exist
+  ///   - [WindowOperationFailureReason.unknown]: Other failure states (including partial failures)
+  ///
+  /// Throws [PlatformException] only for system errors (invalid arguments, internal errors).
   ///
   /// Example usage:
   /// ```dart
@@ -975,23 +994,19 @@ class MacosWindowToolkit {
   /// final targetWindow = windows.firstWhere((w) => w.ownerName.contains('Electron'));
   ///
   /// // Terminate the entire process tree
-  /// final success = await toolkit.terminateApplicationTree(targetWindow.processId);
+  /// final result = await toolkit.terminateApplicationTree(targetWindow.processId);
   ///
-  /// if (success) {
-  ///   print('Application and all child processes terminated');
-  /// } else {
-  ///   print('Some processes failed to terminate');
+  /// switch (result) {
+  ///   case OperationSuccess():
+  ///     print('Application and all child processes terminated');
+  ///   case OperationFailure(:final message):
+  ///     print('Some processes failed to terminate: $message');
   /// }
   ///
   /// // For security applications, you might want to use force termination
   /// await toolkit.terminateApplicationTree(processId, force: true);
   /// ```
-  ///
-  /// Throws [PlatformException] with appropriate error codes:
-  /// - `TERMINATE_TREE_ERROR`: Process tree termination failed
-  /// - `PROCESS_NOT_FOUND`: Parent process with the specified ID does not exist
-  /// - `FAILED_TO_GET_PROCESS_LIST`: Unable to retrieve system process list
-  Future<bool> terminateApplicationTree(
+  Future<WindowOperationResult> terminateApplicationTree(
     int processId, {
     bool force = false,
   }) async {

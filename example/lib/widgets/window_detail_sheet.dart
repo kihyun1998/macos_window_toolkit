@@ -301,12 +301,14 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
     });
 
     try {
-      final success = await _macosWindowToolkit.closeWindow(
+      final result = await _macosWindowToolkit.closeWindow(
         widget.window.windowId,
       );
 
-      if (success) {
-        if (mounted) {
+      if (!mounted) return;
+
+      switch (result) {
+        case OperationSuccess():
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -316,42 +318,42 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
             ),
           );
           Navigator.of(context).pop();
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to close window: ${widget.window.name}'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        String errorMessage;
 
-        if (e is PlatformException) {
-          final errorCode = e.errorCode;
-          errorMessage = errorCode?.userMessage ?? e.message ?? 'Unknown error';
-
-          // Handle special case: accessibility permission
-          if (errorCode == PlatformErrorCode.accessibilityPermissionDenied) {
+        case OperationFailure(:final reason, :final message):
+          // Handle accessibility permission case
+          if (reason ==
+              WindowOperationFailureReason.accessibilityPermissionDenied) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               Navigator.pushNamed(context, '/permission');
             });
           }
-        } else {
-          errorMessage = 'Unknown error occurred';
-        }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to close window: $errorMessage'),
-            backgroundColor: Colors.red,
-          ),
-        );
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to close window: ${message ?? reason.name}',
+              ),
+              backgroundColor: Colors.orange,
+            ),
+          );
       }
+    } catch (e) {
+      if (!mounted) return;
+
+      String errorMessage;
+      if (e is PlatformException) {
+        final errorCode = e.errorCode;
+        errorMessage = errorCode?.userMessage ?? e.message ?? 'Unknown error';
+      } else {
+        errorMessage = 'Unknown error occurred';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('System error: $errorMessage'),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -367,13 +369,15 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
     });
 
     try {
-      final success = await _macosWindowToolkit.terminateApplicationByPID(
+      final result = await _macosWindowToolkit.terminateApplicationByPID(
         widget.window.processId,
         force: force,
       );
 
-      if (success) {
-        if (mounted) {
+      if (!mounted) return;
+
+      switch (result) {
+        case OperationSuccess():
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -383,32 +387,30 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
             ),
           );
           Navigator.of(context).pop();
-        }
-      } else {
-        if (mounted) {
+
+        case OperationFailure(:final message):
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Failed to ${force ? 'force ' : ''}terminate application: ${widget.window.ownerName}',
+                'Failed to ${force ? 'force ' : ''}terminate: ${message ?? 'Unknown error'}',
               ),
               backgroundColor: Colors.orange,
             ),
           );
-        }
       }
     } catch (e) {
-      if (mounted) {
-        final errorMessage = e is PlatformException
-            ? e.errorCode?.userMessage ?? e.message ?? 'Unknown error'
-            : 'Unknown error occurred';
+      if (!mounted) return;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to terminate application: $errorMessage'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      final errorMessage = e is PlatformException
+          ? e.errorCode?.userMessage ?? e.message ?? 'Unknown error'
+          : 'Unknown error occurred';
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('System error: $errorMessage'),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -424,13 +426,15 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
     });
 
     try {
-      final success = await _macosWindowToolkit.terminateApplicationTree(
+      final result = await _macosWindowToolkit.terminateApplicationTree(
         widget.window.processId,
         force: force,
       );
 
-      if (success) {
-        if (mounted) {
+      if (!mounted) return;
+
+      switch (result) {
+        case OperationSuccess():
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -440,34 +444,30 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
             ),
           );
           Navigator.of(context).pop();
-        }
-      } else {
-        if (mounted) {
+
+        case OperationFailure(:final message):
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Failed to ${force ? 'force ' : ''}terminate application tree: ${widget.window.ownerName}',
+                'Failed to ${force ? 'force ' : ''}terminate tree: ${message ?? 'Unknown error'}',
               ),
               backgroundColor: Colors.orange,
             ),
           );
-        }
       }
     } catch (e) {
-      if (mounted) {
-        final errorMessage = e is PlatformException
-            ? e.errorCode?.userMessage ?? e.message ?? 'Unknown error'
-            : 'Unknown error occurred';
+      if (!mounted) return;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to terminate application tree: $errorMessage',
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      final errorMessage = e is PlatformException
+          ? e.errorCode?.userMessage ?? e.message ?? 'Unknown error'
+          : 'Unknown error occurred';
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('System error: $errorMessage'),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {

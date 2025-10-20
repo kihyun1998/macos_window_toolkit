@@ -1,3 +1,11 @@
+## 1.4.4
+
+### Changed
+- **BREAKING**: `closeWindow()`, `terminateApplicationByPID()`, and `terminateApplicationTree()` now return `WindowOperationResult` instead of `bool`
+  - Added `WindowOperationResult` sealed class with `OperationSuccess` and `OperationFailure` variants
+  - Consistent with `CaptureResult` pattern used by capture methods
+  - Use pattern matching to handle results (see updated examples)
+
 ## 1.4.3
 
 ### Changed
