@@ -45,23 +45,26 @@ Represented as sealed classes or enums for specific failure scenarios (e.g., `Ca
 
 ### Process Management Errors
 
-| Code | Description | Cause | Resolution |
-|------|-------------|-------|------------|
-| `TERMINATE_APP_ERROR` | Application termination failed | Process protection, system restriction | Try force termination or manual intervention |
-| `PROCESS_NOT_FOUND` | Process with specified ID doesn't exist | Process already terminated or invalid PID | Check process exists before operation |
-| `TERMINATION_FAILED` | System call to terminate process failed | Insufficient privileges, system protection | Check process permissions |
-| `TERMINATE_TREE_ERROR` | Process tree termination failed | Some child processes couldn't be terminated | Try individual termination |
-| `FAILED_TO_GET_PROCESS_LIST` | Unable to retrieve system process list | System restriction, resource limitation | Check system permissions |
-| `GET_CHILD_PROCESSES_ERROR` | Failed to retrieve child processes | Process access restriction | Skip inaccessible processes |
+| Code | Description | Cause | Resolution | Return Type |
+|------|-------------|-------|------------|-------------|
+| `PROCESS_NOT_FOUND` | Process with specified ID doesn't exist | Process already terminated or invalid PID | Check process exists before operation | **State Error** (success: false) |
+| `TERMINATION_FAILED` | System call to terminate process failed | Insufficient privileges, system protection | Check process permissions | System Error (throws exception) |
+| `FAILED_TO_GET_PROCESS_LIST` | Unable to retrieve system process list | System restriction, resource limitation | Check system permissions | System Error (throws exception) |
+
+**Note:** As of v1.4.3, process management operations return structured error responses for state errors instead of generic exceptions.
 
 ### Window Operations Errors
 
-| Code | Description | Cause | Resolution |
-|------|-------------|-------|------------|
-| `CLOSE_WINDOW_ERROR` | Window closing operation failed | AppleScript failure, application doesn't support | Try alternative methods |
-| `WINDOW_NOT_FOUND` | Specified window not found | Window closed, invalid window ID | Refresh window list |
-| `INSUFFICIENT_WINDOW_INFO` | Not enough information to perform operation | Missing window properties | Use different window source |
-| `APPLESCRIPT_EXECUTION_FAILED` | AppleScript execution failed | Script error, application incompatibility | Check application AppleScript support |
+| Code | Description | Cause | Resolution | Return Type |
+|------|-------------|-------|------------|-------------|
+| `WINDOW_NOT_FOUND` | Specified window not found | Window closed, invalid window ID | Refresh window list | **State Error** (success: false) |
+| `ACCESSIBILITY_PERMISSION_DENIED` | Accessibility permission not granted | Permission required for window closing | Request accessibility permission | **State Error** (success: false) |
+| `CLOSE_BUTTON_NOT_FOUND` | Close button not found for window | Window structure doesn't support closing | Try alternative closing methods | **State Error** (success: false) |
+| `INSUFFICIENT_WINDOW_INFO` | Not enough information to perform operation | Missing window properties | Use different window source | System Error (throws exception) |
+| `APPLESCRIPT_EXECUTION_FAILED` | AppleScript execution failed | Script error, application incompatibility | Check application AppleScript support | System Error (throws exception) |
+| `CLOSE_ACTION_FAILED` | Failed to perform close action | Click action failed on close button | Try manual close or force quit | System Error (throws exception) |
+
+**Note:** As of v1.4.3, window closing operations use the same error handling pattern as capture operations, distinguishing between recoverable state errors and system exceptions.
 
 ## Error Handling Patterns
 
@@ -296,7 +299,69 @@ Future<Uint8List?> _handleCaptureException(
 
 ### Process Management Error Handling
 
-**Recommended (Enum-based):**
+**Recommended (v1.4.3+) - With State Error Handling:**
+```dart
+Future<bool> terminateProcessSafely(int processId) async {
+  // Try graceful termination first
+  final result = await toolkit.terminateApplicationByPID(processId);
+
+  // Handle result-based response (v1.4.3+)
+  if (result is Map<String, dynamic>) {
+    final success = result['success'] as bool?;
+
+    if (success == false) {
+      // State error - handle gracefully
+      final reason = result['reason'] as String?;
+      final message = result['message'] as String?;
+
+      if (reason == 'process_not_found') {
+        print('Process $processId no longer exists');
+        return true; // Consider successful if already gone
+      }
+
+      print('Termination failed: $message');
+
+      // Try force termination as fallback
+      return await toolkit.terminateApplicationByPID(processId, force: true);
+    }
+
+    return success ?? false;
+  }
+
+  // Boolean result (backwards compatible)
+  if (result is bool) {
+    if (result) {
+      return true;
+    }
+
+    // Try force termination if graceful failed
+    return await toolkit.terminateApplicationByPID(processId, force: true);
+  }
+
+  return false;
+}
+
+// Handle system errors separately
+try {
+  final success = await terminateProcessSafely(processId);
+  if (success) {
+    print('✅ Process terminated');
+  } else {
+    print('❌ Termination failed');
+  }
+} on PlatformException catch (e) {
+  final errorCode = e.errorCode;
+
+  if (errorCode == PlatformErrorCode.terminationFailed) {
+    print('System error: ${errorCode.userMessage}');
+  } else {
+    final message = errorCode?.userMessage ?? e.message ?? 'Unknown error';
+    print('Unexpected error: $message');
+  }
+}
+```
+
+**Legacy (Pre-v1.4.3) - Exception-based:**
 ```dart
 Future<bool> terminateProcessSafely(int processId) async {
   try {
@@ -318,58 +383,13 @@ Future<bool> terminateProcessSafely(int processId) async {
     }
 
     if (errorCode == PlatformErrorCode.terminationFailed) {
-      print('Unable to terminate process $processId: ${errorCode.userMessage}');
-
-      // Could try alternative methods
+      print('Unable to terminate process: ${errorCode.userMessage}');
       return await _tryAlternativeTermination(processId);
     }
 
-    if (errorCode == PlatformErrorCode.terminateAppError) {
-      print('Application termination error: ${errorCode.userMessage}');
-      return false;
-    }
-
-    // Use user-friendly error message
     final message = errorCode?.userMessage ?? e.message ?? 'Unknown error';
     print('Unexpected termination error: $message');
     return false;
-  }
-}
-```
-
-**Legacy (String-based):**
-```dart
-Future<bool> terminateProcessSafely(int processId) async {
-  try {
-    // Try graceful termination first
-    bool success = await toolkit.terminateApplicationByPID(processId);
-    if (success) {
-      return true;
-    }
-
-    // Try force termination if graceful failed
-    return await toolkit.terminateApplicationByPID(processId, force: true);
-
-  } on PlatformException catch (e) {
-    switch (e.code) {
-      case 'PROCESS_NOT_FOUND':
-        print('Process $processId no longer exists');
-        return true; // Consider it successful if already gone
-
-      case 'TERMINATION_FAILED':
-        print('Unable to terminate process $processId: ${e.message}');
-
-        // Could try alternative methods
-        return await _tryAlternativeTermination(processId);
-
-      case 'TERMINATE_APP_ERROR':
-        print('Application termination error: ${e.message}');
-        return false;
-
-      default:
-        print('Unexpected termination error: ${e.code} - ${e.message}');
-        return false;
-    }
   }
 }
 
@@ -543,32 +563,47 @@ class SafeWindowManager {
   }
   
   Future<bool> closeWindow(int windowId) async {
-    try {
-      return await toolkit.closeWindow(windowId);
-    } on PlatformException catch (e) {
-      final errorCode = e.errorCode;
+    // New in v1.4.3: closeWindow returns structured response for state errors
+    final result = await toolkit.closeWindow(windowId);
 
-      if (errorCode == PlatformErrorCode.windowNotFound) {
-        print('Window already closed');
-        return true; // Consider success
-      }
+    // Handle result-based response (v1.4.3+)
+    if (result is Map<String, dynamic>) {
+      final success = result['success'] as bool?;
 
-      if (errorCode == PlatformErrorCode.appleScriptExecutionFailed) {
-        print('AppleScript failed, window may not support closing');
+      if (success == false) {
+        // State error - handle gracefully
+        final reason = result['reason'] as String?;
+        final message = result['message'] as String?;
+
+        if (reason == 'window_not_found') {
+          print('Window already closed');
+          return true; // Consider success
+        }
+
+        if (reason == 'accessibility_permission_denied') {
+          print('Need accessibility permission: $message');
+          await toolkit.requestAccessibilityPermission();
+          return false;
+        }
+
+        if (reason == 'close_button_not_found') {
+          print('Window structure unsupported: $message');
+          return false;
+        }
+
+        print('Window close failed: $message');
         return false;
       }
 
-      if (errorCode == PlatformErrorCode.accessibilityPermissionDenied) {
-        print('Need accessibility permission for window closing');
-        await toolkit.requestAccessibilityPermission();
-        return false;
-      }
-
-      // Use user-friendly error message
-      final message = errorCode?.userMessage ?? e.message ?? 'Unknown error';
-      print('Failed to close window: $message');
-      return false;
+      return success ?? false;
     }
+
+    // Boolean result (backwards compatible)
+    if (result is bool) {
+      return result;
+    }
+
+    return false;
   }
 }
 ```

@@ -583,7 +583,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     result(isAlive)
   }
 
-  /// Closes a window by its window ID using AppleScript
+  /// Closes a window by its window ID using Accessibility API
   private func closeWindow(call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let arguments = call.arguments as? [String: Any],
       let windowId = arguments["windowId"] as? Int
@@ -601,11 +601,25 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     case .success(let success):
       result(success)
     case .failure(let error):
-      result(
-        FlutterError(
-          code: "CLOSE_WINDOW_ERROR",
-          message: error.localizedDescription,
-          details: nil))
+      let errorInfo = WindowHandler.handleWindowError(error)
+
+      // Check if this is a state or a system error
+      if let code = errorInfo["code"] as? String, isStateError(code) {
+        // Return failure result for states
+        result([
+          "success": false,
+          "reason": mapErrorCodeToReasonCode(code),
+          "message": errorInfo["message"],
+          "details": errorInfo["details"]
+        ])
+      } else {
+        // Throw for system errors
+        result(
+          FlutterError(
+            code: errorInfo["code"] as? String ?? "CLOSE_WINDOW_ERROR",
+            message: errorInfo["message"] as? String ?? "Unknown error",
+            details: errorInfo["details"]))
+      }
     }
   }
 
@@ -629,11 +643,25 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     case .success(let success):
       result(success)
     case .failure(let error):
-      result(
-        FlutterError(
-          code: "TERMINATE_APP_ERROR",
-          message: error.localizedDescription,
-          details: nil))
+      let errorInfo = WindowHandler.handleWindowError(error)
+
+      // Check if this is a state or a system error
+      if let code = errorInfo["code"] as? String, isStateError(code) {
+        // Return failure result for states
+        result([
+          "success": false,
+          "reason": mapErrorCodeToReasonCode(code),
+          "message": errorInfo["message"],
+          "details": errorInfo["details"]
+        ])
+      } else {
+        // Throw for system errors
+        result(
+          FlutterError(
+            code: errorInfo["code"] as? String ?? "TERMINATE_APP_ERROR",
+            message: errorInfo["message"] as? String ?? "Unknown error",
+            details: errorInfo["details"]))
+      }
     }
   }
 
@@ -657,11 +685,25 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     case .success(let success):
       result(success)
     case .failure(let error):
-      result(
-        FlutterError(
-          code: "TERMINATE_TREE_ERROR",
-          message: error.localizedDescription,
-          details: nil))
+      let errorInfo = WindowHandler.handleWindowError(error)
+
+      // Check if this is a state or a system error
+      if let code = errorInfo["code"] as? String, isStateError(code) {
+        // Return failure result for states
+        result([
+          "success": false,
+          "reason": mapErrorCodeToReasonCode(code),
+          "message": errorInfo["message"],
+          "details": errorInfo["details"]
+        ])
+      } else {
+        // Throw for system errors
+        result(
+          FlutterError(
+            code: errorInfo["code"] as? String ?? "TERMINATE_TREE_ERROR",
+            message: errorInfo["message"] as? String ?? "Unknown error",
+            details: errorInfo["details"]))
+      }
     }
   }
 
@@ -777,14 +819,19 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   /// Determines if an error code represents a state (not a system error)
   private func isStateError(_ code: String) -> Bool {
     switch code {
+    // Screenshot/Capture related state errors
     case "WINDOW_MINIMIZED",
-         "INVALID_WINDOW_ID", 
+         "INVALID_WINDOW_ID",
          "WINDOW_NOT_FOUND",
          "UNSUPPORTED_MACOS_VERSION",
          "PERMISSION_DENIED",
          "SCREEN_RECORDING_PERMISSION_DENIED",
          "CAPTURE_IN_PROGRESS",
-         "WINDOW_NOT_CAPTURABLE":
+         "WINDOW_NOT_CAPTURABLE",
+    // Window operation related state errors
+         "ACCESSIBILITY_PERMISSION_DENIED",
+         "CLOSE_BUTTON_NOT_FOUND",
+         "PROCESS_NOT_FOUND":
       return true
     default:
       return false
@@ -794,6 +841,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   /// Maps error codes to reason codes for Dart
   private func mapErrorCodeToReasonCode(_ code: String) -> String {
     switch code {
+    // Screenshot/Capture related errors
     case "WINDOW_MINIMIZED":
       return "window_minimized"
     case "INVALID_WINDOW_ID", "WINDOW_NOT_FOUND":
@@ -806,6 +854,13 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       return "capture_in_progress"
     case "WINDOW_NOT_CAPTURABLE":
       return "window_not_capturable"
+    // Window operation related errors
+    case "ACCESSIBILITY_PERMISSION_DENIED":
+      return "accessibility_permission_denied"
+    case "CLOSE_BUTTON_NOT_FOUND":
+      return "close_button_not_found"
+    case "PROCESS_NOT_FOUND":
+      return "process_not_found"
     default:
       return "unknown"
     }

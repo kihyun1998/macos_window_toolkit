@@ -1,3 +1,11 @@
+## 1.4.3
+
+### Changed
+- **ENHANCEMENT**: Improved error handling for `closeWindow()`, `terminateApplicationByPID()`, and `terminateApplicationTree()`
+  - State errors (permission denied, window/process not found) now return structured failure responses instead of throwing exceptions
+  - Error handling pattern now consistent with screenshot/capture functions
+  - Better error messages with actionable recovery suggestions
+
 ## 1.4.2
 
 ### Changed

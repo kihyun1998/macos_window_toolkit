@@ -892,6 +892,72 @@ class WindowHandler {
             return .failure(error)
         }
     }
+
+    /// Helper method to pass WindowError errors to Flutter
+    static func handleWindowError(_ error: WindowError) -> [String: Any] {
+        switch error {
+        case .failedToRetrieveWindowList:
+            return [
+                "code": "FAILED_TO_RETRIEVE_WINDOW_LIST",
+                "message": "Failed to retrieve window list",
+                "details": NSNull(),
+            ]
+        case .windowNotFound:
+            return [
+                "code": "WINDOW_NOT_FOUND",
+                "message": "Window not found",
+                "details": "The specified window could not be found. It may have been closed or the ID is invalid.",
+            ]
+        case .insufficientWindowInfo:
+            return [
+                "code": "INSUFFICIENT_WINDOW_INFO",
+                "message": "Insufficient window information",
+                "details": "Unable to retrieve necessary information (process ID or window name) to perform the operation.",
+            ]
+        case .appleScriptExecutionFailed:
+            return [
+                "code": "APPLESCRIPT_EXECUTION_FAILED",
+                "message": "Failed to execute AppleScript for window closure",
+                "details": NSNull(),
+            ]
+        case .accessibilityPermissionDenied:
+            return [
+                "code": "ACCESSIBILITY_PERMISSION_DENIED",
+                "message": "Accessibility permission is required",
+                "details": "Please grant accessibility permission in System Settings > Privacy & Security > Accessibility",
+            ]
+        case .closeButtonNotFound:
+            return [
+                "code": "CLOSE_BUTTON_NOT_FOUND",
+                "message": "Could not find close button for the specified window",
+                "details": "The window structure may not support programmatic closing via Accessibility API.",
+            ]
+        case .closeActionFailed:
+            return [
+                "code": "CLOSE_ACTION_FAILED",
+                "message": "Failed to perform close action on window",
+                "details": "The close button was found but clicking it failed.",
+            ]
+        case .processNotFound:
+            return [
+                "code": "PROCESS_NOT_FOUND",
+                "message": "Process not found",
+                "details": "The specified process ID does not exist or has already terminated.",
+            ]
+        case .terminationFailed:
+            return [
+                "code": "TERMINATION_FAILED",
+                "message": "Failed to terminate process",
+                "details": "The process could not be terminated. It may require elevated privileges.",
+            ]
+        case .failedToGetProcessList:
+            return [
+                "code": "FAILED_TO_GET_PROCESS_LIST",
+                "message": "Failed to retrieve process list",
+                "details": "Unable to query system process information.",
+            ]
+        }
+    }
 }
 
 /// Enum representing window operation errors

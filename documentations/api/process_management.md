@@ -35,11 +35,18 @@ Future<bool> terminateApplicationByPID(
 **Returns:**
 - `Future<bool>` - `true` if application was successfully terminated, `false` otherwise
 
+**Returns (v1.4.3+):**
+- `Future<dynamic>` - Either `bool` for success or `Map<String, dynamic>` for state errors:
+  - Success: Returns `true` when process terminates successfully
+  - State Error: Returns `{'success': false, 'reason': String, 'message': String, 'details': dynamic}`
+    - `reason: 'process_not_found'` - Process with specified ID does not exist (consider as success)
+
 **Throws:**
-- `PlatformException` with error codes:
-  - `TERMINATE_APP_ERROR` - Application termination failed
-  - `PROCESS_NOT_FOUND` - Process with specified ID does not exist
-  - `TERMINATION_FAILED` - System call to terminate process failed
+- `PlatformException` with error codes (system errors only):
+  - `TERMINATION_FAILED` - System call to terminate process failed (requires elevated privileges)
+  - `INSUFFICIENT_WINDOW_INFO` - Unable to retrieve process information
+
+**Note:** As of v1.4.3, state errors (like `PROCESS_NOT_FOUND`) return structured responses instead of throwing exceptions. Only system-level failures throw `PlatformException`.
 
 **Termination Methods:**
 - **Graceful (`force: false`)**: Allows application to clean up resources, save data, and terminate properly
@@ -179,14 +186,19 @@ Future<bool> terminateApplicationTree(
 - `processId` - Process ID of the parent application to terminate
 - `force` (optional) - Termination method for all processes. Defaults to `false`.
 
-**Returns:**
-- `Future<bool>` - `true` if all processes were successfully terminated, `false` if any failed
+**Returns (v1.4.3+):**
+- `Future<dynamic>` - Either `bool` for success or `Map<String, dynamic>` for state errors:
+  - Success: Returns `true` when all processes terminate successfully
+  - Partial Success: Returns `false` if some processes failed (check logs for details)
+  - State Error: Returns `{'success': false, 'reason': String, 'message': String, 'details': dynamic}`
+    - `reason: 'process_not_found'` - Parent process does not exist (consider as success)
 
 **Throws:**
-- `PlatformException` with error codes:
-  - `TERMINATE_TREE_ERROR` - Process tree termination failed
-  - `PROCESS_NOT_FOUND` - Parent process does not exist
-  - `FAILED_TO_GET_PROCESS_LIST` - Unable to retrieve system process list
+- `PlatformException` with error codes (system errors only):
+  - `FAILED_TO_GET_PROCESS_LIST` - Unable to retrieve system process list (system restriction)
+  - `TERMINATION_FAILED` - Critical system call failure
+
+**Note:** As of v1.4.3, recoverable errors return structured responses. Only critical system failures throw exceptions.
 
 **Termination Process:**
 1. **Discovery**: Identifies all child processes using system process list
