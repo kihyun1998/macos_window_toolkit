@@ -7,9 +7,11 @@ class AdvancedFilterSection extends StatefulWidget {
     String? name,
     bool? nameExactMatch,
     bool? nameCaseSensitive,
+    bool? nameWildcard,
     String? ownerName,
     bool? ownerNameExactMatch,
     bool? ownerNameCaseSensitive,
+    bool? ownerNameWildcard,
     int? processId,
     bool? isOnScreen,
     int? layer,
@@ -54,8 +56,10 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
   // Matching options
   bool _nameExactMatch = false;
   bool _nameCaseSensitive = true;
+  bool _nameWildcard = false;
   bool _ownerNameExactMatch = false;
   bool _ownerNameCaseSensitive = true;
+  bool _ownerNameWildcard = false;
 
   @override
   void dispose() {
@@ -191,7 +195,7 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
                                 style: TextStyle(fontSize: 13),
                               ),
                               value: _nameExactMatch,
-                              onChanged: widget.isLoading
+                              onChanged: widget.isLoading || _nameWildcard
                                   ? null
                                   : (value) {
                                       setState(
@@ -223,6 +227,26 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 4),
+                      CheckboxListTile(
+                        title: const Text(
+                          'Wildcard (* = any chars, ? = single char)',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                        value: _nameWildcard,
+                        onChanged: widget.isLoading
+                            ? null
+                            : (value) {
+                                setState(() {
+                                  _nameWildcard = value ?? false;
+                                  if (_nameWildcard) {
+                                    _nameExactMatch = false;
+                                  }
+                                });
+                              },
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
                       const SizedBox(height: 12),
                       _buildTextField(
                         controller: _ownerNameController,
@@ -241,7 +265,7 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
                                 style: TextStyle(fontSize: 13),
                               ),
                               value: _ownerNameExactMatch,
-                              onChanged: widget.isLoading
+                              onChanged: widget.isLoading || _ownerNameWildcard
                                   ? null
                                   : (value) {
                                       setState(
@@ -273,6 +297,26 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
                             ),
                           ),
                         ],
+                      ),
+                      const SizedBox(height: 4),
+                      CheckboxListTile(
+                        title: const Text(
+                          'Wildcard (* = any chars, ? = single char)',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                        value: _ownerNameWildcard,
+                        onChanged: widget.isLoading
+                            ? null
+                            : (value) {
+                                setState(() {
+                                  _ownerNameWildcard = value ?? false;
+                                  if (_ownerNameWildcard) {
+                                    _ownerNameExactMatch = false;
+                                  }
+                                });
+                              },
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
                       ),
                       const SizedBox(height: 12),
                       _buildTextField(
@@ -591,6 +635,7 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
       nameCaseSensitive: _nameController.text.isNotEmpty
           ? _nameCaseSensitive
           : null,
+      nameWildcard: _nameController.text.isNotEmpty ? _nameWildcard : null,
       ownerName: _ownerNameController.text.isNotEmpty
           ? _ownerNameController.text
           : null,
@@ -599,6 +644,9 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
           : null,
       ownerNameCaseSensitive: _ownerNameController.text.isNotEmpty
           ? _ownerNameCaseSensitive
+          : null,
+      ownerNameWildcard: _ownerNameController.text.isNotEmpty
+          ? _ownerNameWildcard
           : null,
       processId: _processIdController.text.isNotEmpty
           ? int.tryParse(_processIdController.text)
@@ -640,8 +688,10 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
       _isOnScreenValue = 'any';
       _nameExactMatch = false;
       _nameCaseSensitive = true;
+      _nameWildcard = false;
       _ownerNameExactMatch = false;
       _ownerNameCaseSensitive = true;
+      _ownerNameWildcard = false;
     });
   }
 }

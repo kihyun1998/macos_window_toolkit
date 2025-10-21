@@ -344,9 +344,11 @@ class MacosWindowToolkit {
   /// - [name]: Filter by window title (substring match by default)
   /// - [nameExactMatch]: If true, name must match exactly. If false (default), uses substring matching.
   /// - [nameCaseSensitive]: If true (default), name matching is case sensitive.
+  /// - [nameWildcard]: If true, enables wildcard matching for name (* for any characters, ? for single character).
   /// - [ownerName]: Filter by application name (substring match by default)
   /// - [ownerNameExactMatch]: If true, ownerName must match exactly. If false (default), uses substring matching.
   /// - [ownerNameCaseSensitive]: If true (default), ownerName matching is case sensitive.
+  /// - [ownerNameWildcard]: If true, enables wildcard matching for ownerName (* for any characters, ? for single character).
   /// - [processId]: Filter by exact process ID
   /// - [isOnScreen]: Filter by visibility on screen (true/false)
   /// - [layer]: Filter by exact window layer level
@@ -395,6 +397,25 @@ class MacosWindowToolkit {
   ///   ownerNameExactMatch: true,
   ///   ownerNameCaseSensitive: false,
   /// );
+  ///
+  /// // Wildcard matching - "Chrom" prefix
+  /// final chromWindows = await toolkit.getWindowsAdvanced(
+  ///   name: 'Chrom*',
+  ///   nameWildcard: true,
+  /// );
+  ///
+  /// // Wildcard matching - suffix and case insensitive
+  /// final gmailWindows = await toolkit.getWindowsAdvanced(
+  ///   name: '*gmail',
+  ///   nameWildcard: true,
+  ///   nameCaseSensitive: false,
+  /// );
+  ///
+  /// // Wildcard matching - single character wildcard
+  /// final safariWindows = await toolkit.getWindowsAdvanced(
+  ///   name: 'Saf?ri',
+  ///   nameWildcard: true,
+  /// );
   /// ```
   ///
   /// Throws [PlatformException] if unable to retrieve window information.
@@ -403,9 +424,11 @@ class MacosWindowToolkit {
     String? name,
     bool? nameExactMatch,
     bool? nameCaseSensitive,
+    bool? nameWildcard,
     String? ownerName,
     bool? ownerNameExactMatch,
     bool? ownerNameCaseSensitive,
+    bool? ownerNameWildcard,
     int? processId,
     bool? isOnScreen,
     int? layer,
@@ -420,9 +443,11 @@ class MacosWindowToolkit {
       name: name,
       nameExactMatch: nameExactMatch,
       nameCaseSensitive: nameCaseSensitive,
+      nameWildcard: nameWildcard,
       ownerName: ownerName,
       ownerNameExactMatch: ownerNameExactMatch,
       ownerNameCaseSensitive: ownerNameCaseSensitive,
+      ownerNameWildcard: ownerNameWildcard,
       processId: processId,
       isOnScreen: isOnScreen,
       layer: layer,

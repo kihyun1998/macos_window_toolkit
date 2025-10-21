@@ -218,9 +218,11 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     let name = arguments["name"] as? String
     let nameExactMatch = arguments["nameExactMatch"] as? Bool
     let nameCaseSensitive = arguments["nameCaseSensitive"] as? Bool
+    let nameWildcard = arguments["nameWildcard"] as? Bool
     let ownerName = arguments["ownerName"] as? String
     let ownerNameExactMatch = arguments["ownerNameExactMatch"] as? Bool
     let ownerNameCaseSensitive = arguments["ownerNameCaseSensitive"] as? Bool
+    let ownerNameWildcard = arguments["ownerNameWildcard"] as? Bool
     let processId = arguments["processId"] as? Int
     let isOnScreen = arguments["isOnScreen"] as? Bool
     let layer = arguments["layer"] as? Int
@@ -234,9 +236,11 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       name: name,
       nameExactMatch: nameExactMatch,
       nameCaseSensitive: nameCaseSensitive,
+      nameWildcard: nameWildcard,
       ownerName: ownerName,
       ownerNameExactMatch: ownerNameExactMatch,
       ownerNameCaseSensitive: ownerNameCaseSensitive,
+      ownerNameWildcard: ownerNameWildcard,
       processId: processId,
       isOnScreen: isOnScreen,
       layer: layer,

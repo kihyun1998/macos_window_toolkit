@@ -1,3 +1,8 @@
+## 1.4.5
+
+### Added
+- **FEAT**: Wildcard pattern matching support for `getWindowsAdvanced()` - `nameWildcard` and `ownerNameWildcard` parameters enable `*` (any chars) and `?` (single char) patterns
+
 ## 1.4.4
 
 ### Changed

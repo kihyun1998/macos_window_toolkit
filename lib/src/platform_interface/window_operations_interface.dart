@@ -80,9 +80,11 @@ abstract class WindowOperationsInterface {
   /// - [name]: Filter by window title (substring match by default)
   /// - [nameExactMatch]: If true, name must match exactly. If false (default), uses substring matching.
   /// - [nameCaseSensitive]: If true (default), name matching is case sensitive.
+  /// - [nameWildcard]: If true, enables wildcard matching for name (* for any characters, ? for single character).
   /// - [ownerName]: Filter by application name (substring match by default)
   /// - [ownerNameExactMatch]: If true, ownerName must match exactly. If false (default), uses substring matching.
   /// - [ownerNameCaseSensitive]: If true (default), ownerName matching is case sensitive.
+  /// - [ownerNameWildcard]: If true, enables wildcard matching for ownerName (* for any characters, ? for single character).
   /// - [processId]: Filter by exact process ID
   /// - [isOnScreen]: Filter by visibility on screen
   /// - [layer]: Filter by exact window layer level
@@ -115,9 +117,11 @@ abstract class WindowOperationsInterface {
     String? name,
     bool? nameExactMatch,
     bool? nameCaseSensitive,
+    bool? nameWildcard,
     String? ownerName,
     bool? ownerNameExactMatch,
     bool? ownerNameCaseSensitive,
+    bool? ownerNameWildcard,
     int? processId,
     bool? isOnScreen,
     int? layer,

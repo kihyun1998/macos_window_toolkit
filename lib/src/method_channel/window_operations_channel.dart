@@ -83,9 +83,11 @@ mixin WindowOperationsChannel {
     String? name,
     bool? nameExactMatch,
     bool? nameCaseSensitive,
+    bool? nameWildcard,
     String? ownerName,
     bool? ownerNameExactMatch,
     bool? ownerNameCaseSensitive,
+    bool? ownerNameWildcard,
     int? processId,
     bool? isOnScreen,
     int? layer,
@@ -102,12 +104,16 @@ mixin WindowOperationsChannel {
     if (nameCaseSensitive != null) {
       args['nameCaseSensitive'] = nameCaseSensitive;
     }
+    if (nameWildcard != null) args['nameWildcard'] = nameWildcard;
     if (ownerName != null) args['ownerName'] = ownerName;
     if (ownerNameExactMatch != null) {
       args['ownerNameExactMatch'] = ownerNameExactMatch;
     }
     if (ownerNameCaseSensitive != null) {
       args['ownerNameCaseSensitive'] = ownerNameCaseSensitive;
+    }
+    if (ownerNameWildcard != null) {
+      args['ownerNameWildcard'] = ownerNameWildcard;
     }
     if (processId != null) args['processId'] = processId;
     if (isOnScreen != null) args['isOnScreen'] = isOnScreen;
