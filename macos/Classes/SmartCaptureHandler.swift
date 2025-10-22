@@ -16,6 +16,7 @@ class SmartCaptureHandler {
     /// Automatically captures a window using the best available method
     /// - Uses ScreenCaptureKit on macOS 14.0+ for best quality
     /// - Falls back to CGWindowListCreateImage on older versions
+    @available(macOS 10.15, *)
     static func captureWindowAuto(
         windowId: Int, excludeTitlebar: Bool = false, customTitlebarHeight: CGFloat? = nil,
         targetWidth: Int? = nil, targetHeight: Int? = nil, preserveAspectRatio: Bool = false
@@ -74,6 +75,7 @@ class SmartCaptureHandler {
     /// Automatically gets capturable windows using the best available method
     /// - Uses ScreenCaptureKit on macOS 12.3+ for better window information
     /// - Falls back to CGWindowListCreateImage on older versions
+    @available(macOS 10.15, *)
     static func getCapturableWindowsAuto() async throws -> [[String: Any]] {
         // Check Screen Recording permission (macOS 10.15+)
         if #available(macOS 10.15, *) {

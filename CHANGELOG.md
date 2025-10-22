@@ -1,3 +1,8 @@
+## 1.4.9
+
+### Fixed
+- **FIX**: Update minimum macOS version to 10.15 to support async/await in SmartCaptureHandler
+
 ## 1.4.8
 
 ### Fixed
