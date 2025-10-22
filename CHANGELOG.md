@@ -1,3 +1,8 @@
+## 1.4.8
+
+### Fixed
+- **FIX**: Swift compiler warning in `focusWindow()` - changed mutable variable to immutable constant
+
 ## 1.4.7
 
 ### Fixed
