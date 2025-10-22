@@ -1035,7 +1035,7 @@ class WindowHandler {
     }
 
     /// Focuses (brings to front) a window by its window ID using Accessibility API
-    /// This method uses AXRaiseAction to bring the window to the front
+    /// This method activates the application and raises the window to the front
     /// Returns a Result indicating success or failure
     func focusWindow(_ windowId: Int) -> Result<Bool, WindowError> {
 
@@ -1076,10 +1076,26 @@ class WindowHandler {
                 return .failure(.windowNotFound)
             }
 
-            // Step 4: Perform raise action to bring window to front
-            let result = AXUIElementPerformAction(element, kAXRaiseAction as CFString)
+            // Step 4: Set this window as the main window (kAXMainAttribute)
+            // This is more reliable than just kAXRaiseAction
+            var mainValue: CFTypeRef = kCFBooleanTrue
+            let setMainResult = AXUIElementSetAttributeValue(
+                element,
+                kAXMainAttribute as CFString,
+                mainValue
+            )
 
-            if result == .success {
+            // Step 5: Activate the application (brings app to front)
+            if let app = NSRunningApplication(processIdentifier: pid_t(processId)) {
+                let activateOptions: NSApplication.ActivationOptions = [.activateIgnoringOtherApps]
+                app.activate(options: activateOptions)
+            }
+
+            // Step 6: Also perform raise action as additional guarantee
+            let raiseResult = AXUIElementPerformAction(element, kAXRaiseAction as CFString)
+
+            // Success if either setMain or raise succeeded
+            if setMainResult == .success || raiseResult == .success {
                 return .success(true)
             } else {
                 return .failure(.focusActionFailed)

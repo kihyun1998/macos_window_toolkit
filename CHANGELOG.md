@@ -1,3 +1,8 @@
+## 1.4.7
+
+### Fixed
+- **FIX**: `focusWindow()` now properly brings windows to front by setting kAXMainAttribute before app activation
+
 ## 1.4.6
 
 ### Added
