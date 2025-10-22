@@ -1,3 +1,8 @@
+## 1.4.6
+
+### Added
+- **FEAT**: `focusWindow(int windowId)` method to bring windows to front using Accessibility API
+
 ## 1.4.5
 
 ### Added

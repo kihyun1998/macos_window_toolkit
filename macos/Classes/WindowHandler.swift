@@ -1034,6 +1034,62 @@ class WindowHandler {
         }
     }
 
+    /// Focuses (brings to front) a window by its window ID using Accessibility API
+    /// This method uses AXRaiseAction to bring the window to the front
+    /// Returns a Result indicating success or failure
+    func focusWindow(_ windowId: Int) -> Result<Bool, WindowError> {
+
+        // Step 1: Check accessibility permissions
+        let permissionHandler = PermissionHandler()
+        guard permissionHandler.hasAccessibilityPermission() else {
+            return .failure(.accessibilityPermissionDenied)
+        }
+
+        // Step 2: Get window information
+        let windowResult = getWindowById(windowId)
+
+        switch windowResult {
+        case .success(let windows):
+            guard let window = windows.first else {
+                return .failure(.windowNotFound)
+            }
+
+            // Extract process ID and window name
+            guard let processId = window["processId"] as? Int else {
+                return .failure(.insufficientWindowInfo)
+            }
+
+            let windowName = window["name"] as? String ?? ""
+
+            // Step 3: Find window element
+            var windowElement: AXUIElement?
+
+            // Try flexible approach first (more likely to succeed)
+            windowElement = findWindowElementFlexible(processId: processId, windowName: windowName)
+
+            // If that fails, try exact approach
+            if windowElement == nil {
+                windowElement = findWindowElement(processId: processId, windowName: windowName)
+            }
+
+            guard let element = windowElement else {
+                return .failure(.windowNotFound)
+            }
+
+            // Step 4: Perform raise action to bring window to front
+            let result = AXUIElementPerformAction(element, kAXRaiseAction as CFString)
+
+            if result == .success {
+                return .success(true)
+            } else {
+                return .failure(.focusActionFailed)
+            }
+
+        case .failure(let error):
+            return .failure(error)
+        }
+    }
+
     /// Helper method to pass WindowError errors to Flutter
     static func handleWindowError(_ error: WindowError) -> [String: Any] {
         switch error {
@@ -1079,6 +1135,12 @@ class WindowHandler {
                 "message": "Failed to perform close action on window",
                 "details": "The close button was found but clicking it failed.",
             ]
+        case .focusActionFailed:
+            return [
+                "code": "FOCUS_ACTION_FAILED",
+                "message": "Failed to focus window",
+                "details": "The raise action was found but executing it failed.",
+            ]
         case .processNotFound:
             return [
                 "code": "PROCESS_NOT_FOUND",
@@ -1110,6 +1172,7 @@ enum WindowError: Error, LocalizedError {
     case accessibilityPermissionDenied
     case closeButtonNotFound
     case closeActionFailed
+    case focusActionFailed
     case processNotFound
     case terminationFailed
     case failedToGetProcessList
@@ -1130,6 +1193,8 @@ enum WindowError: Error, LocalizedError {
             return "Could not find close button for the specified window"
         case .closeActionFailed:
             return "Failed to perform close action on window"
+        case .focusActionFailed:
+            return "Failed to focus window - raise action did not succeed"
         case .processNotFound:
             return "Process not found"
         case .terminationFailed:

@@ -65,6 +65,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
   bool _isCheckingAlive = false;
   bool _isCheckingAliveWithName = false;
   bool _isClosingWindow = false;
+  bool _isFocusingWindow = false;
   bool _isTerminatingApp = false;
   bool _isTerminatingTree = false;
 
@@ -363,6 +364,73 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
     }
   }
 
+  Future<void> _focusWindow() async {
+    setState(() {
+      _isFocusingWindow = true;
+    });
+
+    try {
+      final result = await _macosWindowToolkit.focusWindow(
+        widget.window.windowId,
+      );
+
+      if (!mounted) return;
+
+      switch (result) {
+        case OperationSuccess():
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Successfully focused window: ${widget.window.name}',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+        case OperationFailure(:final reason, :final message):
+          // Handle accessibility permission case
+          if (reason ==
+              WindowOperationFailureReason.accessibilityPermissionDenied) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.pushNamed(context, '/permission');
+            });
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to focus window: ${message ?? reason.name}',
+              ),
+              backgroundColor: Colors.orange,
+            ),
+          );
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      String errorMessage;
+      if (e is PlatformException) {
+        final errorCode = e.errorCode;
+        errorMessage = errorCode?.userMessage ?? e.message ?? 'Unknown error';
+      } else {
+        errorMessage = 'Unknown error occurred';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('System error: $errorMessage'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isFocusingWindow = false;
+        });
+      }
+    }
+  }
+
   Future<void> _terminateApplication({bool force = false}) async {
     setState(() {
       _isTerminatingApp = true;
@@ -582,6 +650,34 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                                 horizontal: 12,
                                 vertical: 4,
                               ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton.icon(
+                            onPressed:
+                                (_isFocusingWindow || _isWindowAlive == false)
+                                ? null
+                                : _focusWindow,
+                            icon: _isFocusingWindow
+                                ? SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Icon(Icons.flip_to_front, size: 16),
+                            label: Text('Focus'),
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: Size(80, 32),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
+                              ),
+                              backgroundColor: Colors.blue.withValues(
+                                alpha: 0.1,
+                              ),
+                              foregroundColor: Colors.blue,
                             ),
                           ),
                           const SizedBox(width: 8),

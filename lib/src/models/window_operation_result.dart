@@ -32,6 +32,8 @@ class OperationFailure extends WindowOperationResult {
         return 'Accessibility permission required';
       case WindowOperationFailureReason.closeButtonNotFound:
         return 'Unable to find close button for this window';
+      case WindowOperationFailureReason.focusActionFailed:
+        return 'Unable to bring window to front';
       case WindowOperationFailureReason.unknown:
         return message ?? 'Operation failed';
     }
@@ -45,6 +47,7 @@ class OperationFailure extends WindowOperationResult {
       case WindowOperationFailureReason.windowNotFound:
       case WindowOperationFailureReason.processNotFound:
       case WindowOperationFailureReason.closeButtonNotFound:
+      case WindowOperationFailureReason.focusActionFailed:
       case WindowOperationFailureReason.unknown:
         return false;
     }
@@ -58,6 +61,7 @@ class OperationFailure extends WindowOperationResult {
       case WindowOperationFailureReason.windowNotFound:
       case WindowOperationFailureReason.processNotFound:
       case WindowOperationFailureReason.closeButtonNotFound:
+      case WindowOperationFailureReason.focusActionFailed:
       case WindowOperationFailureReason.unknown:
         return null;
     }
@@ -77,6 +81,9 @@ enum WindowOperationFailureReason {
 
   /// Close button not found (for closeWindow operation)
   closeButtonNotFound,
+
+  /// Focus action failed (for focusWindow operation)
+  focusActionFailed,
 
   /// Unknown operation state (not a system error)
   unknown,

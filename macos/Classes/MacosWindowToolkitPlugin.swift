@@ -53,6 +53,8 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       isWindowAlive(call: call, result: result)
     case "closeWindow":
       closeWindow(call: call, result: result)
+    case "focusWindow":
+      focusWindow(call: call, result: result)
     case "terminateApplicationByPID":
       terminateApplicationByPID(call: call, result: result)
     case "terminateApplicationTree":
@@ -627,6 +629,46 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     }
   }
 
+  /// Focuses a window by its window ID using Accessibility API
+  private func focusWindow(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let arguments = call.arguments as? [String: Any],
+      let windowId = arguments["windowId"] as? Int
+    else {
+      result(
+        FlutterError(
+          code: "INVALID_ARGUMENTS",
+          message: "WindowId parameter is required",
+          details: nil))
+      return
+    }
+
+    let focusResult = windowHandler.focusWindow(windowId)
+    switch focusResult {
+    case .success(let success):
+      result(success)
+    case .failure(let error):
+      let errorInfo = WindowHandler.handleWindowError(error)
+
+      // Check if this is a state or a system error
+      if let code = errorInfo["code"] as? String, isStateError(code) {
+        // Return failure result for states
+        result([
+          "success": false,
+          "reason": mapErrorCodeToReasonCode(code),
+          "message": errorInfo["message"],
+          "details": errorInfo["details"]
+        ])
+      } else {
+        // Throw for system errors
+        result(
+          FlutterError(
+            code: errorInfo["code"] as? String ?? "FOCUS_WINDOW_ERROR",
+            message: errorInfo["message"] as? String ?? "Unknown error",
+            details: errorInfo["details"]))
+      }
+    }
+  }
+
   /// Terminates an application by its process ID
   private func terminateApplicationByPID(call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let args = call.arguments as? [String: Any],
@@ -835,6 +877,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     // Window operation related state errors
          "ACCESSIBILITY_PERMISSION_DENIED",
          "CLOSE_BUTTON_NOT_FOUND",
+         "FOCUS_ACTION_FAILED",
          "PROCESS_NOT_FOUND":
       return true
     default:
@@ -863,6 +906,8 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       return "accessibility_permission_denied"
     case "CLOSE_BUTTON_NOT_FOUND":
       return "close_button_not_found"
+    case "FOCUS_ACTION_FAILED":
+      return "focus_action_failed"
     case "PROCESS_NOT_FOUND":
       return "process_not_found"
     default:

@@ -187,6 +187,47 @@ mixin WindowOperationsChannel {
     }
   }
 
+  Future<WindowOperationResult> focusWindow(int windowId) async {
+    try {
+      final result = await methodChannel.invokeMethod<dynamic>('focusWindow', {
+        'windowId': windowId,
+      });
+
+      if (result == null) {
+        return const OperationFailure(
+          reason: WindowOperationFailureReason.unknown,
+          message: 'No response from focusWindow',
+        );
+      }
+
+      // Handle Map response (v1.4.3+ state errors)
+      if (result is Map) {
+        return _parseOperationResult(Map<dynamic, dynamic>.from(result));
+      }
+
+      // Handle bool response (backward compatible or success case)
+      if (result is bool) {
+        return result
+            ? const OperationSuccess()
+            : const OperationFailure(
+                reason: WindowOperationFailureReason.unknown,
+                message: 'Operation returned false',
+              );
+      }
+
+      return const OperationFailure(
+        reason: WindowOperationFailureReason.unknown,
+        message: 'Unexpected response type',
+      );
+    } on PlatformException catch (e) {
+      // Only system errors should throw, others should return OperationFailure
+      if (_isSystemError(e.code)) {
+        rethrow;
+      }
+      return _platformExceptionToOperationFailure(e);
+    }
+  }
+
   /// Helper method to parse operation result from native response
   WindowOperationResult _parseOperationResult(Map<dynamic, dynamic> result) {
     final success = result['success'] as bool? ?? false;
@@ -215,6 +256,8 @@ mixin WindowOperationsChannel {
         return WindowOperationFailureReason.accessibilityPermissionDenied;
       case 'close_button_not_found':
         return WindowOperationFailureReason.closeButtonNotFound;
+      case 'focus_action_failed':
+        return WindowOperationFailureReason.focusActionFailed;
       default:
         return WindowOperationFailureReason.unknown;
     }
@@ -242,6 +285,8 @@ mixin WindowOperationsChannel {
         return WindowOperationFailureReason.accessibilityPermissionDenied;
       case 'CLOSE_BUTTON_NOT_FOUND':
         return WindowOperationFailureReason.closeButtonNotFound;
+      case 'FOCUS_ACTION_FAILED':
+        return WindowOperationFailureReason.focusActionFailed;
       default:
         return WindowOperationFailureReason.unknown;
     }

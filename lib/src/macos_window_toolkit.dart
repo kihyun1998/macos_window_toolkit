@@ -916,6 +916,59 @@ class MacosWindowToolkit {
     return await MacosWindowToolkitPlatform.instance.closeWindow(windowId);
   }
 
+  /// Focuses (brings to front) a window by its window ID using Accessibility API.
+  ///
+  /// Returns a [WindowOperationResult] indicating success or failure with details.
+  ///
+  /// [windowId] is the unique identifier of the window to focus, which can be
+  /// obtained from [getAllWindows], [getWindowsByName], or other window listing methods.
+  ///
+  /// This method uses the Accessibility API to bring the window to the front
+  /// of all other windows. The window will be raised to the topmost layer and
+  /// become the active window. This is useful for bringing a specific window
+  /// into focus programmatically.
+  ///
+  /// **Important Notes:**
+  /// - This method requires accessibility permissions
+  /// - The success depends on the application's window structure and window state
+  /// - Some fullscreen or minimized windows may not respond to focus actions
+  ///
+  /// Returns:
+  /// - [OperationSuccess] if the window was successfully focused
+  /// - [OperationFailure] with one of the following reasons:
+  ///   - [WindowOperationFailureReason.windowNotFound]: Window no longer exists
+  ///   - [WindowOperationFailureReason.accessibilityPermissionDenied]: Permission not granted
+  ///   - [WindowOperationFailureReason.focusActionFailed]: Unable to bring window to front
+  ///   - [WindowOperationFailureReason.unknown]: Other failure states
+  ///
+  /// Throws [PlatformException] only for system errors (invalid arguments, internal errors).
+  ///
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  /// final windows = await toolkit.getAllWindows();
+  ///
+  /// for (final window in windows) {
+  ///   if (window.name.contains('Important')) {
+  ///     final result = await toolkit.focusWindow(window.windowId);
+  ///     switch (result) {
+  ///       case OperationSuccess():
+  ///         print('Successfully focused window: ${window.name}');
+  ///       case OperationFailure(:final reason, :final message):
+  ///         if (reason == WindowOperationFailureReason.accessibilityPermissionDenied) {
+  ///           print('Need accessibility permission');
+  ///           await toolkit.requestAccessibilityPermission();
+  ///         } else {
+  ///           print('Failed to focus window: $message');
+  ///         }
+  ///     }
+  ///   }
+  /// }
+  /// ```
+  Future<WindowOperationResult> focusWindow(int windowId) async {
+    return await MacosWindowToolkitPlatform.instance.focusWindow(windowId);
+  }
+
   /// Terminates an application by its process ID.
   ///
   /// This method will terminate the entire application, not just a specific window.

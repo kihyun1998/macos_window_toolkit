@@ -214,4 +214,45 @@ abstract class WindowOperationsInterface {
   Future<WindowOperationResult> closeWindow(int windowId) {
     throw UnimplementedError('closeWindow() has not been implemented.');
   }
+
+  /// Focuses (brings to front) a window by its window ID using Accessibility API.
+  ///
+  /// Returns a [WindowOperationResult] indicating success or failure with details.
+  ///
+  /// [windowId] is the unique identifier of the window to focus.
+  ///
+  /// This method uses the Accessibility API to bring the window to the front
+  /// of all other windows. The window will be raised to the topmost layer and
+  /// become the active window.
+  ///
+  /// **Note**: This method requires accessibility permissions.
+  ///
+  /// Returns:
+  /// - [OperationSuccess] if the window was successfully focused
+  /// - [OperationFailure] with one of the following reasons:
+  ///   - [WindowOperationFailureReason.windowNotFound]: Window no longer exists
+  ///   - [WindowOperationFailureReason.accessibilityPermissionDenied]: Permission not granted
+  ///   - [WindowOperationFailureReason.focusActionFailed]: Unable to focus window
+  ///   - [WindowOperationFailureReason.unknown]: Other failure states
+  ///
+  /// Throws [PlatformException] only for system errors (invalid arguments, internal errors).
+  ///
+  /// Example usage:
+  /// ```dart
+  /// final result = await toolkit.focusWindow(12345);
+  /// switch (result) {
+  ///   case OperationSuccess():
+  ///     print('Window focused successfully');
+  ///   case OperationFailure(:final reason, :final message):
+  ///     if (reason == WindowOperationFailureReason.accessibilityPermissionDenied) {
+  ///       print('Need accessibility permission: $message');
+  ///       await toolkit.requestAccessibilityPermission();
+  ///     } else {
+  ///       print('Failed to focus window: $message');
+  ///     }
+  /// }
+  /// ```
+  Future<WindowOperationResult> focusWindow(int windowId) {
+    throw UnimplementedError('focusWindow() has not been implemented.');
+  }
 }
