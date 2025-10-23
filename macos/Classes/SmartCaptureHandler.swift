@@ -21,12 +21,10 @@ class SmartCaptureHandler {
         windowId: Int, excludeTitlebar: Bool = false, customTitlebarHeight: CGFloat? = nil,
         targetWidth: Int? = nil, targetHeight: Int? = nil, preserveAspectRatio: Bool = false
     ) async throws -> Data {
-        // Check Screen Recording permission (macOS 10.15+)
-        if #available(macOS 10.15, *) {
-            let permissionHandler = PermissionHandler()
-            guard permissionHandler.hasScreenRecordingPermission() else {
-                throw SmartCaptureError.screenRecordingPermissionDenied
-            }
+        // Check Screen Recording permission
+        let permissionHandler = PermissionHandler()
+        guard permissionHandler.hasScreenRecordingPermission() else {
+            throw SmartCaptureError.screenRecordingPermissionDenied
         }
         if shouldUseScreenCaptureKit() {
             if #available(macOS 12.3, *) {
@@ -77,12 +75,10 @@ class SmartCaptureHandler {
     /// - Falls back to CGWindowListCreateImage on older versions
     @available(macOS 10.15, *)
     static func getCapturableWindowsAuto() async throws -> [[String: Any]] {
-        // Check Screen Recording permission (macOS 10.15+)
-        if #available(macOS 10.15, *) {
-            let permissionHandler = PermissionHandler()
-            guard permissionHandler.hasScreenRecordingPermission() else {
-                return [] // 권한 없으면 빈 배열 반환
-            }
+        // Check Screen Recording permission
+        let permissionHandler = PermissionHandler()
+        guard permissionHandler.hasScreenRecordingPermission() else {
+            return [] // 권한 없으면 빈 배열 반환
         }
         if shouldUseScreenCaptureKitForWindowList() {
             if #available(macOS 12.3, *) {

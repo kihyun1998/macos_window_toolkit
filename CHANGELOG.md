@@ -1,3 +1,9 @@
+## 1.4.10
+
+### Fixed
+- **FIX**: Removed unnecessary macOS 10.15 availability checks in SmartCaptureHandler (functions already marked with @available)
+- **FIX**: Changed mutable `var` to immutable `let` for `mainValue` constant in WindowHandler
+
 ## 1.4.9
 
 ### Fixed

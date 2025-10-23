@@ -1078,7 +1078,7 @@ class WindowHandler {
 
             // Step 4: Set this window as the main window (kAXMainAttribute)
             // This is more reliable than just kAXRaiseAction
-            var mainValue: CFTypeRef = kCFBooleanTrue
+            let mainValue: CFTypeRef = kCFBooleanTrue
             let setMainResult = AXUIElementSetAttributeValue(
                 element,
                 kAXMainAttribute as CFString,
