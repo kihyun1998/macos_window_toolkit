@@ -81,19 +81,7 @@ class PermissionHandler {
     /// Opens the Accessibility settings page
     /// Allows user to manually grant permission
     func openAccessibilitySettings() -> Bool {
-        // Use new Settings app URL for macOS Ventura and later
-        if #available(macOS 13.0, *) {
-            if let url = URL(
-                string:
-                    "x-apple.systempreferences:com.apple.Settings.PrivacySecurity.extension?Privacy_Accessibility"
-            ) {
-                if NSWorkspace.shared.open(url) {
-                    return true
-                }
-            }
-        }
-
-        // System Preferences URL for previous versions
+        // System Preferences URL (works for all macOS versions)
         if let url = URL(
             string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
         {

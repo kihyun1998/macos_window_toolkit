@@ -1041,58 +1041,48 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Column(
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
                           children: [
-                            RadioListTile<CaptureType>(
-                              title: const Text('Smart (Auto)'),
-                              subtitle: const Text(
-                                'Automatically selects best method',
-                              ),
-                              value: CaptureType.smart,
-                              groupValue: _captureType,
-                              onChanged: _isCapturing
+                            ChoiceChip(
+                              label: const Text('Smart (Auto)'),
+                              selected: _captureType == CaptureType.smart,
+                              onSelected: _isCapturing
                                   ? null
-                                  : (value) {
-                                      setState(() {
-                                        _captureType = value!;
-                                      });
+                                  : (selected) {
+                                      if (selected) {
+                                        setState(() {
+                                          _captureType = CaptureType.smart;
+                                        });
+                                      }
                                     },
-                              dense: true,
                             ),
-                            RadioListTile<CaptureType>(
-                              title: const Text('ScreenCaptureKit'),
-                              subtitle: Text(
-                                _versionInfo?.isScreenCaptureKitAvailable ==
-                                        true
-                                    ? 'High quality (macOS 12.3+)'
-                                    : 'Not available on this system',
-                              ),
-                              value: CaptureType.screenCaptureKit,
-                              groupValue: _captureType,
-                              onChanged: _isCapturing
+                            ChoiceChip(
+                              label: const Text('ScreenCaptureKit'),
+                              selected: _captureType == CaptureType.screenCaptureKit,
+                              onSelected: _isCapturing
                                   ? null
-                                  : (value) {
-                                      setState(() {
-                                        _captureType = value!;
-                                      });
+                                  : (selected) {
+                                      if (selected) {
+                                        setState(() {
+                                          _captureType = CaptureType.screenCaptureKit;
+                                        });
+                                      }
                                     },
-                              dense: true,
                             ),
-                            RadioListTile<CaptureType>(
-                              title: const Text('Legacy'),
-                              subtitle: const Text(
-                                'Compatible with all macOS versions',
-                              ),
-                              value: CaptureType.legacy,
-                              groupValue: _captureType,
-                              onChanged: _isCapturing
+                            ChoiceChip(
+                              label: const Text('Legacy'),
+                              selected: _captureType == CaptureType.legacy,
+                              onSelected: _isCapturing
                                   ? null
-                                  : (value) {
-                                      setState(() {
-                                        _captureType = value!;
-                                      });
+                                  : (selected) {
+                                      if (selected) {
+                                        setState(() {
+                                          _captureType = CaptureType.legacy;
+                                        });
+                                      }
                                     },
-                              dense: true,
                             ),
                           ],
                         ),

@@ -1,3 +1,8 @@
+## 1.4.11
+
+### Fixed
+- **FIX**: Fixed `openAccessibilitySettings()` incorrectly opening Display settings on macOS Ventura and later
+
 ## 1.4.10
 
 ### Fixed

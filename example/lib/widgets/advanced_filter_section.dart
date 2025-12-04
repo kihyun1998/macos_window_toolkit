@@ -413,7 +413,7 @@ class _AdvancedFilterSectionState extends State<AdvancedFilterSection> {
                     colorScheme: colorScheme,
                     children: [
                       DropdownButtonFormField<String>(
-                        value: _isOnScreenValue,
+                        initialValue: _isOnScreenValue,
                         decoration: InputDecoration(
                           labelText: 'Is On Screen',
                           prefixIcon: const Icon(Icons.visibility, size: 20),
