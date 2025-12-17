@@ -1,3 +1,11 @@
+## 1.4.13
+
+### Removed
+- **REMOVED**: Unused permission verification methods from PermissionHandler
+  - Removed `hasActualScreenRecordingPermission()` function
+  - Removed `hasActualScreenRecordingPermissionAsync()` function
+  - Removed unused ScreenCaptureKit import from PermissionHandler.swift
+
 ## 1.4.12
 
 ### Fixed

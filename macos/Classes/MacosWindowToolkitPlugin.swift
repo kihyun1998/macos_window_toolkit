@@ -291,11 +291,11 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
           // Return success result
           result([
             "success": true,
-            "imageData": FlutterStandardTypedData(bytes: imageData)
+            "imageData": FlutterStandardTypedData(bytes: imageData),
           ])
         } catch let error as CaptureHandler.CaptureError {
           let errorInfo = CaptureHandler.handleCaptureError(error)
-          
+
           // Check if this is a state or a system error
           if let code = errorInfo["code"] as? String, isStateError(code) {
             // Return failure result for states
@@ -303,7 +303,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
               "success": false,
               "reason": mapErrorCodeToReasonCode(code),
               "message": errorInfo["message"],
-              "details": errorInfo["details"]
+              "details": errorInfo["details"],
             ])
           } else {
             // Throw for system errors
@@ -327,7 +327,8 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
         "success": false,
         "reason": "unsupported_version",
         "message": "macOS version does not support ScreenCaptureKit",
-        "details": "Current version: \(ProcessInfo.processInfo.operatingSystemVersionString), Required: 12.3+"
+        "details":
+          "Current version: \(ProcessInfo.processInfo.operatingSystemVersionString), Required: 12.3+",
       ])
     }
   }
@@ -390,15 +391,15 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
         customTitlebarHeight: customTitlebarHeight,
         targetWidth: targetWidth, targetHeight: targetHeight,
         preserveAspectRatio: preserveAspectRatio)
-      
+
       // Return success result
       result([
         "success": true,
-        "imageData": FlutterStandardTypedData(bytes: imageData)
+        "imageData": FlutterStandardTypedData(bytes: imageData),
       ])
     } catch let error as LegacyCaptureHandler.LegacyCaptureError {
       let errorInfo = LegacyCaptureHandler.handleLegacyCaptureError(error)
-      
+
       // Check if this is a state or a system error
       if let code = errorInfo["code"] as? String, isStateError(code) {
         // Return failure result for states
@@ -406,7 +407,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
           "success": false,
           "reason": mapErrorCodeToReasonCode(code),
           "message": errorInfo["message"],
-          "details": errorInfo["details"]
+          "details": errorInfo["details"],
         ])
       } else {
         // Throw for system errors
@@ -458,15 +459,15 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
             customTitlebarHeight: customTitlebarHeight,
             targetWidth: targetWidth, targetHeight: targetHeight,
             preserveAspectRatio: preserveAspectRatio)
-          
+
           // Return success result
           result([
             "success": true,
-            "imageData": FlutterStandardTypedData(bytes: imageData)
+            "imageData": FlutterStandardTypedData(bytes: imageData),
           ])
         } catch let error as SmartCaptureHandler.SmartCaptureError {
           let errorInfo = SmartCaptureHandler.handleSmartCaptureError(error)
-          
+
           // Check if this is a state or a system error
           if let code = errorInfo["code"] as? String, isStateError(code) {
             // Return failure result for states
@@ -474,7 +475,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
               "success": false,
               "reason": mapErrorCodeToReasonCode(code),
               "message": errorInfo["message"],
-              "details": errorInfo["details"]
+              "details": errorInfo["details"],
             ])
           } else {
             // Throw for system errors
@@ -500,15 +501,15 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
           customTitlebarHeight: customTitlebarHeight,
           targetWidth: targetWidth, targetHeight: targetHeight,
           preserveAspectRatio: preserveAspectRatio)
-        
+
         // Return success result
         result([
           "success": true,
-          "imageData": FlutterStandardTypedData(bytes: imageData)
+          "imageData": FlutterStandardTypedData(bytes: imageData),
         ])
       } catch let error as LegacyCaptureHandler.LegacyCaptureError {
         let errorInfo = LegacyCaptureHandler.handleLegacyCaptureError(error)
-        
+
         // Check if this is a state or a system error
         if let code = errorInfo["code"] as? String, isStateError(code) {
           // Return failure result for states
@@ -516,7 +517,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
             "success": false,
             "reason": mapErrorCodeToReasonCode(code),
             "message": errorInfo["message"],
-            "details": errorInfo["details"]
+            "details": errorInfo["details"],
           ])
         } else {
           // Throw for system errors
@@ -616,7 +617,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
           "success": false,
           "reason": mapErrorCodeToReasonCode(code),
           "message": errorInfo["message"],
-          "details": errorInfo["details"]
+          "details": errorInfo["details"],
         ])
       } else {
         // Throw for system errors
@@ -656,7 +657,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
           "success": false,
           "reason": mapErrorCodeToReasonCode(code),
           "message": errorInfo["message"],
-          "details": errorInfo["details"]
+          "details": errorInfo["details"],
         ])
       } else {
         // Throw for system errors
@@ -698,7 +699,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
           "success": false,
           "reason": mapErrorCodeToReasonCode(code),
           "message": errorInfo["message"],
-          "details": errorInfo["details"]
+          "details": errorInfo["details"],
         ])
       } else {
         // Throw for system errors
@@ -740,7 +741,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
           "success": false,
           "reason": mapErrorCodeToReasonCode(code),
           "message": errorInfo["message"],
-          "details": errorInfo["details"]
+          "details": errorInfo["details"],
         ])
       } else {
         // Throw for system errors
@@ -867,18 +868,18 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     switch code {
     // Screenshot/Capture related state errors
     case "WINDOW_MINIMIZED",
-         "INVALID_WINDOW_ID",
-         "WINDOW_NOT_FOUND",
-         "UNSUPPORTED_MACOS_VERSION",
-         "PERMISSION_DENIED",
-         "SCREEN_RECORDING_PERMISSION_DENIED",
-         "CAPTURE_IN_PROGRESS",
-         "WINDOW_NOT_CAPTURABLE",
-    // Window operation related state errors
-         "ACCESSIBILITY_PERMISSION_DENIED",
-         "CLOSE_BUTTON_NOT_FOUND",
-         "FOCUS_ACTION_FAILED",
-         "PROCESS_NOT_FOUND":
+      "INVALID_WINDOW_ID",
+      "WINDOW_NOT_FOUND",
+      "UNSUPPORTED_MACOS_VERSION",
+      "PERMISSION_DENIED",
+      "SCREEN_RECORDING_PERMISSION_DENIED",
+      "CAPTURE_IN_PROGRESS",
+      "WINDOW_NOT_CAPTURABLE",
+      // Window operation related state errors
+      "ACCESSIBILITY_PERMISSION_DENIED",
+      "CLOSE_BUTTON_NOT_FOUND",
+      "FOCUS_ACTION_FAILED",
+      "PROCESS_NOT_FOUND":
       return true
     default:
       return false
