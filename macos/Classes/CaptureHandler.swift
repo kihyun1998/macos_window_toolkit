@@ -140,7 +140,32 @@ class CaptureHandler {
         } catch let error as CaptureError {
             throw error
         } catch {
-            throw CaptureError.captureFailed(error.localizedDescription)
+            // Analyze NSError to provide more specific error information
+            let nsError = error as NSError
+
+            // Check for ScreenCaptureKit specific errors
+            if nsError.domain == "com.apple.screencapturekit" {
+                switch nsError.code {
+                case -3801, -3803: // Permission denied error codes
+                    throw CaptureError.screenRecordingPermissionDenied
+                default:
+                    throw CaptureError.captureFailed(
+                        "ScreenCaptureKit error (code: \(nsError.code)): \(error.localizedDescription)"
+                    )
+                }
+            }
+
+            // Check for CoreGraphics/System errors that might indicate permission issues
+            if nsError.domain == NSCocoaErrorDomain || nsError.domain == NSOSStatusErrorDomain {
+                let errorMessage = error.localizedDescription.lowercased()
+                if errorMessage.contains("permission") || errorMessage.contains("not permitted") || errorMessage.contains("denied") {
+                    throw CaptureError.screenRecordingPermissionDenied
+                }
+            }
+
+            throw CaptureError.captureFailed(
+                "Error domain: \(nsError.domain), code: \(nsError.code), message: \(error.localizedDescription)"
+            )
         }
     }
 
@@ -312,7 +337,32 @@ class CaptureHandler {
                 ]
             }
         } catch {
-            throw CaptureError.captureFailed(error.localizedDescription)
+            // Analyze NSError to provide more specific error information
+            let nsError = error as NSError
+
+            // Check for ScreenCaptureKit specific errors
+            if nsError.domain == "com.apple.screencapturekit" {
+                switch nsError.code {
+                case -3801, -3803: // Permission denied error codes
+                    throw CaptureError.screenRecordingPermissionDenied
+                default:
+                    throw CaptureError.captureFailed(
+                        "ScreenCaptureKit error (code: \(nsError.code)): \(error.localizedDescription)"
+                    )
+                }
+            }
+
+            // Check for CoreGraphics/System errors that might indicate permission issues
+            if nsError.domain == NSCocoaErrorDomain || nsError.domain == NSOSStatusErrorDomain {
+                let errorMessage = error.localizedDescription.lowercased()
+                if errorMessage.contains("permission") || errorMessage.contains("not permitted") || errorMessage.contains("denied") {
+                    throw CaptureError.screenRecordingPermissionDenied
+                }
+            }
+
+            throw CaptureError.captureFailed(
+                "Error domain: \(nsError.domain), code: \(nsError.code), message: \(error.localizedDescription)"
+            )
         }
     }
 

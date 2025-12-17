@@ -1,3 +1,20 @@
+## 1.4.12
+
+### Fixed
+- **FIX**: Improved screen recording permission error detection and reporting
+  - Enhanced error handling to distinguish permission errors from other capture failures
+  - Added NSError domain and code analysis for ScreenCaptureKit errors (codes -3801, -3803)
+  - LegacyCaptureHandler now performs additional permission verification on capture failure
+  - Added detailed error messages with domain, code, and description for better debugging
+- **FIX**: Added runtime permission verification methods to PermissionHandler
+  - `hasActualScreenRecordingPermission()` performs real capture test to detect permission changes
+  - `hasActualScreenRecordingPermissionAsync()` uses ScreenCaptureKit for accurate async permission check
+  - Addresses limitation where `CGPreflightScreenCaptureAccess()` returns cached value and doesn't detect runtime permission changes
+- **FIX**: Resolved macOS 14.0+ deprecated API warnings
+  - PermissionHandler now uses ScreenCaptureKit on macOS 14.0+ instead of deprecated `CGWindowListCreateImage`
+  - Added version-specific permission checking with fallback to legacy methods for older macOS versions
+- **ENHANCEMENT**: Example app now shows detailed error information (reason, message, details, error code) with optional permission settings button
+
 ## 1.4.11
 
 ### Fixed

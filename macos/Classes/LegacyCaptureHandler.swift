@@ -13,6 +13,8 @@ class LegacyCaptureHandler {
     }
 
     // Window capture using CGWindowListCreateImage (macOS 10.5+)
+    // Note: CGWindowListCreateImage is deprecated in macOS 14.0+, but this legacy handler
+    // is kept for compatibility with older macOS versions
     static func captureWindow(
         windowId: Int, excludeTitlebar: Bool = false, customTitlebarHeight: CGFloat? = nil,
         targetWidth: Int? = nil, targetHeight: Int? = nil, preserveAspectRatio: Bool = false
@@ -56,7 +58,26 @@ class LegacyCaptureHandler {
                 imageOption
             )
         else {
-            throw LegacyCaptureError.captureFailed("Failed to create window image")
+            // CGWindowListCreateImage failed - determine why
+            // On macOS 10.15+, this can fail due to permission issues
+            if #available(macOS 10.15, *) {
+                // Double-check permission status with actual test
+                let testImage = CGWindowListCreateImage(
+                    CGRect(x: 0, y: 0, width: 1, height: 1),
+                    .optionOnScreenOnly,
+                    kCGNullWindowID,
+                    .nominalResolution
+                )
+
+                // If we can't even create a simple screenshot, it's likely a permission issue
+                if testImage == nil || testImage!.width == 0 || testImage!.height == 0 {
+                    throw LegacyCaptureError.screenRecordingPermissionDenied
+                }
+            }
+
+            throw LegacyCaptureError.captureFailed(
+                "Failed to create window image - window may have been closed or is not capturable"
+            )
         }
 
         // Titlebar 제외가 요청된 경우 이미지를 crop
@@ -317,7 +338,21 @@ class LegacyCaptureHandler {
                 kCGNullWindowID
             ) as? [[String: Any]]
         else {
+            // Failed to get window list - could be a permission issue on macOS 10.15+
+            // Return empty array (permission check was already done above)
             return []
+        }
+
+        // On macOS 10.15+, if we get an empty list despite having windows open,
+        // it might indicate permission was revoked at runtime
+        if #available(macOS 10.15, *), windowList.isEmpty {
+            // Try to get all windows (including off-screen) to verify
+            let allWindows = CGWindowListCopyWindowInfo(.optionAll, kCGNullWindowID) as? [[String: Any]] ?? []
+            if !allWindows.isEmpty {
+                // We can see windows exist but not their details - likely permission issue
+                // However, we already checked permission at the start, so this is expected behavior
+                // Return empty array as permission check already handled above
+            }
         }
 
         return windowList.compactMap { window in

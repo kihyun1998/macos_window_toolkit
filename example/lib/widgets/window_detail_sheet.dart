@@ -202,8 +202,8 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
           case CaptureSuccess(imageData: final imageBytes):
             _showCaptureResultDialog(imageBytes);
             break;
-          case CaptureFailure(reason: final reason):
-            _handleCaptureFailure(reason);
+          case CaptureFailure(:final reason, :final message, :final details):
+            _handleCaptureFailure(reason, message, details);
             break;
         }
       }
@@ -211,62 +211,85 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
       setState(() {
         _isCapturing = false;
 
-        // Get user-friendly error message
+        // Build detailed error message
+        final errorParts = <String>[];
+
         if (e is PlatformException) {
           final errorCode = e.errorCode;
-          _captureError =
-              errorCode?.userMessage ?? e.message ?? 'Unknown error';
 
-          // Handle special case: screen recording permission
-          if (errorCode ==
-              PlatformErrorCode.captureScreenRecordingPermissionDenied) {
-            if (mounted) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                Navigator.pushNamed(context, '/permission');
-              });
-            }
+          // Add primary error message
+          errorParts.add('🔴 System Error');
+          errorParts.add(
+            '\n💬 ${errorCode?.userMessage ?? e.message ?? 'Unknown error'}',
+          );
+
+          // Add error code
+          if (e.code.isNotEmpty) {
+            errorParts.add('\n🔍 Error Code: ${e.code}');
+          }
+
+          // Add details if available
+          if (e.details != null) {
+            errorParts.add('\n📋 Details: ${e.details}');
           }
         } else {
-          _captureError = 'Unexpected error: $e';
+          errorParts.add('⚠️ Unexpected Error');
+          errorParts.add('\n💬 $e');
         }
+
+        _captureError = errorParts.join('\n');
       });
     }
   }
 
-  void _handleCaptureFailure(CaptureFailureReason reason) {
+  void _handleCaptureFailure(
+    CaptureFailureReason reason,
+    String? message,
+    String? details,
+  ) {
     setState(() {
+      // Build detailed error message with all available information
+      final errorParts = <String>[];
+
+      // Add reason-based primary message
       switch (reason) {
         case CaptureFailureReason.windowNotFound:
-          _captureError = 'Window not found or not capturable';
+          errorParts.add('❌ Window not found or not capturable');
           break;
         case CaptureFailureReason.windowMinimized:
-          _captureError =
-              'Window is minimized and cannot be captured. Please restore the window first.';
+          errorParts.add('📦 Window is minimized and cannot be captured');
           break;
         case CaptureFailureReason.permissionDenied:
-          _captureError =
-              'Screen recording permission denied. Please enable it in System Settings.';
-          // Navigate to permission settings
-          if (mounted) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.pushNamed(context, '/permission');
-            });
-          }
+          errorParts.add('🔒 Screen recording permission denied');
           break;
         case CaptureFailureReason.unsupportedVersion:
-          _captureError = 'macOS version not supported for this capture method';
+          errorParts.add('⚠️ macOS version not supported');
           break;
         case CaptureFailureReason.captureInProgress:
-          _captureError =
-              'Another capture is already in progress. Please wait.';
+          errorParts.add('⏳ Another capture is already in progress');
           break;
         case CaptureFailureReason.windowNotCapturable:
-          _captureError = 'This window cannot be captured';
+          errorParts.add('🚫 This window cannot be captured');
           break;
         case CaptureFailureReason.unknown:
-          _captureError = 'Unknown capture error occurred';
+          errorParts.add('❓ Unknown capture error');
           break;
       }
+
+      // Add message from native side if available
+      if (message != null && message.isNotEmpty) {
+        errorParts.add('\n💬 $message');
+      }
+
+      // Add details from native side if available
+      if (details != null && details.isNotEmpty) {
+        errorParts.add('\n📋 Details: $details');
+      }
+
+      // Add error code for debugging
+      errorParts.add('\n🔍 Error Code: ${reason.name}');
+
+      _captureError = errorParts.join('\n');
     });
   }
 
@@ -1060,13 +1083,15 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                             ),
                             ChoiceChip(
                               label: const Text('ScreenCaptureKit'),
-                              selected: _captureType == CaptureType.screenCaptureKit,
+                              selected:
+                                  _captureType == CaptureType.screenCaptureKit,
                               onSelected: _isCapturing
                                   ? null
                                   : (selected) {
                                       if (selected) {
                                         setState(() {
-                                          _captureType = CaptureType.screenCaptureKit;
+                                          _captureType =
+                                              CaptureType.screenCaptureKit;
                                         });
                                       }
                                     },
@@ -1322,19 +1347,73 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                                 color: Colors.red.withValues(alpha: 0.3),
                               ),
                             ),
-                            child: Row(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(Icons.error, color: Colors.red, size: 16),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      Icons.error,
+                                      color: Colors.red,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'Capture Failed',
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Container(
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: SelectableText(
                                     _captureError!,
                                     style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 12,
+                                      color: Colors.red.shade900,
+                                      fontSize: 11,
+                                      fontFamily: 'monospace',
+                                      height: 1.5,
                                     ),
                                   ),
                                 ),
+                                // Show permission button if error is permission-related
+                                if (_captureError!.contains('permission') ||
+                                    _captureError!.contains('Permission')) ...[
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton.icon(
+                                      onPressed: () {
+                                        Navigator.pushNamed(
+                                          context,
+                                          '/permission',
+                                        );
+                                      },
+                                      icon: Icon(Icons.settings, size: 16),
+                                      label: Text('Open Permission Settings'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.orange,
+                                        foregroundColor: Colors.white,
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 10,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),
