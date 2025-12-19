@@ -36,9 +36,12 @@ class SmartCaptureHandler {
                         targetWidth: targetWidth, targetHeight: targetHeight,
                         preserveAspectRatio: preserveAspectRatio)
                 } catch let error as CaptureHandler.CaptureError {
-                    // Re-throw minimized window error without fallback
+                    // Re-throw errors without fallback
                     if case .windowMinimized = error {
                         throw SmartCaptureError.windowMinimized
+                    }
+                    if case .screenRecordingPermissionDenied = error {
+                        throw SmartCaptureError.screenRecordingPermissionDenied
                     }
                     // For other ScreenCaptureKit errors, fall back to legacy method
                     return try LegacyCaptureHandler.captureWindow(

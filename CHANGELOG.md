@@ -1,3 +1,9 @@
+## 1.4.14
+
+### Fixed
+- **FIX**: `captureWindowAuto()` now correctly returns `permission_denied` instead of `unknown` when screen recording permission is denied
+  - SmartCaptureHandler now properly re-throws `screenRecordingPermissionDenied` errors without falling back to legacy capture method
+
 ## 1.4.13
 
 ### Removed
