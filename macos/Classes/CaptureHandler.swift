@@ -175,17 +175,17 @@ class CaptureHandler {
             // Analyze NSError to provide more specific error information
             let nsError = error as NSError
 
-            // Check for ScreenCaptureKit specific errors
-            if nsError.domain == "com.apple.screencapturekit" {
-                // Check known permission error codes first
-                if nsError.code == -3801 || nsError.code == -3803 {
-                    throw CaptureError.screenRecordingPermissionDenied(
-                        code: nsError.code,
-                        domain: nsError.domain,
-                        message: error.localizedDescription
-                    )
-                }
+            // Check known permission error codes first (regardless of domain)
+            if nsError.code == -3801 || nsError.code == -3803 {
+                throw CaptureError.screenRecordingPermissionDenied(
+                    code: nsError.code,
+                    domain: nsError.domain,
+                    message: error.localizedDescription
+                )
+            }
 
+            // Check for ScreenCaptureKit specific errors (domain contains screencapturekit)
+            if nsError.domain.lowercased().contains("screencapturekit") {
                 // Also check error description for permission-related keywords
                 let errorMessage = error.localizedDescription.lowercased()
                 if errorMessage.contains("permission") || errorMessage.contains("not permitted") || errorMessage.contains("denied") {
@@ -403,17 +403,17 @@ class CaptureHandler {
             // Analyze NSError to provide more specific error information
             let nsError = error as NSError
 
-            // Check for ScreenCaptureKit specific errors
-            if nsError.domain == "com.apple.screencapturekit" {
-                // Check known permission error codes first
-                if nsError.code == -3801 || nsError.code == -3803 {
-                    throw CaptureError.screenRecordingPermissionDenied(
-                        code: nsError.code,
-                        domain: nsError.domain,
-                        message: error.localizedDescription
-                    )
-                }
+            // Check known permission error codes first (regardless of domain)
+            if nsError.code == -3801 || nsError.code == -3803 {
+                throw CaptureError.screenRecordingPermissionDenied(
+                    code: nsError.code,
+                    domain: nsError.domain,
+                    message: error.localizedDescription
+                )
+            }
 
+            // Check for ScreenCaptureKit specific errors (domain contains screencapturekit)
+            if nsError.domain.lowercased().contains("screencapturekit") {
                 // Also check error description for permission-related keywords
                 let errorMessage = error.localizedDescription.lowercased()
                 if errorMessage.contains("permission") || errorMessage.contains("not permitted") || errorMessage.contains("denied") {

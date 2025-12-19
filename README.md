@@ -18,7 +18,7 @@ A Flutter plugin for macOS window management, screen capture, and application di
 
 ```yaml
 dependencies:
-  macos_window_toolkit: ^1.5.1
+  macos_window_toolkit: ^1.5.2
 ```
 
 ## Setup (Required)

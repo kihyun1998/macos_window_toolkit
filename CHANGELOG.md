@@ -1,3 +1,8 @@
+## 1.5.2
+
+### Fixed
+- **FIX**: Fixed screen recording permission error (code -3801) being incorrectly reported as unknown error
+
 ## 1.5.1
 
 ### Enhanced
