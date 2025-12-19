@@ -94,17 +94,12 @@ if (apps case ApplicationSuccess(applications: final appList)) {
 | `closeWindow(int id)` | Close a window (requires Accessibility) |
 | `focusWindow(int id)` | Focus/bring window to front (requires Accessibility) |
 
-### Screen Capture (7 methods)
+### Screen Capture (2 methods)
 
 | Method | Description |
 |--------|-------------|
-| `captureWindow(int id, {...})` | Capture using ScreenCaptureKit (macOS 12.3+) |
-| `captureWindowLegacy(int id, {...})` | Capture using legacy method (all versions) |
-| `captureWindowAuto(int id, {...})` | Auto-select best method |
-| `getCapturableWindows()` | List capturable windows (ScreenCaptureKit) |
-| `getCapturableWindowsLegacy()` | List capturable windows (legacy) |
-| `getCapturableWindowsAuto()` | Auto-select method for list |
-| `getCaptureMethodInfo()` | Get available capture methods |
+| `captureWindow(int id, {...})` | Capture window using ScreenCaptureKit (macOS 14.0+) |
+| `getCapturableWindows()` | List capturable windows using ScreenCaptureKit (macOS 12.3+) |
 
 ### Permission Management (7 methods)
 
