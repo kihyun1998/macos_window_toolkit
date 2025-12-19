@@ -1,3 +1,30 @@
+## 1.5.0
+
+### Breaking Changes
+- **BREAKING**: Removed all legacy capture methods and handlers
+  - Removed `LegacyCaptureHandler.swift` (CGWindowListCreateImage-based capture)
+  - Removed `SmartCaptureHandler.swift` (auto-selection with fallback)
+  - Removed `captureWindowLegacy()` method
+  - Removed `getCapturableWindowsLegacy()` method
+  - Removed `captureWindowAuto()` method
+  - Removed `getCapturableWindowsAuto()` method
+  - Removed `getCaptureMethodInfo()` method
+- **BREAKING**: ScreenCaptureKit is now the only capture method
+  - `captureWindow()` requires macOS 14.0 or later
+  - `getCapturableWindows()` requires macOS 12.3 or later
+  - Older macOS versions are no longer supported for window capture
+
+### Fixed
+- **FIX**: Enhanced permission error detection to prevent permission errors from being reported as unknown errors
+  - Added error description keyword checking ("permission", "not permitted", "denied") in ScreenCaptureKit error handler
+  - Now catches permission-related errors even with non-standard error codes
+  - Significantly reduces false "unknown error" reports when screen recording permission is denied
+
+### Removed
+- **REMOVED**: Legacy capture support for macOS < 14.0
+- **REMOVED**: Auto-selection capture method with fallback logic
+- **REMOVED**: Example app legacy/smart capture mode options
+
 ## 1.4.14
 
 ### Fixed

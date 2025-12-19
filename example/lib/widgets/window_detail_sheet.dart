@@ -45,8 +45,6 @@ class WindowDetailSheet extends StatefulWidget {
   State<WindowDetailSheet> createState() => _WindowDetailSheetState();
 }
 
-enum CaptureType { screenCaptureKit, legacy, smart }
-
 class _WindowDetailSheetState extends State<WindowDetailSheet> {
   final _macosWindowToolkit = MacosWindowToolkit();
   final _titlebarHeightController = TextEditingController();
@@ -59,7 +57,6 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
   bool _excludeTitlebar = false;
   bool _enableResize = false;
   bool _preserveAspectRatio = false;
-  CaptureType _captureType = CaptureType.smart;
   bool? _isWindowAlive;
   bool? _isWindowAliveWithName;
   bool _isCheckingAlive = false;
@@ -157,40 +154,14 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
         targetHeight = int.tryParse(_targetHeightController.text);
       }
 
-      CaptureResult result;
-
-      switch (_captureType) {
-        case CaptureType.screenCaptureKit:
-          result = await _macosWindowToolkit.captureWindow(
-            widget.window.windowId,
-            excludeTitlebar: _excludeTitlebar,
-            customTitlebarHeight: customHeight,
-            targetWidth: targetWidth,
-            targetHeight: targetHeight,
-            preserveAspectRatio: _preserveAspectRatio,
-          );
-          break;
-        case CaptureType.legacy:
-          result = await _macosWindowToolkit.captureWindowLegacy(
-            widget.window.windowId,
-            excludeTitlebar: _excludeTitlebar,
-            customTitlebarHeight: customHeight,
-            targetWidth: targetWidth,
-            targetHeight: targetHeight,
-            preserveAspectRatio: _preserveAspectRatio,
-          );
-          break;
-        case CaptureType.smart:
-          result = await _macosWindowToolkit.captureWindowAuto(
-            widget.window.windowId,
-            excludeTitlebar: _excludeTitlebar,
-            customTitlebarHeight: customHeight,
-            targetWidth: targetWidth,
-            targetHeight: targetHeight,
-            preserveAspectRatio: _preserveAspectRatio,
-          );
-          break;
-      }
+      final result = await _macosWindowToolkit.captureWindow(
+        widget.window.windowId,
+        excludeTitlebar: _excludeTitlebar,
+        customTitlebarHeight: customHeight,
+        targetWidth: targetWidth,
+        targetHeight: targetHeight,
+        preserveAspectRatio: _preserveAspectRatio,
+      );
 
       setState(() {
         _isCapturing = false;
@@ -294,14 +265,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
   }
 
   bool get _canCapture {
-    switch (_captureType) {
-      case CaptureType.screenCaptureKit:
-        return _versionInfo?.isScreenCaptureKitAvailable ?? false;
-      case CaptureType.legacy:
-        return true; // Legacy method works on all versions
-      case CaptureType.smart:
-        return true; // Smart method handles version compatibility
-    }
+    return _versionInfo?.isScreenCaptureKitAvailable ?? false;
   }
 
   void _showCaptureResultDialog(Uint8List imageBytes) {
@@ -1055,67 +1019,6 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Capture Type Selection
-                        Text(
-                          'Capture Method',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            ChoiceChip(
-                              label: const Text('Smart (Auto)'),
-                              selected: _captureType == CaptureType.smart,
-                              onSelected: _isCapturing
-                                  ? null
-                                  : (selected) {
-                                      if (selected) {
-                                        setState(() {
-                                          _captureType = CaptureType.smart;
-                                        });
-                                      }
-                                    },
-                            ),
-                            ChoiceChip(
-                              label: const Text('ScreenCaptureKit'),
-                              selected:
-                                  _captureType == CaptureType.screenCaptureKit,
-                              onSelected: _isCapturing
-                                  ? null
-                                  : (selected) {
-                                      if (selected) {
-                                        setState(() {
-                                          _captureType =
-                                              CaptureType.screenCaptureKit;
-                                        });
-                                      }
-                                    },
-                            ),
-                            ChoiceChip(
-                              label: const Text('Legacy'),
-                              selected: _captureType == CaptureType.legacy,
-                              onSelected: _isCapturing
-                                  ? null
-                                  : (selected) {
-                                      if (selected) {
-                                        setState(() {
-                                          _captureType = CaptureType.legacy;
-                                        });
-                                      }
-                                    },
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-                        const Divider(),
-                        const SizedBox(height: 16),
-
                         // Titlebar Options
                         Row(
                           children: [
@@ -1301,9 +1204,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  _captureType == CaptureType.screenCaptureKit
-                                      ? 'ScreenCaptureKit not available (requires macOS 12.3+)'
-                                      : 'Capture method not available',
+                                  'ScreenCaptureKit not available (requires macOS 12.3+)',
                                   style: TextStyle(
                                     color: Colors.orange,
                                     fontSize: 12,
