@@ -17,8 +17,16 @@ class CaptureFailure extends CaptureResult {
   final CaptureFailureReason reason;
   final String? message;
   final String? details;
+  final int? errorCode;
+  final String? errorDomain;
 
-  const CaptureFailure({required this.reason, this.message, this.details});
+  const CaptureFailure({
+    required this.reason,
+    this.message,
+    this.details,
+    this.errorCode,
+    this.errorDomain,
+  });
 
   String get userMessage {
     switch (reason) {

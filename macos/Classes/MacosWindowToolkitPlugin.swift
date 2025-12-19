@@ -294,6 +294,8 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
               "reason": mapErrorCodeToReasonCode(code),
               "message": errorInfo["message"],
               "details": errorInfo["details"],
+              "errorCode": errorInfo["errorCode"],
+              "errorDomain": errorInfo["errorDomain"],
             ])
           } else {
             // Throw for system errors
@@ -301,7 +303,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
               FlutterError(
                 code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
                 message: errorInfo["message"] as? String ?? "Unknown error",
-                details: errorInfo["details"]))
+                details: errorInfo))
           }
         } catch {
           result(
@@ -336,7 +338,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
             FlutterError(
               code: errorInfo["code"] as? String ?? "CAPTURE_FAILED",
               message: errorInfo["message"] as? String ?? "Unknown error",
-              details: errorInfo["details"]))
+              details: errorInfo))
         } catch {
           result(
             FlutterError(

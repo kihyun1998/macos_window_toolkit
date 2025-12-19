@@ -6,14 +6,14 @@ import ScreenCaptureKit
 class CaptureHandler {
 
     enum CaptureError: Error {
-        case screenCaptureKitNotAvailable
-        case invalidWindowId
-        case windowMinimized
-        case captureNotSupported
-        case captureFailed(String)
-        case unsupportedMacOSVersion
-        case requiresMacOS14
-        case screenRecordingPermissionDenied
+        case screenCaptureKitNotAvailable(code: Int?, domain: String?, message: String)
+        case invalidWindowId(code: Int?, domain: String?, message: String)
+        case windowMinimized(code: Int?, domain: String?, message: String)
+        case captureNotSupported(code: Int?, domain: String?, message: String)
+        case captureFailed(code: Int?, domain: String?, message: String)
+        case unsupportedMacOSVersion(code: Int?, domain: String?, message: String)
+        case requiresMacOS14(code: Int?, domain: String?, message: String)
+        case screenRecordingPermissionDenied(code: Int?, domain: String?, message: String)
     }
 
     static func captureWindow(
@@ -23,16 +23,28 @@ class CaptureHandler {
         // Check Screen Recording permission
         let permissionHandler = PermissionHandler()
         guard permissionHandler.hasScreenRecordingPermission() else {
-            throw CaptureError.screenRecordingPermissionDenied
+            throw CaptureError.screenRecordingPermissionDenied(
+                code: nil,
+                domain: nil,
+                message: "Screen recording permission is required for window capture"
+            )
         }
         
         // Check macOS version - SCScreenshotManager is only available on macOS 14.0+
         guard #available(macOS 14.0, *) else {
-            throw CaptureError.requiresMacOS14
+            throw CaptureError.requiresMacOS14(
+                code: nil,
+                domain: nil,
+                message: "Window capture requires macOS 14.0 or later"
+            )
         }
 
         guard VersionUtil.isScreenCaptureKitAvailable() else {
-            throw CaptureError.unsupportedMacOSVersion
+            throw CaptureError.unsupportedMacOSVersion(
+                code: nil,
+                domain: nil,
+                message: "macOS version does not support ScreenCaptureKit"
+            )
         }
 
         do {
@@ -45,12 +57,20 @@ class CaptureHandler {
                     window.windowID == CGWindowID(windowId)
                 })
             else {
-                throw CaptureError.invalidWindowId
+                throw CaptureError.invalidWindowId(
+                    code: nil,
+                    domain: nil,
+                    message: "Window with the specified ID was not found"
+                )
             }
-            
+
             // Re-check minimized state in SCWindow (prevent ScreenCaptureKit from waiting)
             if !targetWindow.isOnScreen {
-                throw CaptureError.windowMinimized
+                throw CaptureError.windowMinimized(
+                    code: nil,
+                    domain: nil,
+                    message: "Window is minimized and cannot be captured"
+                )
             }
 
             // Capture configuration
@@ -95,7 +115,11 @@ class CaptureHandler {
                 )
 
                 guard let croppedImage = screenshot.cropping(to: cropRect) else {
-                    throw CaptureError.captureFailed("Failed to crop titlebar from image")
+                    throw CaptureError.captureFailed(
+                        code: nil,
+                        domain: nil,
+                        message: "Failed to crop titlebar from image"
+                    )
                 }
                 finalImage = croppedImage
             } else {
@@ -123,7 +147,11 @@ class CaptureHandler {
                 }
 
                 guard let finalResized = resized else {
-                    throw CaptureError.captureFailed("Failed to resize image")
+                    throw CaptureError.captureFailed(
+                        code: nil,
+                        domain: nil,
+                        message: "Failed to resize image"
+                    )
                 }
                 imageToConvert = finalResized
             } else {
@@ -132,7 +160,11 @@ class CaptureHandler {
 
             // CGImage를 PNG 데이터로 변환
             guard let pngData = convertCGImageToPNG(imageToConvert) else {
-                throw CaptureError.captureFailed("Failed to convert image to PNG")
+                throw CaptureError.captureFailed(
+                    code: nil,
+                    domain: nil,
+                    message: "Failed to convert image to PNG"
+                )
             }
 
             return pngData
@@ -147,18 +179,28 @@ class CaptureHandler {
             if nsError.domain == "com.apple.screencapturekit" {
                 // Check known permission error codes first
                 if nsError.code == -3801 || nsError.code == -3803 {
-                    throw CaptureError.screenRecordingPermissionDenied
+                    throw CaptureError.screenRecordingPermissionDenied(
+                        code: nsError.code,
+                        domain: nsError.domain,
+                        message: error.localizedDescription
+                    )
                 }
 
                 // Also check error description for permission-related keywords
                 let errorMessage = error.localizedDescription.lowercased()
                 if errorMessage.contains("permission") || errorMessage.contains("not permitted") || errorMessage.contains("denied") {
-                    throw CaptureError.screenRecordingPermissionDenied
+                    throw CaptureError.screenRecordingPermissionDenied(
+                        code: nsError.code,
+                        domain: nsError.domain,
+                        message: error.localizedDescription
+                    )
                 }
 
                 // Other ScreenCaptureKit errors
                 throw CaptureError.captureFailed(
-                    "ScreenCaptureKit error (code: \(nsError.code)): \(error.localizedDescription)"
+                    code: nsError.code,
+                    domain: nsError.domain,
+                    message: error.localizedDescription
                 )
             }
 
@@ -166,12 +208,18 @@ class CaptureHandler {
             if nsError.domain == NSCocoaErrorDomain || nsError.domain == NSOSStatusErrorDomain {
                 let errorMessage = error.localizedDescription.lowercased()
                 if errorMessage.contains("permission") || errorMessage.contains("not permitted") || errorMessage.contains("denied") {
-                    throw CaptureError.screenRecordingPermissionDenied
+                    throw CaptureError.screenRecordingPermissionDenied(
+                        code: nsError.code,
+                        domain: nsError.domain,
+                        message: error.localizedDescription
+                    )
                 }
             }
 
             throw CaptureError.captureFailed(
-                "Error domain: \(nsError.domain), code: \(nsError.code), message: \(error.localizedDescription)"
+                code: nsError.code,
+                domain: nsError.domain,
+                message: error.localizedDescription
             )
         }
     }
@@ -316,11 +364,19 @@ class CaptureHandler {
         // Check Screen Recording permission
         let permissionHandler = PermissionHandler()
         guard permissionHandler.hasScreenRecordingPermission() else {
-            throw CaptureError.screenRecordingPermissionDenied
+            throw CaptureError.screenRecordingPermissionDenied(
+                code: nil,
+                domain: nil,
+                message: "Screen recording permission is required for window capture"
+            )
         }
-        
+
         guard VersionUtil.isScreenCaptureKitAvailable() else {
-            throw CaptureError.unsupportedMacOSVersion
+            throw CaptureError.unsupportedMacOSVersion(
+                code: nil,
+                domain: nil,
+                message: "macOS version does not support ScreenCaptureKit"
+            )
         }
 
         do {
@@ -351,18 +407,28 @@ class CaptureHandler {
             if nsError.domain == "com.apple.screencapturekit" {
                 // Check known permission error codes first
                 if nsError.code == -3801 || nsError.code == -3803 {
-                    throw CaptureError.screenRecordingPermissionDenied
+                    throw CaptureError.screenRecordingPermissionDenied(
+                        code: nsError.code,
+                        domain: nsError.domain,
+                        message: error.localizedDescription
+                    )
                 }
 
                 // Also check error description for permission-related keywords
                 let errorMessage = error.localizedDescription.lowercased()
                 if errorMessage.contains("permission") || errorMessage.contains("not permitted") || errorMessage.contains("denied") {
-                    throw CaptureError.screenRecordingPermissionDenied
+                    throw CaptureError.screenRecordingPermissionDenied(
+                        code: nsError.code,
+                        domain: nsError.domain,
+                        message: error.localizedDescription
+                    )
                 }
 
                 // Other ScreenCaptureKit errors
                 throw CaptureError.captureFailed(
-                    "ScreenCaptureKit error (code: \(nsError.code)): \(error.localizedDescription)"
+                    code: nsError.code,
+                    domain: nsError.domain,
+                    message: error.localizedDescription
                 )
             }
 
@@ -370,12 +436,18 @@ class CaptureHandler {
             if nsError.domain == NSCocoaErrorDomain || nsError.domain == NSOSStatusErrorDomain {
                 let errorMessage = error.localizedDescription.lowercased()
                 if errorMessage.contains("permission") || errorMessage.contains("not permitted") || errorMessage.contains("denied") {
-                    throw CaptureError.screenRecordingPermissionDenied
+                    throw CaptureError.screenRecordingPermissionDenied(
+                        code: nsError.code,
+                        domain: nsError.domain,
+                        message: error.localizedDescription
+                    )
                 }
             }
 
             throw CaptureError.captureFailed(
-                "Error domain: \(nsError.domain), code: \(nsError.code), message: \(error.localizedDescription)"
+                code: nsError.code,
+                domain: nsError.domain,
+                message: error.localizedDescription
             )
         }
     }
@@ -383,54 +455,70 @@ class CaptureHandler {
     // Helper method to pass errors to Flutter
     static func handleCaptureError(_ error: CaptureError) -> [String: Any] {
         switch error {
-        case .screenCaptureKitNotAvailable:
+        case .screenCaptureKitNotAvailable(let code, let domain, let message):
             return [
                 "code": "SCREENCAPTUREKIT_NOT_AVAILABLE",
-                "message": "ScreenCaptureKit is not available on this macOS version",
+                "message": message,
                 "details": "Requires macOS 12.3 or later",
+                "errorCode": code ?? NSNull(),
+                "errorDomain": domain ?? NSNull(),
             ]
-        case .invalidWindowId:
+        case .invalidWindowId(let code, let domain, let message):
             return [
                 "code": "INVALID_WINDOW_ID",
-                "message": "Window with the specified ID was not found",
+                "message": message,
                 "details": NSNull(),
+                "errorCode": code ?? NSNull(),
+                "errorDomain": domain ?? NSNull(),
             ]
-        case .windowMinimized:
+        case .windowMinimized(let code, let domain, let message):
             return [
                 "code": "WINDOW_MINIMIZED",
-                "message": "Window is minimized and cannot be captured",
+                "message": message,
                 "details":
                     "The window is currently minimized. Please restore the window to capture it.",
+                "errorCode": code ?? NSNull(),
+                "errorDomain": domain ?? NSNull(),
             ]
-        case .captureNotSupported:
+        case .captureNotSupported(let code, let domain, let message):
             return [
                 "code": "CAPTURE_NOT_SUPPORTED",
-                "message": "Window capture is not supported for this window",
+                "message": message,
                 "details": NSNull(),
+                "errorCode": code ?? NSNull(),
+                "errorDomain": domain ?? NSNull(),
             ]
-        case .captureFailed(let description):
+        case .captureFailed(let code, let domain, let message):
             return [
                 "code": "CAPTURE_FAILED",
-                "message": "Window capture failed",
-                "details": description,
+                "message": message,
+                "details": message,
+                "errorCode": code ?? NSNull(),
+                "errorDomain": domain ?? NSNull(),
             ]
-        case .unsupportedMacOSVersion:
+        case .unsupportedMacOSVersion(let code, let domain, let message):
             return [
                 "code": "UNSUPPORTED_MACOS_VERSION",
-                "message": "macOS version does not support ScreenCaptureKit",
+                "message": message,
                 "details": "Current version: \(VersionUtil.getMacOSVersion()), Required: 12.3+",
+                "errorCode": code ?? NSNull(),
+                "errorDomain": domain ?? NSNull(),
             ]
-        case .requiresMacOS14:
+        case .requiresMacOS14(let code, let domain, let message):
             return [
                 "code": "REQUIRES_MACOS_14",
-                "message": "Window capture requires macOS 14.0 or later",
+                "message": message,
                 "details": "Current version: \(VersionUtil.getMacOSVersion()), Required: 14.0+",
+                "errorCode": code ?? NSNull(),
+                "errorDomain": domain ?? NSNull(),
             ]
-        case .screenRecordingPermissionDenied:
+        case .screenRecordingPermissionDenied(let code, let domain, let message):
             return [
                 "code": "SCREEN_RECORDING_PERMISSION_DENIED",
-                "message": "Screen recording permission is required for window capture",
+                "message": message,
                 "details": "Please grant screen recording permission in System Settings > Privacy & Security > Screen Recording",
+                "errorCode": code ?? NSNull(),
+                "errorDomain": domain ?? NSNull(),
             ]
         }
     }

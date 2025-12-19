@@ -1,3 +1,12 @@
+## 1.5.1
+
+### Enhanced
+- **ENHANCEMENT**: Enhanced error reporting with detailed NSError information
+  - Added `errorCode` and `errorDomain` fields to `CaptureFailure` for debugging
+  - CaptureError now includes NSError code, domain, and localized description
+  - System errors (FlutterError) now include full error information in details
+  - Better diagnostics for troubleshooting capture failures
+
 ## 1.5.0
 
 ### Breaking Changes

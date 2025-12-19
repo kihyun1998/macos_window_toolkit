@@ -84,9 +84,17 @@ mixin CaptureOperationsChannel {
       final reasonCode = result['reason'] as String? ?? 'unknown';
       final message = result['message'] as String?;
       final details = result['details'] as String?;
+      final errorCode = result['errorCode'] as int?;
+      final errorDomain = result['errorDomain'] as String?;
 
       final reason = _mapReasonCodeToFailureReason(reasonCode);
-      return CaptureFailure(reason: reason, message: message, details: details);
+      return CaptureFailure(
+        reason: reason,
+        message: message,
+        details: details,
+        errorCode: errorCode,
+        errorDomain: errorDomain,
+      );
     }
   }
 
@@ -113,10 +121,27 @@ mixin CaptureOperationsChannel {
   /// Converts PlatformException to CaptureFailure for legacy error handling
   CaptureFailure _platformExceptionToCaptureFailure(PlatformException e) {
     final reason = _mapErrorCodeToFailureReason(e.code);
+
+    // Extract errorCode and errorDomain from details if available
+    int? errorCode;
+    String? errorDomain;
+    String? details;
+
+    if (e.details is Map) {
+      final detailsMap = e.details as Map;
+      errorCode = detailsMap['errorCode'] as int?;
+      errorDomain = detailsMap['errorDomain'] as String?;
+      details = detailsMap['details']?.toString();
+    } else {
+      details = e.details?.toString();
+    }
+
     return CaptureFailure(
       reason: reason,
       message: e.message,
-      details: e.details?.toString(),
+      details: details,
+      errorCode: errorCode,
+      errorDomain: errorDomain,
     );
   }
 
