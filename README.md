@@ -213,7 +213,7 @@ try {
 
 ## Requirements
 
-- macOS 10.15+
+- macOS 10.15+ (14.0+ required for window capture)
 - Flutter 3.10.0+
 - Dart 3.0.0+
 - **App Sandbox must be disabled**
