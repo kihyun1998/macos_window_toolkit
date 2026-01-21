@@ -486,6 +486,60 @@ class MacosWindowToolkit {
     return MacosVersionInfo.fromMap(versionMap);
   }
 
+  /// Gets the screen scale factor (backingScaleFactor) of the main screen.
+  ///
+  /// Returns the scale factor used for Retina displays:
+  /// - `1.0` for standard resolution displays
+  /// - `2.0` for Retina displays
+  /// - `3.0` for higher density displays (rare on macOS)
+  ///
+  /// This is equivalent to `NSScreen.main?.backingScaleFactor` in Swift.
+  /// Similar to Windows `SetThreadDpiAwarenessContext` but macOS handles
+  /// DPI awareness automatically - this method just returns the current scale.
+  ///
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  /// final scaleFactor = await toolkit.getScreenScaleFactor();
+  /// print('Scale factor: $scaleFactor');
+  ///
+  /// // Calculate actual pixel dimensions
+  /// final logicalWidth = 1920;
+  /// final actualPixels = (logicalWidth * scaleFactor).toInt();
+  /// print('Actual pixels: $actualPixels');
+  /// ```
+  Future<double> getScreenScaleFactor() async {
+    return await MacosWindowToolkitPlatform.instance.getScreenScaleFactor();
+  }
+
+  /// Gets information about all connected screens.
+  ///
+  /// Returns a list of maps containing detailed information for each screen:
+  /// - `index`: Screen index (int)
+  /// - `isMain`: Whether this is the main screen (bool)
+  /// - `scaleFactor`: Screen scale factor for Retina (double)
+  /// - `frame`: Screen frame with x, y, width, height (Map)
+  /// - `visibleFrame`: Visible frame excluding menu bar and dock (Map)
+  /// - `pixelWidth`: Actual pixel width (int)
+  /// - `pixelHeight`: Actual pixel height (int)
+  ///
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  /// final screens = await toolkit.getAllScreensInfo();
+  ///
+  /// for (final screen in screens) {
+  ///   print('Screen ${screen['index']}:');
+  ///   print('  Main: ${screen['isMain']}');
+  ///   print('  Scale: ${screen['scaleFactor']}');
+  ///   print('  Size: ${screen['frame']['width']} x ${screen['frame']['height']}');
+  ///   print('  Pixels: ${screen['pixelWidth']} x ${screen['pixelHeight']}');
+  /// }
+  /// ```
+  Future<List<Map<String, dynamic>>> getAllScreensInfo() async {
+    return await MacosWindowToolkitPlatform.instance.getAllScreensInfo();
+  }
+
   /// Captures a window using ScreenCaptureKit.
   ///
   /// Returns a [CaptureResult] indicating success with image data or failure with reason.

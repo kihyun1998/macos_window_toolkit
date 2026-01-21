@@ -194,6 +194,39 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
     });
   }
 
+  Future<void> _showScreenInfo() async {
+    try {
+      final plugin = MacosWindowToolkit();
+      final scaleFactor = await plugin.getScreenScaleFactor();
+      final screens = await plugin.getAllScreensInfo();
+
+      if (!mounted) return;
+
+      final mainScreen = screens.firstWhere(
+        (s) => s['isMain'] == true,
+        orElse: () => screens.first,
+      );
+      final frame = mainScreen['frame'] as Map<String, dynamic>;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Scale: ${scaleFactor}x | '
+            'Size: ${frame['width'].toInt()}x${frame['height'].toInt()} | '
+            'Pixels: ${mainScreen['pixelWidth']}x${mainScreen['pixelHeight']} | '
+            'Screens: ${screens.length}',
+          ),
+          duration: const Duration(seconds: 4),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        NotificationService.showError(context, 'Failed to get screen info: $e');
+      }
+    }
+  }
+
   Future<void> _requestScreenRecordingPermission() async {
     final granted = await PermissionService.requestScreenRecordingPermission();
 
@@ -445,6 +478,11 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
             icon: const Icon(Icons.monitor_heart),
             onPressed: () => Navigator.pushNamed(context, '/test-monitoring'),
             tooltip: 'Test Permission Monitoring',
+          ),
+          IconButton(
+            icon: const Icon(Icons.display_settings),
+            onPressed: _showScreenInfo,
+            tooltip: 'Screen Info',
           ),
         ],
       ),

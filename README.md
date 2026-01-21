@@ -18,7 +18,7 @@ A Flutter plugin for macOS window management, screen capture, and application di
 
 ```yaml
 dependencies:
-  macos_window_toolkit: ^1.5.2
+  macos_window_toolkit: ^1.6.0
 ```
 
 ## Setup (Required)
@@ -123,12 +123,14 @@ if (apps case ApplicationSuccess(applications: final appList)) {
 | `terminateApplicationByPID(int pid)` | Terminate app (requires Accessibility) |
 | `terminateApplicationTree(int pid)` | Terminate app and children (requires Accessibility) |
 
-### System Info (2 methods)
+### System Info (4 methods)
 
 | Method | Description |
 |--------|-------------|
 | `getMacOSVersionInfo()` | Get macOS version and capabilities |
 | `getChildProcesses(int pid)` | Get child process IDs |
+| `getScreenScaleFactor()` | Get main screen's Retina scale (1.0, 2.0, etc.) |
+| `getAllScreensInfo()` | Get all screens info (size, pixels, scale) |
 
 ## Permission Requirements
 

@@ -1,3 +1,10 @@
+## 1.6.0
+
+### Added
+- **FEAT**: `getScreenScaleFactor()` method to get the main screen's backing scale factor (1.0 for standard, 2.0 for Retina)
+- **FEAT**: `getAllScreensInfo()` method to get detailed information about all connected screens including frame, visibleFrame, scaleFactor, and actual pixel dimensions
+- **UI**: Added screen info button in example app that displays scale factor, screen size, and pixel dimensions via snackbar
+
 ## 1.5.2
 
 ### Fixed

@@ -63,6 +63,10 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       getApplicationByName(call: call, result: result)
     case "openAppStoreSearch":
       openAppStoreSearch(call: call, result: result)
+    case "getScreenScaleFactor":
+      getScreenScaleFactor(result: result)
+    case "getAllScreensInfo":
+      getAllScreensInfo(result: result)
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -700,5 +704,38 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     default:
       return "unknown"
     }
+  }
+
+  /// Gets the screen scale factor (backingScaleFactor) of the main screen
+  private func getScreenScaleFactor(result: @escaping FlutterResult) {
+    let scaleFactor = NSScreen.main?.backingScaleFactor ?? 1.0
+    result(scaleFactor)
+  }
+
+  /// Gets information about all connected screens
+  private func getAllScreensInfo(result: @escaping FlutterResult) {
+    let screens = NSScreen.screens.enumerated().map { (index, screen) -> [String: Any] in
+      let isMain = (screen == NSScreen.main)
+      return [
+        "index": index,
+        "isMain": isMain,
+        "scaleFactor": screen.backingScaleFactor,
+        "frame": [
+          "x": screen.frame.origin.x,
+          "y": screen.frame.origin.y,
+          "width": screen.frame.width,
+          "height": screen.frame.height,
+        ],
+        "visibleFrame": [
+          "x": screen.visibleFrame.origin.x,
+          "y": screen.visibleFrame.origin.y,
+          "width": screen.visibleFrame.width,
+          "height": screen.visibleFrame.height,
+        ],
+        "pixelWidth": Int(screen.frame.width * screen.backingScaleFactor),
+        "pixelHeight": Int(screen.frame.height * screen.backingScaleFactor),
+      ]
+    }
+    result(screens)
   }
 }
