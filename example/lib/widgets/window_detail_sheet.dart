@@ -920,7 +920,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                       ),
                       const Spacer(),
                       ElevatedButton.icon(
-                        onPressed: _isLoadingScrollInfo ? null : _loadScrollInfo,
+                        onPressed: _isLoadingScrollInfo
+                            ? null
+                            : _loadScrollInfo,
                         icon: _isLoadingScrollInfo
                             ? SizedBox(
                                 width: 16,
@@ -990,7 +992,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                               size: 16,
                               color: _scrollInfo!.hasVerticalScroll
                                   ? Colors.green
-                                  : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                  : colorScheme.onSurfaceVariant.withValues(
+                                      alpha: 0.5,
+                                    ),
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -1006,8 +1010,11 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                                       children: [
                                         Expanded(
                                           child: LinearProgressIndicator(
-                                            value: _scrollInfo!.verticalPosition ?? 0,
-                                            backgroundColor: colorScheme.surfaceContainerHighest,
+                                            value:
+                                                _scrollInfo!.verticalPosition ??
+                                                0,
+                                            backgroundColor: colorScheme
+                                                .surfaceContainerHighest,
                                           ),
                                         ),
                                         const SizedBox(width: 8),
@@ -1025,7 +1032,8 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                                   : Text(
                                       'Not available',
                                       style: TextStyle(
-                                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                        color: colorScheme.onSurfaceVariant
+                                            .withValues(alpha: 0.5),
                                         fontSize: 12,
                                       ),
                                     ),
@@ -1041,7 +1049,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                               size: 16,
                               color: _scrollInfo!.hasHorizontalScroll
                                   ? Colors.green
-                                  : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                  : colorScheme.onSurfaceVariant.withValues(
+                                      alpha: 0.5,
+                                    ),
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -1057,8 +1067,12 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                                       children: [
                                         Expanded(
                                           child: LinearProgressIndicator(
-                                            value: _scrollInfo!.horizontalPosition ?? 0,
-                                            backgroundColor: colorScheme.surfaceContainerHighest,
+                                            value:
+                                                _scrollInfo!
+                                                    .horizontalPosition ??
+                                                0,
+                                            backgroundColor: colorScheme
+                                                .surfaceContainerHighest,
                                           ),
                                         ),
                                         const SizedBox(width: 8),
@@ -1076,7 +1090,8 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                                   : Text(
                                       'Not available',
                                       style: TextStyle(
-                                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                        color: colorScheme.onSurfaceVariant
+                                            .withValues(alpha: 0.5),
                                         fontSize: 12,
                                       ),
                                     ),
@@ -1089,7 +1104,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                             'This window has no scrollable content or does not expose scroll information.',
                             style: TextStyle(
                               fontSize: 11,
-                              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                              color: colorScheme.onSurfaceVariant.withValues(
+                                alpha: 0.7,
+                              ),
                             ),
                           ),
                         ],
@@ -1099,7 +1116,9 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                     Text(
                       'Click Refresh to load scroll information',
                       style: TextStyle(
-                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                        color: colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.7,
+                        ),
                         fontSize: 12,
                       ),
                     ),
