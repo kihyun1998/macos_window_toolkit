@@ -1,3 +1,12 @@
+## 1.6.1
+
+### Breaking Changes
+- **BREAKING**: `getAllScreensInfo()` now returns `List<MacosScreenInfo>` instead of `List<Map<String, dynamic>>`
+  - Added `MacosScreenInfo` model class with type-safe properties: `index`, `isMain`, `scaleFactor`, `frame`, `visibleFrame`, `pixelWidth`, `pixelHeight`
+  - Added `ScreenRect` model class for `frame` and `visibleFrame` with `x`, `y`, `width`, `height` properties
+  - Migration: Replace map access (`screen['isMain']`) with object properties (`screen.isMain`)
+  - Improved type safety and IDE autocomplete support
+
 ## 1.6.0
 
 ### Added

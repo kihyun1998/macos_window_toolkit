@@ -4,6 +4,7 @@ import 'platform_interface/macos_window_toolkit_platform_interface.dart';
 import 'models/capturable_window_info.dart';
 import 'models/capture_result.dart';
 import 'models/macos_application_info.dart';
+import 'models/macos_screen_info.dart';
 import 'models/macos_version_info.dart';
 import 'models/macos_window_info.dart';
 import 'models/permission_status.dart';
@@ -16,6 +17,7 @@ export 'platform_interface/macos_window_toolkit_platform_interface.dart';
 export 'models/capturable_window_info.dart';
 export 'models/capture_result.dart';
 export 'models/macos_application_info.dart';
+export 'models/macos_screen_info.dart';
 export 'models/macos_version_info.dart';
 export 'models/macos_window_info.dart';
 export 'models/scroll_info.dart';
@@ -531,14 +533,14 @@ class MacosWindowToolkit {
   /// final screens = await toolkit.getAllScreensInfo();
   ///
   /// for (final screen in screens) {
-  ///   print('Screen ${screen['index']}:');
-  ///   print('  Main: ${screen['isMain']}');
-  ///   print('  Scale: ${screen['scaleFactor']}');
-  ///   print('  Size: ${screen['frame']['width']} x ${screen['frame']['height']}');
-  ///   print('  Pixels: ${screen['pixelWidth']} x ${screen['pixelHeight']}');
+  ///   print('Screen ${screen.index}:');
+  ///   print('  Main: ${screen.isMain}');
+  ///   print('  Scale: ${screen.scaleFactor}');
+  ///   print('  Size: ${screen.frame.width} x ${screen.frame.height}');
+  ///   print('  Pixels: ${screen.pixelWidth} x ${screen.pixelHeight}');
   /// }
   /// ```
-  Future<List<Map<String, dynamic>>> getAllScreensInfo() async {
+  Future<List<MacosScreenInfo>> getAllScreensInfo() async {
     return await MacosWindowToolkitPlatform.instance.getAllScreensInfo();
   }
 

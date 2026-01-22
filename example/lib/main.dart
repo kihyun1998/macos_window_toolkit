@@ -203,17 +203,16 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
       if (!mounted) return;
 
       final mainScreen = screens.firstWhere(
-        (s) => s['isMain'] == true,
+        (s) => s.isMain,
         orElse: () => screens.first,
       );
-      final frame = mainScreen['frame'] as Map<String, dynamic>;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             'Scale: ${scaleFactor}x | '
-            'Size: ${frame['width'].toInt()}x${frame['height'].toInt()} | '
-            'Pixels: ${mainScreen['pixelWidth']}x${mainScreen['pixelHeight']} | '
+            'Size: ${mainScreen.frame.width.toInt()}x${mainScreen.frame.height.toInt()} | '
+            'Pixels: ${mainScreen.pixelWidth}x${mainScreen.pixelHeight} | '
             'Screens: ${screens.length}',
           ),
           duration: const Duration(seconds: 4),

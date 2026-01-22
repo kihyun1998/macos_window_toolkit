@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import '../models/macos_screen_info.dart';
 
 /// Mixin providing method channel implementations for system info operations.
 mixin SystemInfoChannel {
@@ -22,14 +23,16 @@ mixin SystemInfoChannel {
     return result ?? 1.0;
   }
 
-  Future<List<Map<String, dynamic>>> getAllScreensInfo() async {
+  Future<List<MacosScreenInfo>> getAllScreensInfo() async {
     final result = await methodChannel.invokeMethod<List<dynamic>>(
       'getAllScreensInfo',
     );
     if (result == null) {
       return [];
     }
-    return result.map((e) => _convertMap(e as Map)).toList();
+    return result
+        .map((e) => MacosScreenInfo.fromMap(_convertMap(e as Map)))
+        .toList();
   }
 
   Map<String, dynamic> _convertMap(Map map) {

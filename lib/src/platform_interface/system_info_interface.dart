@@ -1,3 +1,5 @@
+import '../models/macos_screen_info.dart';
+
 /// Platform interface for system information operations.
 abstract class SystemInfoInterface {
   /// Gets macOS version information.
@@ -22,15 +24,12 @@ abstract class SystemInfoInterface {
 
   /// Gets information about all connected screens.
   ///
-  /// Returns a list of maps containing screen information:
-  /// - `index`: Screen index (int)
-  /// - `isMain`: Whether this is the main screen (bool)
-  /// - `scaleFactor`: Screen scale factor (double)
-  /// - `frame`: Screen frame (Map with x, y, width, height)
-  /// - `visibleFrame`: Visible frame excluding menu bar and dock (Map)
-  /// - `pixelWidth`: Actual pixel width (int)
-  /// - `pixelHeight`: Actual pixel height (int)
-  Future<List<Map<String, dynamic>>> getAllScreensInfo() {
+  /// Returns a list of [MacosScreenInfo] containing:
+  /// - Screen index, whether it's the main screen
+  /// - Scale factor for Retina displays
+  /// - Screen frame and visible frame (excluding menu bar/dock)
+  /// - Actual pixel dimensions
+  Future<List<MacosScreenInfo>> getAllScreensInfo() {
     throw UnimplementedError('getAllScreensInfo() has not been implemented.');
   }
 }
