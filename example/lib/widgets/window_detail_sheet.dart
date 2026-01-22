@@ -66,11 +66,17 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
   bool _isTerminatingApp = false;
   bool _isTerminatingTree = false;
 
+  // Scroll info state
+  ScrollInfo? _scrollInfo;
+  bool _isLoadingScrollInfo = false;
+  String? _scrollError;
+
   @override
   void initState() {
     super.initState();
     _checkVersionInfo();
     _checkWindowAlive();
+    _loadScrollInfo();
   }
 
   @override
@@ -131,6 +137,42 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
       setState(() {
         _isWindowAliveWithName = null;
         _isCheckingAliveWithName = false;
+      });
+    }
+  }
+
+  Future<void> _loadScrollInfo() async {
+    setState(() {
+      _isLoadingScrollInfo = true;
+      _scrollError = null;
+    });
+
+    try {
+      final result = await _macosWindowToolkit.getScrollInfo(
+        widget.window.windowId,
+      );
+
+      if (!mounted) return;
+
+      switch (result) {
+        case ScrollSuccess(scrollInfo: final info):
+          setState(() {
+            _scrollInfo = info;
+            _isLoadingScrollInfo = false;
+          });
+        case ScrollFailure(:final reason, :final message):
+          setState(() {
+            _scrollInfo = null;
+            _scrollError = message ?? reason.name;
+            _isLoadingScrollInfo = false;
+          });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _scrollInfo = null;
+        _scrollError = e.toString();
+        _isLoadingScrollInfo = false;
       });
     }
   }
@@ -842,6 +884,225 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                       ),
                     ],
                   ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Scroll Information Section
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: colorScheme.outline.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.swap_vert,
+                        color: colorScheme.primary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Scroll Information',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const Spacer(),
+                      ElevatedButton.icon(
+                        onPressed: _isLoadingScrollInfo ? null : _loadScrollInfo,
+                        icon: _isLoadingScrollInfo
+                            ? SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Icon(Icons.refresh, size: 16),
+                        label: Text('Refresh'),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: Size(90, 32),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (_isLoadingScrollInfo)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  else if (_scrollError != null)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.orange.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            color: Colors.orange,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _scrollError!,
+                              style: TextStyle(
+                                color: Colors.orange.shade800,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else if (_scrollInfo != null)
+                    Column(
+                      children: [
+                        // Vertical Scroll
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.swap_vert,
+                              size: 16,
+                              color: _scrollInfo!.hasVerticalScroll
+                                  ? Colors.green
+                                  : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Vertical: ',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            Expanded(
+                              child: _scrollInfo!.hasVerticalScroll
+                                  ? Row(
+                                      children: [
+                                        Expanded(
+                                          child: LinearProgressIndicator(
+                                            value: _scrollInfo!.verticalPosition ?? 0,
+                                            backgroundColor: colorScheme.surfaceContainerHighest,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '${((_scrollInfo!.verticalPosition ?? 0) * 100).toStringAsFixed(1)}%',
+                                          style: TextStyle(
+                                            fontFamily: 'monospace',
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: colorScheme.primary,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Text(
+                                      'Not available',
+                                      style: TextStyle(
+                                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        // Horizontal Scroll
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.swap_horiz,
+                              size: 16,
+                              color: _scrollInfo!.hasHorizontalScroll
+                                  ? Colors.green
+                                  : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Horizontal: ',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            Expanded(
+                              child: _scrollInfo!.hasHorizontalScroll
+                                  ? Row(
+                                      children: [
+                                        Expanded(
+                                          child: LinearProgressIndicator(
+                                            value: _scrollInfo!.horizontalPosition ?? 0,
+                                            backgroundColor: colorScheme.surfaceContainerHighest,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '${((_scrollInfo!.horizontalPosition ?? 0) * 100).toStringAsFixed(1)}%',
+                                          style: TextStyle(
+                                            fontFamily: 'monospace',
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: colorScheme.primary,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Text(
+                                      'Not available',
+                                      style: TextStyle(
+                                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                            ),
+                          ],
+                        ),
+                        if (!_scrollInfo!.hasAnyScroll) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'This window has no scrollable content or does not expose scroll information.',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                      ],
+                    )
+                  else
+                    Text(
+                      'Click Refresh to load scroll information',
+                      style: TextStyle(
+                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                        fontSize: 12,
+                      ),
+                    ),
                 ],
               ),
             ),

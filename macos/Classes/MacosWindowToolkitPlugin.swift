@@ -67,6 +67,8 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       getScreenScaleFactor(result: result)
     case "getAllScreensInfo":
       getAllScreensInfo(result: result)
+    case "getScrollInfo":
+      getScrollInfo(call: call, result: result)
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -737,5 +739,48 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       ]
     }
     result(screens)
+  }
+
+  /// Gets scroll information for a window by its window ID
+  private func getScrollInfo(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let arguments = call.arguments as? [String: Any],
+      let windowId = arguments["windowId"] as? Int
+    else {
+      result(
+        FlutterError(
+          code: "INVALID_ARGUMENTS",
+          message: "WindowId parameter is required",
+          details: nil))
+      return
+    }
+
+    let scrollResult = windowHandler.getScrollInfo(windowId)
+    switch scrollResult {
+    case .success(let scrollInfo):
+      result([
+        "success": true,
+        "scrollInfo": scrollInfo
+      ])
+    case .failure(let error):
+      let errorInfo = WindowHandler.handleWindowError(error)
+
+      // Check if this is a state or a system error
+      if let code = errorInfo["code"] as? String, isStateError(code) {
+        // Return failure result for states
+        result([
+          "success": false,
+          "reason": mapErrorCodeToReasonCode(code),
+          "message": errorInfo["message"],
+          "details": errorInfo["details"],
+        ])
+      } else {
+        // Throw for system errors
+        result(
+          FlutterError(
+            code: errorInfo["code"] as? String ?? "GET_SCROLL_INFO_ERROR",
+            message: errorInfo["message"] as? String ?? "Unknown error",
+            details: errorInfo["details"]))
+      }
+    }
   }
 }

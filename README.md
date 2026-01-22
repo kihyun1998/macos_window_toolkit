@@ -80,7 +80,7 @@ if (apps case ApplicationSuccess(applications: final appList)) {
 
 ## API Reference
 
-### Window Management (9 methods)
+### Window Management (10 methods)
 
 | Method | Description |
 |--------|-------------|
@@ -93,6 +93,7 @@ if (apps case ApplicationSuccess(applications: final appList)) {
 | `isWindowAlive(int id)` | Check if window exists |
 | `closeWindow(int id)` | Close a window (requires Accessibility) |
 | `focusWindow(int id)` | Focus/bring window to front (requires Accessibility) |
+| `getScrollInfo(int id)` | Get scroll position (requires Accessibility) |
 
 ### Screen Capture (2 methods)
 
@@ -142,6 +143,7 @@ if (apps case ApplicationSuccess(applications: final appList)) {
 | Close/focus windows | ❌ | ✅ |
 | Terminate processes | ❌ | ✅ |
 | Window role/subrole | ❌ | ✅ |
+| Get scroll info | ❌ | ✅ |
 
 ## Data Models
 
@@ -197,6 +199,17 @@ final windows = await toolkit.getWindowsAdvanced(
   isOnScreen: true,
   width: 800,  // Exact width
 );
+```
+
+### Get Scroll Position
+```dart
+final result = await toolkit.getScrollInfo(windowId);
+switch (result) {
+  case ScrollSuccess(scrollInfo: final info):
+    print('Vertical: ${info.verticalPosition}');  // 0.0 (top) ~ 1.0 (bottom)
+  case ScrollFailure(:final reason):
+    print('Failed: ${reason.name}');
+}
 ```
 
 ### Error Handling

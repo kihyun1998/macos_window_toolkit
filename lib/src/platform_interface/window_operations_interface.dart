@@ -1,3 +1,4 @@
+import '../models/scroll_info.dart';
 import '../models/window_operation_result.dart';
 
 /// Platform interface for window-related operations.
@@ -254,5 +255,33 @@ abstract class WindowOperationsInterface {
   /// ```
   Future<WindowOperationResult> focusWindow(int windowId) {
     throw UnimplementedError('focusWindow() has not been implemented.');
+  }
+
+  /// Retrieves scroll information for a window by its window ID.
+  ///
+  /// Returns a [ScrollOperationResult] indicating success with scroll info
+  /// or failure with details.
+  ///
+  /// [windowId] is the unique identifier of the window to get scroll info from.
+  ///
+  /// This method uses the Accessibility API to find scroll areas within the window
+  /// and retrieve their scroll bar positions. The scroll positions are normalized
+  /// values between 0.0 and 1.0:
+  /// - Vertical: 0.0 = top, 1.0 = bottom
+  /// - Horizontal: 0.0 = left, 1.0 = right
+  ///
+  /// **Note**: This method requires accessibility permissions.
+  ///
+  /// Returns:
+  /// - [ScrollSuccess] with [ScrollInfo] containing scroll positions
+  /// - [ScrollFailure] with one of the following reasons:
+  ///   - [ScrollFailureReason.windowNotFound]: Window no longer exists
+  ///   - [ScrollFailureReason.accessibilityPermissionDenied]: Permission not granted
+  ///   - [ScrollFailureReason.noScrollableContent]: Window has no scrollable areas
+  ///   - [ScrollFailureReason.unknown]: Other failure states
+  ///
+  /// Throws [PlatformException] only for system errors (invalid arguments, internal errors).
+  Future<ScrollOperationResult> getScrollInfo(int windowId) {
+    throw UnimplementedError('getScrollInfo() has not been implemented.');
   }
 }

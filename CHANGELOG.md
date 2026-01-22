@@ -3,7 +3,13 @@
 ### Added
 - **FEAT**: `getScreenScaleFactor()` method to get the main screen's backing scale factor (1.0 for standard, 2.0 for Retina)
 - **FEAT**: `getAllScreensInfo()` method to get detailed information about all connected screens including frame, visibleFrame, scaleFactor, and actual pixel dimensions
+- **FEAT**: `getScrollInfo(int windowId)` method to retrieve scroll position information for a window using Accessibility API
+  - Returns normalized scroll positions (0.0-1.0) for both vertical and horizontal scroll bars
+  - `ScrollInfo` model with `verticalPosition`, `horizontalPosition`, `hasVerticalScroll`, `hasHorizontalScroll` properties
+  - `ScrollOperationResult` sealed class with `ScrollSuccess` and `ScrollFailure` variants for type-safe error handling
+  - Supports failure reasons: `windowNotFound`, `accessibilityPermissionDenied`, `noScrollableContent`, `unknown`
 - **UI**: Added screen info button in example app that displays scale factor, screen size, and pixel dimensions via snackbar
+- **UI**: Added scroll information section in window detail sheet showing vertical/horizontal scroll positions
 
 ## 1.5.2
 

@@ -7,6 +7,7 @@ import 'models/macos_application_info.dart';
 import 'models/macos_version_info.dart';
 import 'models/macos_window_info.dart';
 import 'models/permission_status.dart';
+import 'models/scroll_info.dart';
 import 'models/window_operation_result.dart';
 import 'permission_watcher.dart';
 
@@ -17,6 +18,7 @@ export 'models/capture_result.dart';
 export 'models/macos_application_info.dart';
 export 'models/macos_version_info.dart';
 export 'models/macos_window_info.dart';
+export 'models/scroll_info.dart';
 
 /// Main class for macOS Window Toolkit functionality
 class MacosWindowToolkit {
@@ -801,6 +803,66 @@ class MacosWindowToolkit {
   /// ```
   Future<WindowOperationResult> focusWindow(int windowId) async {
     return await MacosWindowToolkitPlatform.instance.focusWindow(windowId);
+  }
+
+  /// Gets scroll information for a window by its window ID using Accessibility API.
+  ///
+  /// Returns a [ScrollOperationResult] indicating success with scroll info
+  /// or failure with details.
+  ///
+  /// [windowId] is the unique identifier of the window to get scroll info from,
+  /// which can be obtained from [getAllWindows], [getWindowsByName], or other
+  /// window listing methods.
+  ///
+  /// This method uses the Accessibility API to find scroll areas within the window
+  /// and retrieve their scroll bar positions. The scroll positions are normalized
+  /// values between 0.0 and 1.0:
+  /// - Vertical: 0.0 = top, 1.0 = bottom
+  /// - Horizontal: 0.0 = left, 1.0 = right
+  ///
+  /// **Important Notes:**
+  /// - This method requires accessibility permissions
+  /// - Not all windows have scrollable content
+  /// - Some applications may not expose scroll information via Accessibility API
+  ///
+  /// Returns:
+  /// - [ScrollSuccess] with [ScrollInfo] containing scroll positions
+  /// - [ScrollFailure] with one of the following reasons:
+  ///   - [ScrollFailureReason.windowNotFound]: Window no longer exists
+  ///   - [ScrollFailureReason.accessibilityPermissionDenied]: Permission not granted
+  ///   - [ScrollFailureReason.noScrollableContent]: Window has no scrollable areas
+  ///   - [ScrollFailureReason.unknown]: Other failure states
+  ///
+  /// Throws [PlatformException] only for system errors (invalid arguments, internal errors).
+  ///
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  /// final windows = await toolkit.getAllWindows();
+  ///
+  /// for (final window in windows) {
+  ///   final result = await toolkit.getScrollInfo(window.windowId);
+  ///   switch (result) {
+  ///     case ScrollSuccess(scrollInfo: final info):
+  ///       if (info.hasVerticalScroll) {
+  ///         print('Vertical scroll: ${info.verticalPosition}');
+  ///       }
+  ///       if (info.hasHorizontalScroll) {
+  ///         print('Horizontal scroll: ${info.horizontalPosition}');
+  ///       }
+  ///     case ScrollFailure(:final reason, :final message):
+  ///       if (reason == ScrollFailureReason.accessibilityPermissionDenied) {
+  ///         await toolkit.requestAccessibilityPermission();
+  ///       } else if (reason == ScrollFailureReason.noScrollableContent) {
+  ///         print('Window has no scrollable content');
+  ///       } else {
+  ///         print('Failed to get scroll info: $message');
+  ///       }
+  ///   }
+  /// }
+  /// ```
+  Future<ScrollOperationResult> getScrollInfo(int windowId) async {
+    return await MacosWindowToolkitPlatform.instance.getScrollInfo(windowId);
   }
 
   /// Terminates an application by its process ID.

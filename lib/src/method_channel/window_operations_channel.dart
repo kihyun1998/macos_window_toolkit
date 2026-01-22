@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 
+import '../models/scroll_info.dart';
 import '../models/window_operation_result.dart';
 
 /// Mixin providing method channel implementations for window operations.
@@ -302,6 +303,101 @@ mixin WindowOperationsChannel {
         return true;
       default:
         return false;
+    }
+  }
+
+  Future<ScrollOperationResult> getScrollInfo(int windowId) async {
+    try {
+      final result =
+          await methodChannel.invokeMethod<dynamic>('getScrollInfo', {
+        'windowId': windowId,
+      });
+
+      if (result == null) {
+        return const ScrollFailure(
+          reason: ScrollFailureReason.unknown,
+          message: 'No response from getScrollInfo',
+        );
+      }
+
+      if (result is Map) {
+        return _parseScrollResult(Map<dynamic, dynamic>.from(result));
+      }
+
+      return const ScrollFailure(
+        reason: ScrollFailureReason.unknown,
+        message: 'Unexpected response type',
+      );
+    } on PlatformException catch (e) {
+      if (_isSystemError(e.code)) {
+        rethrow;
+      }
+      return _platformExceptionToScrollFailure(e);
+    }
+  }
+
+  /// Helper method to parse scroll result from native response
+  ScrollOperationResult _parseScrollResult(Map<dynamic, dynamic> result) {
+    final success = result['success'] as bool? ?? false;
+
+    if (success) {
+      final scrollInfoMap = result['scrollInfo'] as Map?;
+      if (scrollInfoMap != null) {
+        final scrollInfo = ScrollInfo.fromMap(
+          Map<String, dynamic>.from(scrollInfoMap),
+        );
+        return ScrollSuccess(scrollInfo);
+      }
+      return const ScrollFailure(
+        reason: ScrollFailureReason.unknown,
+        message: 'Missing scroll info in response',
+      );
+    } else {
+      final reasonCode = result['reason'] as String? ?? 'unknown';
+      final message = result['message'] as String?;
+      final details = result['details'] as String?;
+
+      final reason = _mapReasonCodeToScrollFailureReason(reasonCode);
+      return ScrollFailure(reason: reason, message: message, details: details);
+    }
+  }
+
+  /// Maps native reason codes to ScrollFailureReason enum
+  ScrollFailureReason _mapReasonCodeToScrollFailureReason(String code) {
+    switch (code) {
+      case 'window_not_found':
+        return ScrollFailureReason.windowNotFound;
+      case 'accessibility_permission_denied':
+        return ScrollFailureReason.accessibilityPermissionDenied;
+      case 'no_scrollable_content':
+        return ScrollFailureReason.noScrollableContent;
+      default:
+        return ScrollFailureReason.unknown;
+    }
+  }
+
+  /// Converts PlatformException to ScrollFailure
+  ScrollFailure _platformExceptionToScrollFailure(PlatformException e) {
+    final reason = _mapErrorCodeToScrollFailureReason(e.code);
+    return ScrollFailure(
+      reason: reason,
+      message: e.message,
+      details: e.details?.toString(),
+    );
+  }
+
+  /// Maps legacy error codes to ScrollFailureReason
+  ScrollFailureReason _mapErrorCodeToScrollFailureReason(String code) {
+    switch (code) {
+      case 'WINDOW_NOT_FOUND':
+      case 'INVALID_WINDOW_ID':
+        return ScrollFailureReason.windowNotFound;
+      case 'ACCESSIBILITY_PERMISSION_DENIED':
+        return ScrollFailureReason.accessibilityPermissionDenied;
+      case 'NO_SCROLLABLE_CONTENT':
+        return ScrollFailureReason.noScrollableContent;
+      default:
+        return ScrollFailureReason.unknown;
     }
   }
 }

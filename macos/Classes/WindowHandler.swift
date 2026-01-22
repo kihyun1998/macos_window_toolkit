@@ -1106,6 +1106,183 @@ class WindowHandler {
         }
     }
 
+    // MARK: - Scroll Information
+
+    /// Retrieves scroll information for a window by its window ID
+    /// Uses Accessibility API to find scroll bars and their positions
+    /// Returns a Result with scroll info or error
+    func getScrollInfo(_ windowId: Int) -> Result<[String: Any], WindowError> {
+        // Step 1: Check accessibility permissions
+        let permissionHandler = PermissionHandler()
+        guard permissionHandler.hasAccessibilityPermission() else {
+            return .failure(.accessibilityPermissionDenied)
+        }
+
+        // Step 2: Get window information
+        let windowResult = getWindowById(windowId)
+
+        switch windowResult {
+        case .success(let windows):
+            guard let window = windows.first else {
+                return .failure(.windowNotFound)
+            }
+
+            guard let processId = window["processId"] as? Int else {
+                return .failure(.insufficientWindowInfo)
+            }
+
+            let windowName = window["name"] as? String ?? ""
+
+            // Step 3: Find window element
+            var windowElement: AXUIElement?
+            windowElement = findWindowElementFlexible(processId: processId, windowName: windowName)
+
+            if windowElement == nil {
+                windowElement = findWindowElement(processId: processId, windowName: windowName)
+            }
+
+            guard let element = windowElement else {
+                return .failure(.windowNotFound)
+            }
+
+            // Step 4: Get scroll information from the window
+            let scrollInfo = getScrollInfoFromElement(element)
+            return .success(scrollInfo)
+
+        case .failure(let error):
+            return .failure(error)
+        }
+    }
+
+    /// Extracts scroll information from an AXUIElement (window or scroll area)
+    private func getScrollInfoFromElement(_ element: AXUIElement) -> [String: Any] {
+        var result: [String: Any] = [
+            "hasVerticalScroll": false,
+            "hasHorizontalScroll": false
+        ]
+
+        // Strategy 1: Try to find AXScrollArea directly in the window's children
+        if let scrollArea = findScrollArea(in: element) {
+            extractScrollBarInfo(from: scrollArea, into: &result)
+        }
+
+        // Strategy 2: Try direct scroll bar attributes on the element itself
+        if !(result["hasVerticalScroll"] as! Bool) && !(result["hasHorizontalScroll"] as! Bool) {
+            extractScrollBarInfo(from: element, into: &result)
+        }
+
+        // Strategy 3: Recursively search for scroll areas in children
+        if !(result["hasVerticalScroll"] as! Bool) && !(result["hasHorizontalScroll"] as! Bool) {
+            if let scrollArea = findScrollAreaRecursively(in: element, depth: 0, maxDepth: 5) {
+                extractScrollBarInfo(from: scrollArea, into: &result)
+            }
+        }
+
+        return result
+    }
+
+    /// Finds the first AXScrollArea in an element's direct children
+    private func findScrollArea(in element: AXUIElement) -> AXUIElement? {
+        var childrenRef: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(
+            element, kAXChildrenAttribute as CFString, &childrenRef)
+
+        guard result == .success,
+              let children = childrenRef as? [AXUIElement] else {
+            return nil
+        }
+
+        for child in children {
+            var roleRef: CFTypeRef?
+            let roleResult = AXUIElementCopyAttributeValue(
+                child, kAXRoleAttribute as CFString, &roleRef)
+
+            if roleResult == .success,
+               let role = roleRef as? String,
+               role == "AXScrollArea" {
+                return child
+            }
+        }
+
+        return nil
+    }
+
+    /// Recursively finds AXScrollArea in the element hierarchy
+    private func findScrollAreaRecursively(in element: AXUIElement, depth: Int, maxDepth: Int) -> AXUIElement? {
+        guard depth < maxDepth else { return nil }
+
+        var childrenRef: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(
+            element, kAXChildrenAttribute as CFString, &childrenRef)
+
+        guard result == .success,
+              let children = childrenRef as? [AXUIElement] else {
+            return nil
+        }
+
+        for child in children {
+            var roleRef: CFTypeRef?
+            let roleResult = AXUIElementCopyAttributeValue(
+                child, kAXRoleAttribute as CFString, &roleRef)
+
+            if roleResult == .success,
+               let role = roleRef as? String,
+               role == "AXScrollArea" {
+                return child
+            }
+
+            // Recursively search in child
+            if let found = findScrollAreaRecursively(in: child, depth: depth + 1, maxDepth: maxDepth) {
+                return found
+            }
+        }
+
+        return nil
+    }
+
+    /// Extracts scroll bar information from an element (scroll area or window)
+    private func extractScrollBarInfo(from element: AXUIElement, into result: inout [String: Any]) {
+        // Get vertical scroll bar
+        var verticalScrollBarRef: CFTypeRef?
+        let verticalResult = AXUIElementCopyAttributeValue(
+            element, kAXVerticalScrollBarAttribute as CFString, &verticalScrollBarRef)
+
+        if verticalResult == .success,
+           let verticalScrollBar = verticalScrollBarRef {
+            result["hasVerticalScroll"] = true
+
+            // Get scroll bar value (0.0 to 1.0)
+            var valueRef: CFTypeRef?
+            let valueResult = AXUIElementCopyAttributeValue(
+                verticalScrollBar as! AXUIElement, kAXValueAttribute as CFString, &valueRef)
+
+            if valueResult == .success,
+               let value = valueRef as? NSNumber {
+                result["verticalPosition"] = value.doubleValue
+            }
+        }
+
+        // Get horizontal scroll bar
+        var horizontalScrollBarRef: CFTypeRef?
+        let horizontalResult = AXUIElementCopyAttributeValue(
+            element, kAXHorizontalScrollBarAttribute as CFString, &horizontalScrollBarRef)
+
+        if horizontalResult == .success,
+           let horizontalScrollBar = horizontalScrollBarRef {
+            result["hasHorizontalScroll"] = true
+
+            // Get scroll bar value (0.0 to 1.0)
+            var valueRef: CFTypeRef?
+            let valueResult = AXUIElementCopyAttributeValue(
+                horizontalScrollBar as! AXUIElement, kAXValueAttribute as CFString, &valueRef)
+
+            if valueResult == .success,
+               let value = valueRef as? NSNumber {
+                result["horizontalPosition"] = value.doubleValue
+            }
+        }
+    }
+
     /// Helper method to pass WindowError errors to Flutter
     static func handleWindowError(_ error: WindowError) -> [String: Any] {
         switch error {
