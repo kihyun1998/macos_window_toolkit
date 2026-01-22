@@ -173,6 +173,23 @@ class MacosApplicationInfo {
 }
 ```
 
+### MacosScreenInfo
+```dart
+class MacosScreenInfo {
+  final int index;
+  final bool isMain;
+  final double scaleFactor;
+  final ScreenRect frame;           // Full screen frame
+  final ScreenRect visibleFrame;    // Excluding menu bar/dock
+  final int pixelWidth;
+  final int pixelHeight;
+}
+
+class ScreenRect {
+  final double x, y, width, height;
+}
+```
+
 ## Examples
 
 ### Permission Monitoring with Stream
@@ -199,6 +216,17 @@ final windows = await toolkit.getWindowsAdvanced(
   isOnScreen: true,
   width: 800,  // Exact width
 );
+```
+
+### Get Screen Information
+```dart
+final screens = await toolkit.getAllScreensInfo();
+for (final screen in screens) {
+  print('Screen ${screen.index}: ${screen.isMain ? "(Main)" : ""}');
+  print('  Scale: ${screen.scaleFactor}x');
+  print('  Size: ${screen.frame.width} x ${screen.frame.height}');
+  print('  Pixels: ${screen.pixelWidth} x ${screen.pixelHeight}');
+}
 ```
 
 ### Get Scroll Position
