@@ -66,6 +66,11 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
   bool _isTerminatingApp = false;
   bool _isTerminatingTree = false;
 
+  // Fullscreen detection state
+  bool? _isFullScreen;
+  bool _isCheckingFullScreen = false;
+  String? _fullScreenError;
+
   // Scroll info state
   ScrollInfo? _scrollInfo;
   bool _isLoadingScrollInfo = false;
@@ -76,6 +81,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
     super.initState();
     _checkVersionInfo();
     _checkWindowAlive();
+    _checkFullScreen();
     _loadScrollInfo();
   }
 
@@ -137,6 +143,33 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
       setState(() {
         _isWindowAliveWithName = null;
         _isCheckingAliveWithName = false;
+      });
+    }
+  }
+
+  Future<void> _checkFullScreen() async {
+    setState(() {
+      _isCheckingFullScreen = true;
+      _fullScreenError = null;
+    });
+
+    try {
+      final isFullScreen = await _macosWindowToolkit.isWindowFullScreen(
+        widget.window.windowId,
+      );
+      if (!mounted) return;
+      setState(() {
+        _isFullScreen = isFullScreen;
+        _isCheckingFullScreen = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isFullScreen = null;
+        _fullScreenError = e is PlatformException
+            ? e.message ?? e.code
+            : e.toString();
+        _isCheckingFullScreen = false;
       });
     }
   }
@@ -766,6 +799,65 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                               ? Colors.red
                               : colorScheme.onSurface,
                           fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Fullscreen Status
+                  Row(
+                    children: [
+                      Text(
+                        'Fullscreen (SCK): ',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      if (_isCheckingFullScreen)
+                        SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      else if (_fullScreenError != null)
+                        Expanded(
+                          child: Text(
+                            _fullScreenError!,
+                            style: TextStyle(
+                              color: Colors.orange,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 12,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        )
+                      else
+                        Text(
+                          _isFullScreen == true
+                              ? 'Yes'
+                              : _isFullScreen == false
+                              ? 'No'
+                              : 'Unknown',
+                          style: TextStyle(
+                            color: _isFullScreen == true
+                                ? Colors.blue
+                                : colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      const Spacer(),
+                      SizedBox(
+                        height: 28,
+                        child: ElevatedButton(
+                          onPressed: _isCheckingFullScreen
+                              ? null
+                              : _checkFullScreen,
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            minimumSize: Size(60, 28),
+                          ),
+                          child: Text('Check', style: TextStyle(fontSize: 12)),
                         ),
                       ),
                     ],

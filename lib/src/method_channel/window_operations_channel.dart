@@ -306,6 +306,31 @@ mixin WindowOperationsChannel {
     }
   }
 
+  Future<bool> isWindowFullScreen(int windowId) async {
+    final result = await methodChannel.invokeMethod<dynamic>(
+      'isWindowFullScreen',
+      {'windowId': windowId},
+    );
+
+    if (result is bool) {
+      return result;
+    }
+
+    // Handle Map response (state errors like permission denied, unsupported version)
+    if (result is Map) {
+      final map = Map<dynamic, dynamic>.from(result);
+      final reason = map['reason'] as String? ?? 'unknown';
+      final message = map['message'] as String? ?? 'Unknown error';
+      throw PlatformException(
+        code: reason.toUpperCase(),
+        message: message,
+        details: map['details'],
+      );
+    }
+
+    return false;
+  }
+
   Future<ScrollOperationResult> getScrollInfo(int windowId) async {
     try {
       final result =

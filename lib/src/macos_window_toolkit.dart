@@ -807,6 +807,34 @@ class MacosWindowToolkit {
     return await MacosWindowToolkitPlatform.instance.focusWindow(windowId);
   }
 
+  /// Checks if a window is currently in fullscreen mode.
+  ///
+  /// Uses SCShareableContent to accurately detect fullscreen state even for
+  /// windows on other Spaces. Unlike the bounds reported by CGWindowListCopyWindowInfo
+  /// (which returns the restore frame for fullscreen windows on other Spaces),
+  /// this method gets the actual current frame from ScreenCaptureKit.
+  ///
+  /// [windowId] is the unique identifier of the window to check.
+  ///
+  /// Returns `true` if the window is fullscreen, `false` otherwise.
+  ///
+  /// **Note**: Requires screen recording permission and macOS 14.0+.
+  ///
+  /// Example usage:
+  /// ```dart
+  /// final toolkit = MacosWindowToolkit();
+  /// final isFullScreen = await toolkit.isWindowFullScreen(12345);
+  /// if (isFullScreen) {
+  ///   print('Window is in fullscreen mode');
+  /// }
+  /// ```
+  ///
+  /// Throws [PlatformException] for system errors or missing permissions.
+  Future<bool> isWindowFullScreen(int windowId) async {
+    return await MacosWindowToolkitPlatform.instance
+        .isWindowFullScreen(windowId);
+  }
+
   /// Gets scroll information for a window by its window ID using Accessibility API.
   ///
   /// Returns a [ScrollOperationResult] indicating success with scroll info

@@ -257,6 +257,24 @@ abstract class WindowOperationsInterface {
     throw UnimplementedError('focusWindow() has not been implemented.');
   }
 
+  /// Checks if a window is currently in fullscreen mode using SCShareableContent.
+  ///
+  /// Unlike CGWindowListCopyWindowInfo which may report the restore frame for
+  /// fullscreen windows on other Spaces, this method uses SCShareableContent
+  /// to get the actual current frame, providing accurate fullscreen detection
+  /// across all Spaces.
+  ///
+  /// [windowId] is the unique identifier of the window to check.
+  ///
+  /// Returns `true` if the window is fullscreen, `false` otherwise.
+  ///
+  /// **Note**: This method requires screen recording permission and macOS 14.0+.
+  ///
+  /// Throws [PlatformException] for system errors.
+  Future<bool> isWindowFullScreen(int windowId) {
+    throw UnimplementedError('isWindowFullScreen() has not been implemented.');
+  }
+
   /// Retrieves scroll information for a window by its window ID.
   ///
   /// Returns a [ScrollOperationResult] indicating success with scroll info

@@ -69,6 +69,8 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       getAllScreensInfo(result: result)
     case "getScrollInfo":
       getScrollInfo(call: call, result: result)
+    case "isWindowFullScreen":
+      isWindowFullScreen(call: call, result: result)
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -739,6 +741,60 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       ]
     }
     result(screens)
+  }
+
+  /// Checks if a window is fullscreen using SCShareableContent
+  private func isWindowFullScreen(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let arguments = call.arguments as? [String: Any],
+      let windowId = arguments["windowId"] as? Int
+    else {
+      result(
+        FlutterError(
+          code: "INVALID_ARGUMENTS",
+          message: "WindowId parameter is required",
+          details: nil))
+      return
+    }
+
+    if #available(macOS 12.3, *) {
+      Task {
+        do {
+          let isFullScreen = try await CaptureHandler.isWindowFullScreen(windowId: windowId)
+          result(isFullScreen)
+        } catch let error as CaptureHandler.CaptureError {
+          let errorInfo = CaptureHandler.handleCaptureError(error)
+
+          if let code = errorInfo["code"] as? String, isStateError(code) {
+            result([
+              "success": false,
+              "reason": mapErrorCodeToReasonCode(code),
+              "message": errorInfo["message"],
+              "details": errorInfo["details"],
+            ])
+          } else {
+            result(
+              FlutterError(
+                code: errorInfo["code"] as? String ?? "FULLSCREEN_CHECK_FAILED",
+                message: errorInfo["message"] as? String ?? "Unknown error",
+                details: errorInfo))
+          }
+        } catch {
+          result(
+            FlutterError(
+              code: "FULLSCREEN_CHECK_FAILED",
+              message: "Unexpected error occurred",
+              details: error.localizedDescription))
+        }
+      }
+    } else {
+      result([
+        "success": false,
+        "reason": "unsupported_version",
+        "message": "macOS version does not support ScreenCaptureKit",
+        "details":
+          "Current version: \(ProcessInfo.processInfo.operatingSystemVersionString), Required: 12.3+",
+      ])
+    }
   }
 
   /// Gets scroll information for a window by its window ID

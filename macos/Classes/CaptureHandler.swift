@@ -99,7 +99,7 @@ class CaptureHandler {
             if excludeTitlebar {
                 // Always set to 0 for fullscreen windows as they have no titlebar
                 let titlebarHeight: CGFloat
-                if isFullscreenWindow(targetWindow.frame) {
+                if try await isWindowFullScreen(windowId: windowId) {
                     titlebarHeight = 0.0
                 } else {
                     // Use custom value or default (28px) for regular windows
@@ -313,6 +313,49 @@ class CaptureHandler {
     private static func convertCGImageToPNG(_ cgImage: CGImage) -> Data? {
         let bitmapRep = NSBitmapImageRep(cgImage: cgImage)
         return bitmapRep.representation(using: .png, properties: [:])
+    }
+
+    /// Checks if a window is fullscreen using SCShareableContent for accurate detection across Spaces
+    static func isWindowFullScreen(windowId: Int) async throws -> Bool {
+        // Check Screen Recording permission
+        let permissionHandler = PermissionHandler()
+        guard permissionHandler.hasScreenRecordingPermission() else {
+            throw CaptureError.screenRecordingPermissionDenied(
+                code: nil,
+                domain: nil,
+                message: "Screen recording permission is required for fullscreen detection"
+            )
+        }
+
+        guard #available(macOS 14.0, *) else {
+            throw CaptureError.requiresMacOS14(
+                code: nil,
+                domain: nil,
+                message: "Fullscreen detection requires macOS 14.0 or later"
+            )
+        }
+
+        guard VersionUtil.isScreenCaptureKitAvailable() else {
+            throw CaptureError.unsupportedMacOSVersion(
+                code: nil,
+                domain: nil,
+                message: "macOS version does not support ScreenCaptureKit"
+            )
+        }
+
+        let availableContent = try await SCShareableContent.current
+
+        guard let targetWindow = availableContent.windows.first(where: { window in
+            window.windowID == CGWindowID(windowId)
+        }) else {
+            throw CaptureError.invalidWindowId(
+                code: nil,
+                domain: nil,
+                message: "Window with the specified ID was not found"
+            )
+        }
+
+        return isFullscreenWindow(targetWindow.frame)
     }
 
     /// 윈도우가 전체화면인지 확인
