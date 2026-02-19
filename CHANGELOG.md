@@ -1,3 +1,11 @@
+## 1.7.0
+
+### Fixed
+- **FIX**: `captureWindow()` no longer fails with `windowMinimized` error for fullscreen windows on other Spaces
+  - Previously used `SCWindow.isOnScreen` which returns `false` for both minimized and other-Space windows
+  - Now uses Accessibility API `kAXMinimizedAttribute` to accurately detect only minimized windows
+  - Fullscreen windows on other Spaces can now be captured correctly
+
 ## 1.6.2
 
 ### Added

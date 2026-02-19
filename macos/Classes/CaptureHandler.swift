@@ -64,13 +64,35 @@ class CaptureHandler {
                 )
             }
 
-            // Re-check minimized state in SCWindow (prevent ScreenCaptureKit from waiting)
-            if !targetWindow.isOnScreen {
-                throw CaptureError.windowMinimized(
-                    code: nil,
-                    domain: nil,
-                    message: "Window is minimized and cannot be captured"
-                )
+            // Check if window is minimized using Accessibility API
+            // (isOnScreen is false for both minimized and other-Space windows,
+            // but kAXMinimizedAttribute is only true for actually minimized windows)
+            if let pid = targetWindow.owningApplication?.processID {
+                let appElement = AXUIElementCreateApplication(pid)
+                var windowsRef: CFTypeRef?
+                if AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success,
+                   let axWindows = windowsRef as? [AXUIElement] {
+                    for axWindow in axWindows {
+                        var minimizedRef: CFTypeRef?
+                        if AXUIElementCopyAttributeValue(axWindow, kAXMinimizedAttribute as CFString, &minimizedRef) == .success,
+                           let isMinimized = minimizedRef as? Bool,
+                           isMinimized {
+                            // Verify this is the same window by comparing titles
+                            var titleRef: CFTypeRef?
+                            let hasTitle = AXUIElementCopyAttributeValue(axWindow, kAXTitleAttribute as CFString, &titleRef) == .success
+                            let axTitle = hasTitle ? (titleRef as? String ?? "") : ""
+                            let scTitle = targetWindow.title ?? ""
+
+                            if axTitle == scTitle || scTitle.isEmpty {
+                                throw CaptureError.windowMinimized(
+                                    code: nil,
+                                    domain: nil,
+                                    message: "Window is minimized and cannot be captured"
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
             // Capture configuration

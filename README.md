@@ -18,7 +18,7 @@ A Flutter plugin for macOS window management, screen capture, and application di
 
 ```yaml
 dependencies:
-  macos_window_toolkit: ^1.6.2
+  macos_window_toolkit: ^1.7.0
 ```
 
 ## Setup (Required)
@@ -80,7 +80,7 @@ if (apps case ApplicationSuccess(applications: final appList)) {
 
 ## API Reference
 
-### Window Management (10 methods)
+### Window Management (11 methods)
 
 | Method | Description |
 |--------|-------------|
@@ -91,6 +91,7 @@ if (apps case ApplicationSuccess(applications: final appList)) {
 | `getWindowsByProcessId(int pid)` | Find windows by process |
 | `getWindowsAdvanced({...})` | Advanced filtering (14 parameters) |
 | `isWindowAlive(int id)` | Check if window exists |
+| `isWindowFullScreen(int id)` | Check fullscreen state across Spaces (requires Screen Recording) |
 | `closeWindow(int id)` | Close a window (requires Accessibility) |
 | `focusWindow(int id)` | Focus/bring window to front (requires Accessibility) |
 | `getScrollInfo(int id)` | Get scroll position (requires Accessibility) |
@@ -140,6 +141,7 @@ if (apps case ApplicationSuccess(applications: final appList)) {
 | Get window list | ❌ | ❌ |
 | Get window **names** | ✅ | ❌ |
 | Window capture | ✅ | ❌ |
+| Fullscreen detection | ✅ | ❌ |
 | Close/focus windows | ❌ | ✅ |
 | Terminate processes | ❌ | ✅ |
 | Window role/subrole | ❌ | ✅ |
@@ -226,6 +228,15 @@ for (final screen in screens) {
   print('  Scale: ${screen.scaleFactor}x');
   print('  Size: ${screen.frame.width} x ${screen.frame.height}');
   print('  Pixels: ${screen.pixelWidth} x ${screen.pixelHeight}');
+}
+```
+
+### Fullscreen Detection
+```dart
+// Accurate across all Spaces (uses SCShareableContent, not CGWindowList)
+final isFullScreen = await toolkit.isWindowFullScreen(windowId);
+if (isFullScreen) {
+  print('Window is in fullscreen mode');
 }
 ```
 
