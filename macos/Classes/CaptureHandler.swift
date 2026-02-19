@@ -99,7 +99,7 @@ class CaptureHandler {
             if excludeTitlebar {
                 // Always set to 0 for fullscreen windows as they have no titlebar
                 let titlebarHeight: CGFloat
-                if try await isWindowFullScreen(windowId: windowId) {
+                if isFullscreenWindow(targetWindow.frame) {
                     titlebarHeight = 0.0
                 } else {
                     // Use custom value or default (28px) for regular windows

@@ -1,3 +1,11 @@
+## 1.6.2
+
+### Added
+- **FEAT**: `isWindowFullScreen(int windowId)` method for accurate fullscreen detection using SCShareableContent
+  - Unlike `CGWindowListCopyWindowInfo` which returns restore frame for fullscreen windows on other Spaces, this method uses ScreenCaptureKit to get the actual current frame
+  - Correctly detects fullscreen state across all Spaces and displays
+  - Requires screen recording permission and macOS 14.0+
+
 ## 1.6.1
 
 ### Breaking Changes
