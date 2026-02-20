@@ -50,6 +50,12 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
   final _titlebarHeightController = TextEditingController();
   final _targetWidthController = TextEditingController();
   final _targetHeightController = TextEditingController();
+  final _cropContentWidthController = TextEditingController();
+  final _cropContentHeightController = TextEditingController();
+  final _cropXController = TextEditingController();
+  final _cropYController = TextEditingController();
+  final _cropWidthController = TextEditingController();
+  final _cropHeightController = TextEditingController();
 
   bool _isCapturing = false;
   String? _captureError;
@@ -57,6 +63,8 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
   bool _excludeTitlebar = false;
   bool _enableResize = false;
   bool _preserveAspectRatio = false;
+  bool _enableCrop = false;
+  bool _cropModeCenter = true; // true = center crop, false = rect crop
   bool? _isWindowAlive;
   bool? _isWindowAliveWithName;
   bool _isCheckingAlive = false;
@@ -90,6 +98,12 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
     _titlebarHeightController.dispose();
     _targetWidthController.dispose();
     _targetHeightController.dispose();
+    _cropContentWidthController.dispose();
+    _cropContentHeightController.dispose();
+    _cropXController.dispose();
+    _cropYController.dispose();
+    _cropWidthController.dispose();
+    _cropHeightController.dispose();
     super.dispose();
   }
 
@@ -229,6 +243,24 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
         targetHeight = int.tryParse(_targetHeightController.text);
       }
 
+      int? cropContentWidth;
+      int? cropContentHeight;
+      int? cropX;
+      int? cropY;
+      int? cropWidth;
+      int? cropHeight;
+      if (_enableCrop) {
+        if (_cropModeCenter) {
+          cropContentWidth = int.tryParse(_cropContentWidthController.text);
+          cropContentHeight = int.tryParse(_cropContentHeightController.text);
+        } else {
+          cropX = int.tryParse(_cropXController.text);
+          cropY = int.tryParse(_cropYController.text);
+          cropWidth = int.tryParse(_cropWidthController.text);
+          cropHeight = int.tryParse(_cropHeightController.text);
+        }
+      }
+
       final result = await _macosWindowToolkit.captureWindow(
         widget.window.windowId,
         excludeTitlebar: _excludeTitlebar,
@@ -236,6 +268,12 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
         targetWidth: targetWidth,
         targetHeight: targetHeight,
         preserveAspectRatio: _preserveAspectRatio,
+        cropContentWidth: cropContentWidth,
+        cropContentHeight: cropContentHeight,
+        cropX: cropX,
+        cropY: cropY,
+        cropWidth: cropWidth,
+        cropHeight: cropHeight,
       );
 
       setState(() {
@@ -1560,6 +1598,220 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                               ],
                             ),
                           ),
+                        ],
+
+                        const SizedBox(height: 16),
+                        const Divider(),
+                        const SizedBox(height: 16),
+
+                        // Custom Crop Options
+                        Row(
+                          children: [
+                            Switch(
+                              value: _enableCrop,
+                              onChanged: _isCapturing
+                                  ? null
+                                  : (value) {
+                                      setState(() {
+                                        _enableCrop = value;
+                                      });
+                                    },
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Custom Crop',
+                              style: TextStyle(
+                                color: _isCapturing ? Colors.grey : null,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        if (_enableCrop) ...[
+                          const SizedBox(height: 12),
+                          // Mode toggle
+                          Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _cropModeCenter = true),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _cropModeCenter
+                                          ? Theme.of(
+                                              context,
+                                            ).colorScheme.primary
+                                          : Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerHighest,
+                                      borderRadius:
+                                          const BorderRadius.horizontal(
+                                            left: Radius.circular(8),
+                                          ),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        'Center Crop',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                          color: _cropModeCenter
+                                              ? Theme.of(
+                                                  context,
+                                                ).colorScheme.onPrimary
+                                              : Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurface,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _cropModeCenter = false),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: !_cropModeCenter
+                                          ? Theme.of(
+                                              context,
+                                            ).colorScheme.primary
+                                          : Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerHighest,
+                                      borderRadius:
+                                          const BorderRadius.horizontal(
+                                            right: Radius.circular(8),
+                                          ),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        'Rect Crop',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                          color: !_cropModeCenter
+                                              ? Theme.of(
+                                                  context,
+                                                ).colorScheme.onPrimary
+                                              : Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurface,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          if (_cropModeCenter) ...[
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _cropContentWidthController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Content Width',
+                                      hintText: '1680',
+                                      helperText: 'pixels',
+                                      border: OutlineInputBorder(),
+                                      isDense: true,
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    enabled: !_isCapturing,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _cropContentHeightController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Content Height',
+                                      hintText: '945',
+                                      helperText: 'pixels',
+                                      border: OutlineInputBorder(),
+                                      isDense: true,
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    enabled: !_isCapturing,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ] else ...[
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _cropXController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'X',
+                                      hintText: '0',
+                                      border: OutlineInputBorder(),
+                                      isDense: true,
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    enabled: !_isCapturing,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _cropYController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Y',
+                                      hintText: '0',
+                                      border: OutlineInputBorder(),
+                                      isDense: true,
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    enabled: !_isCapturing,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _cropWidthController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Width',
+                                      hintText: '800',
+                                      border: OutlineInputBorder(),
+                                      isDense: true,
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    enabled: !_isCapturing,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _cropHeightController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Height',
+                                      hintText: '600',
+                                      border: OutlineInputBorder(),
+                                      isDense: true,
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    enabled: !_isCapturing,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
 
                         const SizedBox(height: 16),

@@ -18,7 +18,7 @@ A Flutter plugin for macOS window management, screen capture, and application di
 
 ```yaml
 dependencies:
-  macos_window_toolkit: ^1.7.0
+  macos_window_toolkit: ^1.8.0
 ```
 
 ## Setup (Required)
@@ -100,7 +100,7 @@ if (apps case ApplicationSuccess(applications: final appList)) {
 
 | Method | Description |
 |--------|-------------|
-| `captureWindow(int id, {...})` | Capture window using ScreenCaptureKit (macOS 14.0+) |
+| `captureWindow(int id, {...})` | Capture window using ScreenCaptureKit (macOS 14.0+). Transparent borders are automatically cropped. Supports titlebar exclusion, resize, and custom crop. |
 | `getCapturableWindows()` | List capturable windows using ScreenCaptureKit (macOS 12.3+) |
 
 ### Permission Management (7 methods)
@@ -237,6 +237,48 @@ for (final screen in screens) {
 final isFullScreen = await toolkit.isWindowFullScreen(windowId);
 if (isFullScreen) {
   print('Window is in fullscreen mode');
+}
+```
+
+### Window Capture with Crop
+
+```dart
+// Basic capture (transparent borders are auto-cropped)
+final capture = await toolkit.captureWindow(windowId);
+
+// Exclude titlebar
+final capture = await toolkit.captureWindow(
+  windowId,
+  excludeTitlebar: true,
+  customTitlebarHeight: 44,  // optional, default 28pt
+);
+
+// Resize output
+final capture = await toolkit.captureWindow(
+  windowId,
+  targetWidth: 1920,
+  targetHeight: 1080,
+  preserveAspectRatio: true,  // fills extra space with black
+);
+
+// Center crop (crops to given size from the center of the image)
+final capture = await toolkit.captureWindow(
+  windowId,
+  cropContentWidth: 1680,
+  cropContentHeight: 945,
+);
+
+// Rect crop (crops to an exact rectangle)
+final capture = await toolkit.captureWindow(
+  windowId,
+  cropX: 100,
+  cropY: 50,
+  cropWidth: 800,
+  cropHeight: 600,
+);
+
+if (capture case CaptureSuccess(imageData: final data)) {
+  // Use image data
 }
 ```
 

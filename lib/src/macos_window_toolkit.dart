@@ -594,6 +594,12 @@ class MacosWindowToolkit {
     int? targetWidth,
     int? targetHeight,
     bool preserveAspectRatio = false,
+    int? cropContentWidth,
+    int? cropContentHeight,
+    int? cropX,
+    int? cropY,
+    int? cropWidth,
+    int? cropHeight,
   }) async {
     return await MacosWindowToolkitPlatform.instance.captureWindow(
       windowId,
@@ -602,6 +608,12 @@ class MacosWindowToolkit {
       targetWidth: targetWidth,
       targetHeight: targetHeight,
       preserveAspectRatio: preserveAspectRatio,
+      cropContentWidth: cropContentWidth,
+      cropContentHeight: cropContentHeight,
+      cropX: cropX,
+      cropY: cropY,
+      cropWidth: cropWidth,
+      cropHeight: cropHeight,
     );
   }
 

@@ -18,7 +18,9 @@ class CaptureHandler {
 
     static func captureWindow(
         windowId: Int, excludeTitlebar: Bool = false, customTitlebarHeight: CGFloat? = nil,
-        targetWidth: Int? = nil, targetHeight: Int? = nil, preserveAspectRatio: Bool = false
+        targetWidth: Int? = nil, targetHeight: Int? = nil, preserveAspectRatio: Bool = false,
+        cropContentWidth: Int? = nil, cropContentHeight: Int? = nil,
+        cropX: Int? = nil, cropY: Int? = nil, cropWidth: Int? = nil, cropHeight: Int? = nil
     ) async throws -> Data {
         // Check Screen Recording permission
         let permissionHandler = PermissionHandler()
@@ -29,7 +31,7 @@ class CaptureHandler {
                 message: "Screen recording permission is required for window capture"
             )
         }
-        
+
         // Check macOS version - SCScreenshotManager is only available on macOS 14.0+
         guard #available(macOS 14.0, *) else {
             throw CaptureError.requiresMacOS14(
@@ -70,16 +72,22 @@ class CaptureHandler {
             if let pid = targetWindow.owningApplication?.processID {
                 let appElement = AXUIElementCreateApplication(pid)
                 var windowsRef: CFTypeRef?
-                if AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success,
-                   let axWindows = windowsRef as? [AXUIElement] {
+                if AXUIElementCopyAttributeValue(
+                    appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success,
+                    let axWindows = windowsRef as? [AXUIElement]
+                {
                     for axWindow in axWindows {
                         var minimizedRef: CFTypeRef?
-                        if AXUIElementCopyAttributeValue(axWindow, kAXMinimizedAttribute as CFString, &minimizedRef) == .success,
-                           let isMinimized = minimizedRef as? Bool,
-                           isMinimized {
+                        if AXUIElementCopyAttributeValue(
+                            axWindow, kAXMinimizedAttribute as CFString, &minimizedRef) == .success,
+                            let isMinimized = minimizedRef as? Bool,
+                            isMinimized
+                        {
                             // Verify this is the same window by comparing titles
                             var titleRef: CFTypeRef?
-                            let hasTitle = AXUIElementCopyAttributeValue(axWindow, kAXTitleAttribute as CFString, &titleRef) == .success
+                            let hasTitle =
+                                AXUIElementCopyAttributeValue(
+                                    axWindow, kAXTitleAttribute as CFString, &titleRef) == .success
                             let axTitle = hasTitle ? (titleRef as? String ?? "") : ""
                             let scTitle = targetWindow.title ?? ""
 
@@ -148,13 +156,52 @@ class CaptureHandler {
                 finalImage = screenshot
             }
 
-            // Crop transparent borders for fullscreen windows
+            // Crop transparent borders (all windows), then restore to original window frame size
             let croppedFinalImage: CGImage
-            if isFullscreenWindow(targetWindow.frame),
-               let cropped = cropTransparentBorders(finalImage) {
-                croppedFinalImage = cropped
+            let frameW = Int(targetWindow.frame.width)
+            let frameH = Int(targetWindow.frame.height)
+            if let cropped = cropTransparentBorders(finalImage),
+                let restored = resizeImageToExactSize(
+                    cropped, targetWidth: frameW, targetHeight: frameH)
+            {
+                croppedFinalImage = restored
             } else {
                 croppedFinalImage = finalImage
+            }
+
+            // Custom crop: center crop
+            let customCroppedImage: CGImage
+            if let cw = cropContentWidth, let ch = cropContentHeight {
+                let imgW = croppedFinalImage.width
+                let imgH = croppedFinalImage.height
+                let x = max(0, (imgW - cw) / 2)
+                let y = max(0, (imgH - ch) / 2)
+                let clampedW = min(cw, imgW - x)
+                let clampedH = min(ch, imgH - y)
+                if let cropped = croppedFinalImage.cropping(
+                    to: CGRect(x: x, y: y, width: clampedW, height: clampedH))
+                {
+                    customCroppedImage = cropped
+                } else {
+                    customCroppedImage = croppedFinalImage
+                }
+                // Custom crop: rect crop
+            } else if let cx = cropX, let cy = cropY, let cw = cropWidth, let ch = cropHeight {
+                let imgW = croppedFinalImage.width
+                let imgH = croppedFinalImage.height
+                let clampedX = max(0, min(cx, imgW - 1))
+                let clampedY = max(0, min(cy, imgH - 1))
+                let clampedW = min(cw, imgW - clampedX)
+                let clampedH = min(ch, imgH - clampedY)
+                if let cropped = croppedFinalImage.cropping(
+                    to: CGRect(x: clampedX, y: clampedY, width: clampedW, height: clampedH))
+                {
+                    customCroppedImage = cropped
+                } else {
+                    customCroppedImage = croppedFinalImage
+                }
+            } else {
+                customCroppedImage = croppedFinalImage
             }
 
             // Resize if needed
@@ -164,14 +211,14 @@ class CaptureHandler {
                 if preserveAspectRatio {
                     // Preserve aspect ratio, fill extra space with black
                     resized = resizeImagePreservingAspectRatio(
-                        croppedFinalImage,
+                        customCroppedImage,
                         targetWidth: width,
                         targetHeight: height
                     )
                 } else {
                     // Force exact size resize (may distort image)
                     resized = resizeImageToExactSize(
-                        croppedFinalImage,
+                        customCroppedImage,
                         targetWidth: width,
                         targetHeight: height
                     )
@@ -186,7 +233,7 @@ class CaptureHandler {
                 }
                 imageToConvert = finalResized
             } else {
-                imageToConvert = croppedFinalImage
+                imageToConvert = customCroppedImage
             }
 
             // CGImage를 PNG 데이터로 변환
@@ -219,7 +266,9 @@ class CaptureHandler {
             if nsError.domain.lowercased().contains("screencapturekit") {
                 // Also check error description for permission-related keywords
                 let errorMessage = error.localizedDescription.lowercased()
-                if errorMessage.contains("permission") || errorMessage.contains("not permitted") || errorMessage.contains("denied") {
+                if errorMessage.contains("permission") || errorMessage.contains("not permitted")
+                    || errorMessage.contains("denied")
+                {
                     throw CaptureError.screenRecordingPermissionDenied(
                         code: nsError.code,
                         domain: nsError.domain,
@@ -238,7 +287,9 @@ class CaptureHandler {
             // Check for CoreGraphics/System errors that might indicate permission issues
             if nsError.domain == NSCocoaErrorDomain || nsError.domain == NSOSStatusErrorDomain {
                 let errorMessage = error.localizedDescription.lowercased()
-                if errorMessage.contains("permission") || errorMessage.contains("not permitted") || errorMessage.contains("denied") {
+                if errorMessage.contains("permission") || errorMessage.contains("not permitted")
+                    || errorMessage.contains("denied")
+                {
                     throw CaptureError.screenRecordingPermissionDenied(
                         code: nsError.code,
                         domain: nsError.domain,
@@ -263,15 +314,17 @@ class CaptureHandler {
     ) -> CGImage? {
         let colorSpace = CGColorSpaceCreateDeviceRGB()
 
-        guard let context = CGContext(
-            data: nil,
-            width: targetWidth,
-            height: targetHeight,
-            bitsPerComponent: 8,
-            bytesPerRow: 0,
-            space: colorSpace,
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-        ) else {
+        guard
+            let context = CGContext(
+                data: nil,
+                width: targetWidth,
+                height: targetHeight,
+                bitsPerComponent: 8,
+                bytesPerRow: 0,
+                space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            )
+        else {
             return nil
         }
 
@@ -313,15 +366,17 @@ class CaptureHandler {
 
         let colorSpace = CGColorSpaceCreateDeviceRGB()
 
-        guard let context = CGContext(
-            data: nil,
-            width: targetWidth,
-            height: targetHeight,
-            bitsPerComponent: 8,
-            bytesPerRow: 0,
-            space: colorSpace,
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-        ) else {
+        guard
+            let context = CGContext(
+                data: nil,
+                width: targetWidth,
+                height: targetHeight,
+                bitsPerComponent: 8,
+                bytesPerRow: 0,
+                space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            )
+        else {
             return nil
         }
 
@@ -376,9 +431,11 @@ class CaptureHandler {
 
         let availableContent = try await SCShareableContent.current
 
-        guard let targetWindow = availableContent.windows.first(where: { window in
-            window.windowID == CGWindowID(windowId)
-        }) else {
+        guard
+            let targetWindow = availableContent.windows.first(where: { window in
+                window.windowID == CGWindowID(windowId)
+            })
+        else {
             throw CaptureError.invalidWindowId(
                 code: nil,
                 domain: nil,
@@ -391,14 +448,19 @@ class CaptureHandler {
 
     /// Crops transparent border pixels from a CGImage
     private static func cropTransparentBorders(_ image: CGImage) -> CGImage? {
-        guard image.alphaInfo != .none && image.alphaInfo != .noneSkipFirst && image.alphaInfo != .noneSkipLast else {
+        guard
+            image.alphaInfo != .none && image.alphaInfo != .noneSkipFirst
+                && image.alphaInfo != .noneSkipLast
+        else {
             return nil  // No alpha channel, nothing to crop
         }
         guard let dataProvider = image.dataProvider,
-              let data = dataProvider.data,
-              let ptr = CFDataGetBytePtr(data) else { return nil }
+            let data = dataProvider.data,
+            let ptr = CFDataGetBytePtr(data)
+        else { return nil }
 
-        let w = image.width, h = image.height
+        let w = image.width
+        let h = image.height
         let bytesPerRow = image.bytesPerRow
         let bpp = image.bitsPerPixel / 8
         // Alpha offset depends on both alphaInfo AND byte order
@@ -427,34 +489,19 @@ class CaptureHandler {
             return true
         }
 
-        NSLog("[cropTransparent] image size: \(w)x\(h), alphaInfo: \(image.alphaInfo.rawValue), bpp: \(image.bitsPerPixel), alphaOffset: \(alphaOffset)")
-
-        var top = 0, bottom = h - 1, left = 0, right = w - 1
+        var top = 0
+        var bottom = h - 1
+        var left = 0
+        var right = w - 1
         while top <= bottom && isTransparentRow(top) { top += 1 }
         while bottom >= top && isTransparentRow(bottom) { bottom -= 1 }
         while left <= right && isTransparentCol(left) { left += 1 }
         while right >= left && isTransparentCol(right) { right -= 1 }
 
-        NSLog("[cropTransparent] detected bounds: top=\(top), bottom=\(bottom), left=\(left), right=\(right)")
-        NSLog("[cropTransparent] content size: \(right - left + 1)x\(bottom - top + 1)")
-
-        // Sample a few pixels near the detected edges to verify
-        func sampleAlpha(_ x: Int, _ y: Int) -> UInt8 {
-            ptr[y * bytesPerRow + x * bpp + alphaOffset]
-        }
-        NSLog("[cropTransparent] alpha at (left,top)=(\(left),\(top)): \(sampleAlpha(left, top))")
-        NSLog("[cropTransparent] alpha at (right,bottom)=(\(right),\(bottom)): \(sampleAlpha(right, bottom))")
-        if top > 0 { NSLog("[cropTransparent] alpha at row top-1=\(top-1), col mid: \(sampleAlpha(w/2, top-1))") }
-        if bottom < h-1 { NSLog("[cropTransparent] alpha at row bottom+1=\(bottom+1), col mid: \(sampleAlpha(w/2, bottom+1))") }
-
         guard top <= bottom && left <= right else { return nil }
-        guard top > 0 || bottom < h - 1 || left > 0 || right < w - 1 else {
-            NSLog("[cropTransparent] nothing to crop")
-            return nil
-        }
+        guard top > 0 || bottom < h - 1 || left > 0 || right < w - 1 else { return nil }
 
         let cropRect = CGRect(x: left, y: top, width: right - left + 1, height: bottom - top + 1)
-        NSLog("[cropTransparent] cropping to: \(cropRect)")
         return image.cropping(to: cropRect)
     }
 
@@ -559,7 +606,9 @@ class CaptureHandler {
             if nsError.domain.lowercased().contains("screencapturekit") {
                 // Also check error description for permission-related keywords
                 let errorMessage = error.localizedDescription.lowercased()
-                if errorMessage.contains("permission") || errorMessage.contains("not permitted") || errorMessage.contains("denied") {
+                if errorMessage.contains("permission") || errorMessage.contains("not permitted")
+                    || errorMessage.contains("denied")
+                {
                     throw CaptureError.screenRecordingPermissionDenied(
                         code: nsError.code,
                         domain: nsError.domain,
@@ -578,7 +627,9 @@ class CaptureHandler {
             // Check for CoreGraphics/System errors that might indicate permission issues
             if nsError.domain == NSCocoaErrorDomain || nsError.domain == NSOSStatusErrorDomain {
                 let errorMessage = error.localizedDescription.lowercased()
-                if errorMessage.contains("permission") || errorMessage.contains("not permitted") || errorMessage.contains("denied") {
+                if errorMessage.contains("permission") || errorMessage.contains("not permitted")
+                    || errorMessage.contains("denied")
+                {
                     throw CaptureError.screenRecordingPermissionDenied(
                         code: nsError.code,
                         domain: nsError.domain,
@@ -659,7 +710,8 @@ class CaptureHandler {
             return [
                 "code": "SCREEN_RECORDING_PERMISSION_DENIED",
                 "message": message,
-                "details": "Please grant screen recording permission in System Settings > Privacy & Security > Screen Recording",
+                "details":
+                    "Please grant screen recording permission in System Settings > Privacy & Security > Screen Recording",
                 "errorCode": code ?? NSNull(),
                 "errorDomain": domain ?? NSNull(),
             ]

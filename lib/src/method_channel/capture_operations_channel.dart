@@ -15,6 +15,12 @@ mixin CaptureOperationsChannel {
     int? targetWidth,
     int? targetHeight,
     bool preserveAspectRatio = false,
+    int? cropContentWidth,
+    int? cropContentHeight,
+    int? cropX,
+    int? cropY,
+    int? cropWidth,
+    int? cropHeight,
   }) async {
     final arguments = <String, dynamic>{
       'windowId': windowId,
@@ -29,6 +35,24 @@ mixin CaptureOperationsChannel {
     }
     if (targetHeight != null) {
       arguments['targetHeight'] = targetHeight;
+    }
+    if (cropContentWidth != null) {
+      arguments['cropContentWidth'] = cropContentWidth;
+    }
+    if (cropContentHeight != null) {
+      arguments['cropContentHeight'] = cropContentHeight;
+    }
+    if (cropX != null) {
+      arguments['cropX'] = cropX;
+    }
+    if (cropY != null) {
+      arguments['cropY'] = cropY;
+    }
+    if (cropWidth != null) {
+      arguments['cropWidth'] = cropWidth;
+    }
+    if (cropHeight != null) {
+      arguments['cropHeight'] = cropHeight;
     }
 
     try {

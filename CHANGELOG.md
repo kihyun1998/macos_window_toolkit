@@ -1,3 +1,16 @@
+## 1.8.0
+
+### Added
+- **FEAT**: `captureWindow()` now supports custom crop after capture
+  - `cropContentWidth` / `cropContentHeight`: crops the center of the captured image to the specified size
+  - `cropX` / `cropY` / `cropWidth` / `cropHeight`: crops to an exact rectangle
+
+### Fixed
+- **FIX**: `captureWindow()` now automatically crops transparent borders for all windows
+  - Windows captured via `desktopIndependentWindow` may include transparent padding around the actual content
+  - Transparent pixel boundaries are correctly detected using byte order-aware alpha channel reading (BGRA layout)
+  - After cropping, the image is restored to the original window frame size
+
 ## 1.7.0
 
 ### Fixed

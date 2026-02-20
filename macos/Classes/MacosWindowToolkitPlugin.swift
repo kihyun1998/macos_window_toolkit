@@ -276,6 +276,12 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     let targetWidth = arguments["targetWidth"] as? Int
     let targetHeight = arguments["targetHeight"] as? Int
     let preserveAspectRatio = arguments["preserveAspectRatio"] as? Bool ?? false
+    let cropContentWidth = arguments["cropContentWidth"] as? Int
+    let cropContentHeight = arguments["cropContentHeight"] as? Int
+    let cropX = arguments["cropX"] as? Int
+    let cropY = arguments["cropY"] as? Int
+    let cropWidth = arguments["cropWidth"] as? Int
+    let cropHeight = arguments["cropHeight"] as? Int
 
     if #available(macOS 12.3, *) {
       Task {
@@ -284,7 +290,9 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
             windowId: windowId, excludeTitlebar: excludeTitlebar,
             customTitlebarHeight: customTitlebarHeight,
             targetWidth: targetWidth, targetHeight: targetHeight,
-            preserveAspectRatio: preserveAspectRatio)
+            preserveAspectRatio: preserveAspectRatio,
+            cropContentWidth: cropContentWidth, cropContentHeight: cropContentHeight,
+            cropX: cropX, cropY: cropY, cropWidth: cropWidth, cropHeight: cropHeight)
 
           // Return success result
           result([
