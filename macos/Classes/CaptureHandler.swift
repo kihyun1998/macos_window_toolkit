@@ -148,6 +148,15 @@ class CaptureHandler {
                 finalImage = screenshot
             }
 
+            // Crop transparent borders for fullscreen windows
+            let croppedFinalImage: CGImage
+            if isFullscreenWindow(targetWindow.frame),
+               let cropped = cropTransparentBorders(finalImage) {
+                croppedFinalImage = cropped
+            } else {
+                croppedFinalImage = finalImage
+            }
+
             // Resize if needed
             let imageToConvert: CGImage
             if let width = targetWidth, let height = targetHeight {
@@ -155,14 +164,14 @@ class CaptureHandler {
                 if preserveAspectRatio {
                     // Preserve aspect ratio, fill extra space with black
                     resized = resizeImagePreservingAspectRatio(
-                        finalImage,
+                        croppedFinalImage,
                         targetWidth: width,
                         targetHeight: height
                     )
                 } else {
                     // Force exact size resize (may distort image)
                     resized = resizeImageToExactSize(
-                        finalImage,
+                        croppedFinalImage,
                         targetWidth: width,
                         targetHeight: height
                     )
@@ -177,7 +186,7 @@ class CaptureHandler {
                 }
                 imageToConvert = finalResized
             } else {
-                imageToConvert = finalImage
+                imageToConvert = croppedFinalImage
             }
 
             // CGImage를 PNG 데이터로 변환
@@ -378,6 +387,75 @@ class CaptureHandler {
         }
 
         return isFullscreenWindow(targetWindow.frame)
+    }
+
+    /// Crops transparent border pixels from a CGImage
+    private static func cropTransparentBorders(_ image: CGImage) -> CGImage? {
+        guard image.alphaInfo != .none && image.alphaInfo != .noneSkipFirst && image.alphaInfo != .noneSkipLast else {
+            return nil  // No alpha channel, nothing to crop
+        }
+        guard let dataProvider = image.dataProvider,
+              let data = dataProvider.data,
+              let ptr = CFDataGetBytePtr(data) else { return nil }
+
+        let w = image.width, h = image.height
+        let bytesPerRow = image.bytesPerRow
+        let bpp = image.bitsPerPixel / 8
+        // Alpha offset depends on both alphaInfo AND byte order
+        // SCScreenshotManager typically uses premultipliedFirst + byteOrder32Little = BGRA in memory (alpha at offset 3)
+        let byteOrderLittle = image.bitmapInfo.contains(.byteOrder32Little)
+        let alphaOffset: Int
+        switch image.alphaInfo {
+        case .premultipliedFirst, .first:
+            alphaOffset = byteOrderLittle ? bpp - 1 : 0
+        case .premultipliedLast, .last:
+            alphaOffset = byteOrderLittle ? 0 : bpp - 1
+        default:
+            return nil
+        }
+
+        func isTransparentRow(_ y: Int) -> Bool {
+            for x in 0..<w {
+                if ptr[y * bytesPerRow + x * bpp + alphaOffset] > 0 { return false }
+            }
+            return true
+        }
+        func isTransparentCol(_ x: Int) -> Bool {
+            for y in 0..<h {
+                if ptr[y * bytesPerRow + x * bpp + alphaOffset] > 0 { return false }
+            }
+            return true
+        }
+
+        NSLog("[cropTransparent] image size: \(w)x\(h), alphaInfo: \(image.alphaInfo.rawValue), bpp: \(image.bitsPerPixel), alphaOffset: \(alphaOffset)")
+
+        var top = 0, bottom = h - 1, left = 0, right = w - 1
+        while top <= bottom && isTransparentRow(top) { top += 1 }
+        while bottom >= top && isTransparentRow(bottom) { bottom -= 1 }
+        while left <= right && isTransparentCol(left) { left += 1 }
+        while right >= left && isTransparentCol(right) { right -= 1 }
+
+        NSLog("[cropTransparent] detected bounds: top=\(top), bottom=\(bottom), left=\(left), right=\(right)")
+        NSLog("[cropTransparent] content size: \(right - left + 1)x\(bottom - top + 1)")
+
+        // Sample a few pixels near the detected edges to verify
+        func sampleAlpha(_ x: Int, _ y: Int) -> UInt8 {
+            ptr[y * bytesPerRow + x * bpp + alphaOffset]
+        }
+        NSLog("[cropTransparent] alpha at (left,top)=(\(left),\(top)): \(sampleAlpha(left, top))")
+        NSLog("[cropTransparent] alpha at (right,bottom)=(\(right),\(bottom)): \(sampleAlpha(right, bottom))")
+        if top > 0 { NSLog("[cropTransparent] alpha at row top-1=\(top-1), col mid: \(sampleAlpha(w/2, top-1))") }
+        if bottom < h-1 { NSLog("[cropTransparent] alpha at row bottom+1=\(bottom+1), col mid: \(sampleAlpha(w/2, bottom+1))") }
+
+        guard top <= bottom && left <= right else { return nil }
+        guard top > 0 || bottom < h - 1 || left > 0 || right < w - 1 else {
+            NSLog("[cropTransparent] nothing to crop")
+            return nil
+        }
+
+        let cropRect = CGRect(x: left, y: top, width: right - left + 1, height: bottom - top + 1)
+        NSLog("[cropTransparent] cropping to: \(cropRect)")
+        return image.cropping(to: cropRect)
     }
 
     /// 윈도우가 전체화면인지 확인
