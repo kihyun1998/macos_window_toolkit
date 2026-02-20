@@ -1902,7 +1902,7 @@ class _CaptureResultDialogState extends State<CaptureResultDialog> {
 
     return Dialog.fullscreen(
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.green,
         appBar: AppBar(
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
