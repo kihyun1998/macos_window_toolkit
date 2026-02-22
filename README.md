@@ -18,7 +18,7 @@ A Flutter plugin for macOS window management, screen capture, and application di
 
 ```yaml
 dependencies:
-  macos_window_toolkit: ^1.8.1
+  macos_window_toolkit: ^1.8.2
 ```
 
 ## Setup (Required)
@@ -103,7 +103,7 @@ if (apps case ApplicationSuccess(applications: final appList)) {
 | `captureWindow(int id, {...})` | Capture window using ScreenCaptureKit (macOS 14.0+). Transparent borders are automatically cropped. Supports titlebar exclusion, resize, custom crop, and crop size control. |
 | `getCapturableWindows()` | List capturable windows using ScreenCaptureKit (macOS 12.3+) |
 
-### Permission Management (7 methods)
+### Permission Management (10 methods)
 
 | Method | Description |
 |--------|-------------|
@@ -113,7 +113,10 @@ if (apps case ApplicationSuccess(applications: final appList)) {
 | `hasAccessibilityPermission()` | Check accessibility permission |
 | `requestAccessibilityPermission()` | Request accessibility permission |
 | `openAccessibilitySettings()` | Open system settings |
-| `permissionStream` | Stream for monitoring permission changes |
+| `startPermissionWatching({interval, emitOnlyChanges})` | Start periodic permission monitoring |
+| `stopPermissionWatching()` | Stop permission monitoring |
+| `permissionStream` | Stream of permission status changes |
+| `isPermissionWatching` | Whether monitoring is currently active |
 
 ### Application Management (5 methods)
 
@@ -296,8 +299,21 @@ final result = await toolkit.getScrollInfo(windowId);
 switch (result) {
   case ScrollSuccess(scrollInfo: final info):
     print('Vertical: ${info.verticalPosition}');  // 0.0 (top) ~ 1.0 (bottom)
-  case ScrollFailure(:final reason):
-    print('Failed: ${reason.name}');
+  case ScrollFailure(:final reason, :final message):
+    switch (reason) {
+      case ScrollFailureReason.windowNotFound:
+        print('Window no longer exists');
+      case ScrollFailureReason.windowNotAccessible:
+        // Window exists but AX API cannot access it
+        // Common cause: window is on a different Space
+        print('Window not accessible — switch to the Space where it is located');
+      case ScrollFailureReason.accessibilityPermissionDenied:
+        await toolkit.openAccessibilitySettings();
+      case ScrollFailureReason.noScrollableContent:
+        print('No scrollable content');
+      case ScrollFailureReason.unknown:
+        print('Failed: $message');
+    }
 }
 ```
 

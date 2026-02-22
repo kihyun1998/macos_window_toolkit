@@ -1142,7 +1142,7 @@ class WindowHandler {
             }
 
             guard let element = windowElement else {
-                return .failure(.windowNotFound)
+                return .failure(.windowNotAccessible)
             }
 
             // Step 4: Get scroll information from the window
@@ -1352,6 +1352,12 @@ class WindowHandler {
                 "message": "Failed to retrieve process list",
                 "details": "Unable to query system process information.",
             ]
+        case .windowNotAccessible:
+            return [
+                "code": "WINDOW_NOT_ACCESSIBLE",
+                "message": "Window is not accessible via Accessibility API",
+                "details": "The window exists but cannot be accessed. It may be on a different Space, or the application does not support the Accessibility API.",
+            ]
         }
     }
 }
@@ -1369,6 +1375,7 @@ enum WindowError: Error, LocalizedError {
     case processNotFound
     case terminationFailed
     case failedToGetProcessList
+    case windowNotAccessible
 
     var errorDescription: String? {
         switch self {
@@ -1394,6 +1401,8 @@ enum WindowError: Error, LocalizedError {
             return "Failed to terminate process"
         case .failedToGetProcessList:
             return "Failed to retrieve process list"
+        case .windowNotAccessible:
+            return "Window is not accessible via Accessibility API"
         }
     }
 }

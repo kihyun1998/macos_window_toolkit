@@ -1,6 +1,6 @@
 name: macos_window_toolkit
 description: Flutter plugin for macOS window management and application discovery - retrieve window info, monitor permissions, discover installed apps with type-safe APIs.
-version: 1.8.1
+version: 1.8.2
 homepage: https://github.com/kihyun1998/macos_window_toolkit
 repository: https://github.com/kihyun1998/macos_window_toolkit
 issue_tracker: https://github.com/kihyun1998/macos_window_toolkit/issues

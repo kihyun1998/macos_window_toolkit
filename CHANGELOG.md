@@ -1,3 +1,11 @@
+## 1.8.2
+
+### Added
+- **FEAT**: New `ScrollFailureReason.windowNotAccessible` error for `getScrollInfo()`
+  - Previously, windows that exist but cannot be accessed via Accessibility API returned `windowNotFound`
+  - Now correctly distinguished as `windowNotAccessible` — covers windows on a different Space, apps that don't support the AX API, etc.
+  - Includes user-friendly message and suggested action ("Switch to the Space where the window is located")
+
 ## 1.8.1
 
 ### Added

@@ -417,6 +417,8 @@ mixin WindowOperationsChannel {
       case 'WINDOW_NOT_FOUND':
       case 'INVALID_WINDOW_ID':
         return ScrollFailureReason.windowNotFound;
+      case 'WINDOW_NOT_ACCESSIBLE':
+        return ScrollFailureReason.windowNotAccessible;
       case 'ACCESSIBILITY_PERMISSION_DENIED':
         return ScrollFailureReason.accessibilityPermissionDenied;
       case 'NO_SCROLLABLE_CONTENT':

@@ -108,6 +108,8 @@ class ScrollFailure extends ScrollOperationResult {
     switch (reason) {
       case ScrollFailureReason.windowNotFound:
         return 'Window not found or no longer exists';
+      case ScrollFailureReason.windowNotAccessible:
+        return 'Window is not accessible (may be on a different Space)';
       case ScrollFailureReason.accessibilityPermissionDenied:
         return 'Accessibility permission required';
       case ScrollFailureReason.noScrollableContent:
@@ -123,6 +125,7 @@ class ScrollFailure extends ScrollOperationResult {
       case ScrollFailureReason.accessibilityPermissionDenied:
         return true;
       case ScrollFailureReason.windowNotFound:
+      case ScrollFailureReason.windowNotAccessible:
       case ScrollFailureReason.noScrollableContent:
       case ScrollFailureReason.unknown:
         return false;
@@ -134,6 +137,8 @@ class ScrollFailure extends ScrollOperationResult {
     switch (reason) {
       case ScrollFailureReason.accessibilityPermissionDenied:
         return 'Grant accessibility permission in System Settings';
+      case ScrollFailureReason.windowNotAccessible:
+        return 'Switch to the Space where the window is located';
       case ScrollFailureReason.windowNotFound:
       case ScrollFailureReason.noScrollableContent:
       case ScrollFailureReason.unknown:
@@ -146,6 +151,10 @@ class ScrollFailure extends ScrollOperationResult {
 enum ScrollFailureReason {
   /// Window ID is invalid or window no longer exists.
   windowNotFound,
+
+  /// Window exists but cannot be accessed via Accessibility API
+  /// (e.g., it is on a different Space or the app does not support AX API).
+  windowNotAccessible,
 
   /// Accessibility permission not granted.
   accessibilityPermissionDenied,
