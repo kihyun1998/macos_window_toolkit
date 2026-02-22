@@ -20,7 +20,8 @@ class CaptureHandler {
         windowId: Int, excludeTitlebar: Bool = false, customTitlebarHeight: CGFloat? = nil,
         targetWidth: Int? = nil, targetHeight: Int? = nil, preserveAspectRatio: Bool = false,
         cropContentWidth: Int? = nil, cropContentHeight: Int? = nil,
-        cropX: Int? = nil, cropY: Int? = nil, cropWidth: Int? = nil, cropHeight: Int? = nil
+        cropX: Int? = nil, cropY: Int? = nil, cropWidth: Int? = nil, cropHeight: Int? = nil,
+        resizeCroppedToWindowSize: Bool = true
     ) async throws -> Data {
         // Check Screen Recording permission
         let permissionHandler = PermissionHandler()
@@ -156,15 +157,19 @@ class CaptureHandler {
                 finalImage = screenshot
             }
 
-            // Crop transparent borders (all windows), then restore to original window frame size
+            // Crop transparent borders (all windows)
             let croppedFinalImage: CGImage
             let frameW = Int(targetWindow.frame.width)
             let frameH = Int(targetWindow.frame.height)
-            if let cropped = cropTransparentBorders(finalImage),
-                let restored = resizeImageToExactSize(
-                    cropped, targetWidth: frameW, targetHeight: frameH)
-            {
-                croppedFinalImage = restored
+            if let cropped = cropTransparentBorders(finalImage) {
+                if resizeCroppedToWindowSize,
+                    let restored = resizeImageToExactSize(
+                        cropped, targetWidth: frameW, targetHeight: frameH)
+                {
+                    croppedFinalImage = restored
+                } else {
+                    croppedFinalImage = cropped
+                }
             } else {
                 croppedFinalImage = finalImage
             }

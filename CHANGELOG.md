@@ -1,3 +1,10 @@
+## 1.8.1
+
+### Added
+- **FEAT**: `captureWindow()` now supports `resizeCroppedToWindowSize` parameter
+  - `true` (default): after transparent border crop, stretches the image back to the original window frame size (previous behavior)
+  - `false`: returns the cropped image at its natural content size without stretching
+
 ## 1.8.0
 
 ### Added

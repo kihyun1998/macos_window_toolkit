@@ -51,6 +51,7 @@ abstract class CaptureOperationsInterface {
     int? cropY,
     int? cropWidth,
     int? cropHeight,
+    bool resizeCroppedToWindowSize = true,
   }) {
     throw UnimplementedError('captureWindow() has not been implemented.');
   }

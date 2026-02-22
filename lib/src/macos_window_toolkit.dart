@@ -600,6 +600,7 @@ class MacosWindowToolkit {
     int? cropY,
     int? cropWidth,
     int? cropHeight,
+    bool resizeCroppedToWindowSize = true,
   }) async {
     return await MacosWindowToolkitPlatform.instance.captureWindow(
       windowId,
@@ -614,6 +615,7 @@ class MacosWindowToolkit {
       cropY: cropY,
       cropWidth: cropWidth,
       cropHeight: cropHeight,
+      resizeCroppedToWindowSize: resizeCroppedToWindowSize,
     );
   }
 

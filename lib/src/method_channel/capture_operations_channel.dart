@@ -21,11 +21,13 @@ mixin CaptureOperationsChannel {
     int? cropY,
     int? cropWidth,
     int? cropHeight,
+    bool resizeCroppedToWindowSize = true,
   }) async {
     final arguments = <String, dynamic>{
       'windowId': windowId,
       'excludeTitlebar': excludeTitlebar,
       'preserveAspectRatio': preserveAspectRatio,
+      'resizeCroppedToWindowSize': resizeCroppedToWindowSize,
     };
     if (customTitlebarHeight != null) {
       arguments['customTitlebarHeight'] = customTitlebarHeight;

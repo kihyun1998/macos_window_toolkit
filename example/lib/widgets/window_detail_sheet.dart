@@ -65,6 +65,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
   bool _preserveAspectRatio = false;
   bool _enableCrop = false;
   bool _cropModeCenter = true; // true = center crop, false = rect crop
+  bool _resizeCroppedToWindowSize = true;
   bool? _isWindowAlive;
   bool? _isWindowAliveWithName;
   bool _isCheckingAlive = false;
@@ -274,6 +275,7 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
         cropY: cropY,
         cropWidth: cropWidth,
         cropHeight: cropHeight,
+        resizeCroppedToWindowSize: _resizeCroppedToWindowSize,
       );
 
       setState(() {
@@ -1813,6 +1815,50 @@ class _WindowDetailSheetState extends State<WindowDetailSheet> {
                             ),
                           ],
                         ],
+
+                        const SizedBox(height: 16),
+                        const Divider(),
+                        const SizedBox(height: 16),
+
+                        // Resize Cropped to Window Size
+                        Row(
+                          children: [
+                            Switch(
+                              value: _resizeCroppedToWindowSize,
+                              onChanged: _isCapturing
+                                  ? null
+                                  : (value) {
+                                      setState(() {
+                                        _resizeCroppedToWindowSize = value;
+                                      });
+                                    },
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Resize Cropped to Window Size',
+                                    style: TextStyle(
+                                      color: _isCapturing ? Colors.grey : null,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  Text(
+                                    _resizeCroppedToWindowSize
+                                        ? 'Transparent borders removed, then stretched back to window frame size'
+                                        : 'Returns actual cropped content size without stretching',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
 
                         const SizedBox(height: 16),
 
