@@ -2,6 +2,23 @@ import ApplicationServices  // Import for Accessibility API
 import Cocoa
 import Foundation
 
+// MARK: - Private CGS Space API Declarations
+
+private typealias CGSConnectionID = UInt32
+private typealias CGSSpaceID = UInt64
+
+@_silgen_name("CGSMainConnectionID")
+private func _cgsMainConnectionID() -> CGSConnectionID
+
+@_silgen_name("CGSGetActiveSpace")
+private func _cgsGetActiveSpace(_ cid: CGSConnectionID) -> CGSSpaceID
+
+@_silgen_name("CGSCopySpacesForWindows")
+private func _cgsCopySpacesForWindows(_ cid: CGSConnectionID, _ mask: Int32, _ windows: CFArray) -> CFArray
+
+@_silgen_name("CGSManagedDisplaySetCurrentSpace")
+private func _cgsManagedDisplaySetCurrentSpace(_ cid: CGSConnectionID, _ display: CFTypeRef, _ spaceID: CGSSpaceID)
+
 /// Handler class responsible for window-related operations
 class WindowHandler {
 
@@ -706,8 +723,7 @@ class WindowHandler {
         }
 
         guard let window = windowElement else {
-
-            return .failure(.windowNotFound)
+            return .failure(.windowNotAccessible)
         }
 
         // Step 2: Find the close button
@@ -766,10 +782,12 @@ class WindowHandler {
                     return .failure(.closeActionFailed)
                 }
 
-            case .failure(let error):
+            case .failure(.windowNotAccessible):
+                // Step 4: Window exists but is on a different Space — switch to it and retry
+                return closeWindowViaSpaceSwitch(
+                    processId: processId, windowId: windowId, windowName: windowName)
 
-                // Step 4: Fallback to alternative methods if needed
-                // For now, we'll just return the error, but we could add AppleScript fallback here
+            case .failure(let error):
                 return .failure(error)
             }
 
@@ -1283,6 +1301,125 @@ class WindowHandler {
         }
     }
 
+    // MARK: - Space Management
+
+    /// Returns the Space ID for a given window ID using private CGS APIs
+    private func spaceForWindow(_ windowId: Int) -> CGSSpaceID? {
+        let cid = _cgsMainConnectionID()
+        let windowID = CGWindowID(windowId)
+        let windowsArray = [NSNumber(value: windowID)] as CFArray
+        let spaces = _cgsCopySpacesForWindows(cid, 7, windowsArray) as? [NSNumber]
+        return spaces?.first.map { CGSSpaceID($0.uint64Value) }
+    }
+
+    /// Returns the display ID that contains the given window using its bounds
+    private func displayForWindow(_ windowId: Int) -> CGDirectDisplayID {
+        let windowListInfo = CGWindowListCopyWindowInfo([.excludeDesktopElements], kCGNullWindowID)
+        guard let windowList = windowListInfo as? [[String: Any]] else {
+            return CGMainDisplayID()
+        }
+
+        for windowInfo in windowList {
+            guard let id = windowInfo[kCGWindowNumber as String] as? NSNumber,
+                  id.intValue == windowId,
+                  let boundsDict = windowInfo[kCGWindowBounds as String] as? [String: Any] else {
+                continue
+            }
+
+            let x = boundsDict["X"] as? Double ?? 0
+            let y = boundsDict["Y"] as? Double ?? 0
+            let width = boundsDict["Width"] as? Double ?? 0
+            let height = boundsDict["Height"] as? Double ?? 0
+            let rect = CGRect(x: x, y: y, width: width, height: height)
+
+            var displayCount: UInt32 = 0
+            var displayIDs = [CGDirectDisplayID](repeating: 0, count: 8)
+            if CGGetDisplaysWithRect(rect, 8, &displayIDs, &displayCount) == .success,
+               displayCount > 0 {
+                return displayIDs[0]
+            }
+        }
+
+        return CGMainDisplayID()
+    }
+
+    /// Returns the UUID string for a given display ID
+    private func displayUUIDString(for displayID: CGDirectDisplayID) -> String? {
+        guard let uuid = CGDisplayCreateUUIDFromDisplayID(displayID) else { return nil }
+        return CFUUIDCreateString(nil, uuid.takeRetainedValue()) as String?
+    }
+
+    /// Switches the active Space on the specified display using private CGS APIs
+    private func activateSpace(_ spaceID: CGSSpaceID, on displayID: CGDirectDisplayID) {
+        guard let uuidString = displayUUIDString(for: displayID) else { return }
+        let cid = _cgsMainConnectionID()
+        _cgsManagedDisplaySetCurrentSpace(cid, uuidString as CFString, spaceID)
+    }
+
+    /// Closes a window on a different Space by temporarily switching to it
+    private func closeWindowViaSpaceSwitch(
+        processId: Int, windowId: Int, windowName: String
+    ) -> Result<Bool, WindowError> {
+        // 0. Verify required private CGS symbols exist at runtime
+        let requiredSymbols = [
+            "CGSMainConnectionID",
+            "CGSGetActiveSpace",
+            "CGSCopySpacesForWindows",
+            "CGSManagedDisplaySetCurrentSpace",
+        ]
+        guard requiredSymbols.allSatisfy({ dlsym(RTLD_DEFAULT, $0) != nil }) else {
+            return .failure(.spaceSwitchAPIUnavailable)
+        }
+
+        // 1. Get the target window's Space
+        guard let targetSpace = spaceForWindow(windowId) else {
+            return .failure(.windowNotAccessible)
+        }
+
+        // 2. Save the currently active Space and find the window's display
+        let cid = _cgsMainConnectionID()
+        let originalSpace = _cgsGetActiveSpace(cid)
+        let displayID = displayForWindow(windowId)
+
+        // 3. Switch to the window's Space if it's different
+        let needsSwitch = originalSpace != targetSpace
+        if needsSwitch {
+            activateSpace(targetSpace, on: displayID)
+        }
+
+        // 4. Poll until AX API can see the window, then close
+        // Space switch is async, so we retry until the window element becomes accessible
+        var windowElement: AXUIElement?
+        let deadline = Date(timeIntervalSinceNow: 1.0)
+        while Date() < deadline {
+            windowElement = findWindowElementFlexible(processId: processId, windowName: windowName)
+                ?? findWindowElement(processId: processId, windowName: windowName)
+            if windowElement != nil { break }
+            CFRunLoopRunInMode(.defaultMode, 0.05, true)
+        }
+
+        guard let element = windowElement else {
+            if needsSwitch { activateSpace(originalSpace, on: displayID) }
+            return .failure(.windowNotAccessible)
+        }
+
+        guard let closeButton = findCloseButton(for: element) else {
+            if needsSwitch { activateSpace(originalSpace, on: displayID) }
+            return .failure(.closeButtonNotFound)
+        }
+
+        let result: Result<Bool, WindowError> = clickCloseButton(closeButton)
+            ? .success(true)
+            : .failure(.closeActionFailed)
+
+        // 5. Switch back to the original Space on the same display
+        if needsSwitch {
+            activateSpace(originalSpace, on: displayID)
+        }
+
+        return result
+    }
+
     /// Helper method to pass WindowError errors to Flutter
     static func handleWindowError(_ error: WindowError) -> [String: Any] {
         switch error {
@@ -1358,6 +1495,12 @@ class WindowHandler {
                 "message": "Window is not accessible via Accessibility API",
                 "details": "The window exists but cannot be accessed. It may be on a different Space, or the application does not support the Accessibility API.",
             ]
+        case .spaceSwitchAPIUnavailable:
+            return [
+                "code": "SPACE_SWITCH_API_UNAVAILABLE",
+                "message": "Private CGS Space APIs are not available",
+                "details": "The window is on a different Space but the required private APIs are unavailable on this macOS version.",
+            ]
         }
     }
 }
@@ -1376,6 +1519,7 @@ enum WindowError: Error, LocalizedError {
     case terminationFailed
     case failedToGetProcessList
     case windowNotAccessible
+    case spaceSwitchAPIUnavailable
 
     var errorDescription: String? {
         switch self {
@@ -1403,6 +1547,8 @@ enum WindowError: Error, LocalizedError {
             return "Failed to retrieve process list"
         case .windowNotAccessible:
             return "Window is not accessible via Accessibility API"
+        case .spaceSwitchAPIUnavailable:
+            return "Private CGS Space APIs are not available on this macOS version"
         }
     }
 }

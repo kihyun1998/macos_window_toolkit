@@ -92,7 +92,7 @@ if (apps case ApplicationSuccess(applications: final appList)) {
 | `getWindowsAdvanced({...})` | Advanced filtering (14 parameters) |
 | `isWindowAlive(int id)` | Check if window exists |
 | `isWindowFullScreen(int id)` | Check fullscreen state across Spaces (requires Screen Recording) |
-| `closeWindow(int id)` | Close a window (requires Accessibility) |
+| `closeWindow(int id)` | Close a window, including windows on other Spaces (requires Accessibility) |
 | `focusWindow(int id)` | Focus/bring window to front (requires Accessibility) |
 | `getScrollInfo(int id)` | Get scroll position (requires Accessibility) |
 
@@ -328,6 +328,29 @@ try {
     case 'ACCESSIBILITY_PERMISSION_DENIED':
       await toolkit.openAccessibilitySettings();
   }
+}
+```
+
+### Close Window Error Handling
+```dart
+final result = await toolkit.closeWindow(windowId);
+switch (result) {
+  case OperationSuccess():
+    print('Window closed');
+  case OperationFailure(:final code, :final message):
+    switch (code) {
+      case 'WINDOW_NOT_FOUND':
+        print('Window no longer exists');
+      case 'WINDOW_NOT_ACCESSIBLE':
+        // Window exists but AX API cannot access it
+        print('Window not accessible: $message');
+      case 'SPACE_SWITCH_API_UNAVAILABLE':
+        // Window is on a different Space but the private CGS APIs
+        // required to switch Spaces are not available on this macOS version
+        print('Cannot switch Space to reach window: $message');
+      case 'ACCESSIBILITY_PERMISSION_DENIED':
+        await toolkit.openAccessibilitySettings();
+    }
 }
 ```
 

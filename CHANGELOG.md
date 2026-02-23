@@ -1,3 +1,18 @@
+## 1.8.3
+
+### Fixed
+- **FIX**: `closeWindow()` now correctly returns `windowNotAccessible` instead of `windowNotFound` when a window exists but cannot be accessed via Accessibility API (e.g., it is on a different Space)
+
+### Added
+- **FEAT**: `closeWindow()` now automatically handles windows on other Spaces
+  - Detects which Space the target window is on using private CGS APIs
+  - Temporarily switches to the target Space, closes the window, then switches back to the original Space
+  - Uses adaptive polling instead of a fixed delay — waits only as long as needed after the Space switch
+  - Supports multi-display setups: correctly identifies and switches the Space on the display that contains the window
+- **FEAT**: New `SPACE_SWITCH_API_UNAVAILABLE` error code
+  - Returned when the target window is on a different Space but the required private CGS APIs are unavailable
+  - Distinct from `WINDOW_NOT_ACCESSIBLE` to indicate that the failure is caused by a missing system API rather than an AX access issue
+
 ## 1.8.2
 
 ### Added
