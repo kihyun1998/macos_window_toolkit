@@ -1,3 +1,10 @@
+## 1.8.4
+
+### Fixed
+- **FIX**: Resolved Swift build error caused by `RTLD_DEFAULT` being unavailable in Swift scope
+  - `RTLD_DEFAULT` is a C macro with a pointer cast (`(void *) -2`) that Swift cannot bridge automatically
+  - Replaced with the equivalent Swift expression `UnsafeMutableRawPointer(bitPattern: -2)`
+
 ## 1.8.3
 
 ### Fixed

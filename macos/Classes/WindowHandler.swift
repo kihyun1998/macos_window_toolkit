@@ -1367,7 +1367,7 @@ class WindowHandler {
             "CGSCopySpacesForWindows",
             "CGSManagedDisplaySetCurrentSpace",
         ]
-        guard requiredSymbols.allSatisfy({ dlsym(RTLD_DEFAULT, $0) != nil }) else {
+        guard requiredSymbols.allSatisfy({ dlsym(UnsafeMutableRawPointer(bitPattern: -2), $0) != nil }) else {
             return .failure(.spaceSwitchAPIUnavailable)
         }
 
