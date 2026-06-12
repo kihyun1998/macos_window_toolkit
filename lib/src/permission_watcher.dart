@@ -8,6 +8,12 @@ import '../macos_window_toolkit.dart';
 /// and accessibility) by checking their status at regular intervals and emitting
 /// changes through a stream.
 ///
+/// Polling is tied to stream listeners: when the last [permissionStream]
+/// listener cancels, the periodic timer stops automatically so no platform
+/// calls are made that nobody consumes. As long as watching has been
+/// requested via [startWatching] (and not stopped via [stopWatching]),
+/// polling resumes automatically when a new listener subscribes.
+///
 /// Example usage:
 /// ```dart
 /// final watcher = PermissionWatcher.instance;
@@ -16,9 +22,9 @@ import '../macos_window_toolkit.dart';
 /// watcher.startWatching();
 ///
 /// // Listen to permission changes
-/// watcher.permissionStream.listen((permissions) {
-///   final screenRecording = permissions['screenRecording'];
-///   final accessibility = permissions['accessibility'];
+/// final subscription = watcher.permissionStream.listen((permissions) {
+///   final screenRecording = permissions.screenRecording;
+///   final accessibility = permissions.accessibility;
 ///
 ///   if (screenRecording == false) {
 ///     // Handle screen recording permission loss
@@ -26,7 +32,11 @@ import '../macos_window_toolkit.dart';
 ///   }
 /// });
 ///
-/// // Stop monitoring
+/// // Cancelling the last listener pauses polling automatically;
+/// // a new listener resumes it.
+/// await subscription.cancel();
+///
+/// // Stop monitoring entirely
 /// watcher.stopWatching();
 /// ```
 class PermissionWatcher {
@@ -44,7 +54,17 @@ class PermissionWatcher {
   /// Whether to emit only when permissions change
   bool _emitOnlyChanges = true;
 
+  /// Polling interval, remembered so auto-resume uses the latest settings
+  Duration _interval = const Duration(seconds: 2);
+
+  /// True between [startWatching] and [stopWatching]/[dispose]. While true,
+  /// polling auto-resumes when a listener subscribes after an auto-stop.
+  bool _watchRequested = false;
+
   /// Whether the watcher is currently monitoring permissions
+  ///
+  /// Note: this can become false without an explicit [stopWatching] call —
+  /// polling stops automatically while the stream has no listeners.
   bool get isWatching => _timer?.isActive ?? false;
 
   /// Stream of permission status changes
@@ -54,9 +74,32 @@ class PermissionWatcher {
   /// - accessibility: bool? - Accessibility permission status
   /// - hasChanges: bool - Whether any permissions changed since last check
   /// - timestamp: DateTime - When the check was performed
-  Stream<PermissionStatus> get permissionStream {
-    _controller ??= StreamController<PermissionStatus>.broadcast();
-    return _controller!.stream;
+  Stream<PermissionStatus> get permissionStream => _ensureController().stream;
+
+  StreamController<PermissionStatus> _ensureController() {
+    return _controller ??= StreamController<PermissionStatus>.broadcast(
+      onListen: _handleFirstListener,
+      onCancel: _handleLastListenerCancelled,
+    );
+  }
+
+  void _handleFirstListener() {
+    // Resume polling that was auto-stopped while nobody was listening.
+    if (_watchRequested && _timer == null) {
+      _startTimer();
+    }
+  }
+
+  void _handleLastListenerCancelled() {
+    // Last listener is gone — stop polling so no platform calls are made
+    // that nobody consumes. _watchRequested stays true so the next listener
+    // resumes polling with the same settings.
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(_interval, (_) => _checkPermissions());
   }
 
   /// Starts monitoring permissions at the specified interval
@@ -64,6 +107,10 @@ class PermissionWatcher {
   /// If monitoring is already active, the existing timer will be cancelled
   /// and a new one will be started with the new interval. This prevents
   /// multiple timers from running simultaneously.
+  ///
+  /// Polling starts immediately, even before any listener subscribes. If all
+  /// listeners later cancel, polling pauses automatically and resumes when a
+  /// new listener subscribes (until [stopWatching] is called).
   ///
   /// [interval] The frequency to check permissions (default: 2 seconds)
   /// [emitOnlyChanges] If true, only emits when permissions change. If false,
@@ -74,34 +121,42 @@ class PermissionWatcher {
   }) {
     // Cancel existing timer to prevent duplicates
     _timer?.cancel();
+    _timer = null;
 
-    // Store emit preference
+    // Store settings for this watch request (also used by auto-resume)
+    _interval = interval;
     _emitOnlyChanges = emitOnlyChanges;
+    _watchRequested = true;
 
     // Initialize stream controller if needed
-    _controller ??= StreamController<PermissionStatus>.broadcast();
+    _ensureController();
 
     // Perform initial check (always emit initial state)
     _checkPermissions(forceEmit: true);
 
     // Start periodic monitoring
-    _timer = Timer.periodic(interval, (_) => _checkPermissions());
+    _startTimer();
   }
 
   /// Stops permission monitoring
   ///
-  /// Cancels the active timer and cleans up resources. The stream controller
+  /// Cancels the active timer and withdraws the watch request, so polling
+  /// does NOT resume when a new listener subscribes. The stream controller
   /// is kept alive to allow reconnection without losing listeners.
   void stopWatching() {
+    _watchRequested = false;
     _timer?.cancel();
     _timer = null;
   }
 
-  /// Performs cleanup and disposes all resources
+  /// Resets the watcher to its initial state
   ///
-  /// This should be called when the watcher is no longer needed to prevent
-  /// memory leaks. After calling dispose(), the watcher cannot be reused.
+  /// Stops monitoring, closes the current stream (existing listeners receive
+  /// a done event), and clears all cached state. The watcher can be reused
+  /// afterwards: accessing [permissionStream] creates a fresh stream, and
+  /// monitoring must be started again with [startWatching].
   void dispose() {
+    _watchRequested = false;
     _timer?.cancel();
     _timer = null;
     _controller?.close();
