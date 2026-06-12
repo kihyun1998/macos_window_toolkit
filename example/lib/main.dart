@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:macos_window_toolkit/macos_window_toolkit.dart';
 import 'package:macos_window_toolkit_example/page/applications/applications_page.dart';
+import 'package:macos_window_toolkit_example/page/memory_harness/memory_harness_page.dart';
 import 'package:macos_window_toolkit_example/page/permission/widgets/permission_setup_page.dart';
 
 import 'page/permission/widgets/permissions_status_card.dart';
@@ -66,6 +67,7 @@ class MyApp extends StatelessWidget {
         '/applications': (context) => const ApplicationsPage(),
         '/permission': (context) => const PermissionSetupPage(),
         '/test-monitoring': (context) => const TestPermissionMonitoring(),
+        '/memory-harness': (context) => const MemoryHarnessPage(),
       },
     );
   }
@@ -482,6 +484,11 @@ class _WindowDemoPageState extends State<WindowDemoPage> {
             icon: const Icon(Icons.display_settings),
             onPressed: _showScreenInfo,
             tooltip: 'Screen Info',
+          ),
+          IconButton(
+            icon: const Icon(Icons.memory),
+            onPressed: () => Navigator.pushNamed(context, '/memory-harness'),
+            tooltip: 'Memory Harness',
           ),
         ],
       ),
