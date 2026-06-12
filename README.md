@@ -18,7 +18,7 @@ A Flutter plugin for macOS window management, screen capture, and application di
 
 ```yaml
 dependencies:
-  macos_window_toolkit: ^1.8.4
+  macos_window_toolkit: ^1.9.0
 ```
 
 ## Setup (Required)
@@ -212,6 +212,10 @@ toolkit.permissionStream.listen((status) {
   }
 });
 ```
+
+Polling pauses automatically while `permissionStream` has no listeners and
+resumes when a new listener subscribes. Call `stopPermissionWatching()` to
+stop monitoring entirely.
 
 ### Advanced Window Filtering
 ```dart

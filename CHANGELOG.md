@@ -1,3 +1,27 @@
+## 1.9.0
+
+### Changed
+- **ENHANCEMENT**: `PermissionWatcher` now stops polling automatically when the last `permissionStream` listener cancels — no more wasted platform calls while nobody is listening
+  - Polling resumes automatically when a new listener subscribes (as long as watching was started and not explicitly stopped)
+  - `stopWatching()` withdraws the watch request entirely, so a later listener does not resume polling
+  - `isWatching` can now become `false` without an explicit `stopWatching()` call while the stream has no listeners
+- **ENHANCEMENT**: `PermissionWatcher.dispose()` is now a documented full reset
+  - Closes the current stream (existing listeners receive a done event) and clears all cached state
+  - The watcher is officially reusable afterwards — previously the docs said it could not be reused while the code silently allowed it
+
+### Performance
+- **PERF**: `getAllWindows()` and all filtered window queries now fetch each application's Accessibility window list at most once per call, instead of re-fetching it for every window the app owns
+  - Average `getAllWindows()` latency reduced by ~53% in testing (27.4ms → 12.9ms with 91 windows)
+  - Returned `role`/`subrole` values are unchanged
+- **PERF**: `captureWindow()` image conversion (crop/resize/PNG encode) now runs inside an `autoreleasepool`, releasing per-capture temporaries deterministically
+  - Lowers the transient memory peak during repeated captures (~19MB lower over a 300-capture soak); captured output is unchanged
+
+### Added
+- **TEST**: Memory measurement harness in the example app for leak and regression analysis
+  - In-app page (`Memory Harness`) with RSS sampling, trend sparkline, settle samples, and markdown export
+  - Automated integration tests: `memory_harness_test.dart` (scenario soak runs) and `ax_parity_probe_test.dart` (window listing latency + role/subrole parity)
+- **TEST**: Unit tests for `PermissionWatcher` covering auto-stop, resume, explicit stop, and dispose/reuse semantics
+
 ## 1.8.4
 
 ### Fixed
