@@ -125,132 +125,139 @@ class CaptureHandler {
                 configuration: configuration
             )
 
-            // Crop image if titlebar exclusion is requested
-            let finalImage: CGImage
-            if excludeTitlebar {
-                // Always set to 0 for fullscreen windows as they have no titlebar
-                let titlebarHeight: CGFloat
-                if isFullscreenWindow(targetWindow.frame) {
-                    titlebarHeight = 0.0
-                } else {
-                    // Use custom value or default (28px) for regular windows
-                    let requestedHeight = customTitlebarHeight ?? 28.0
-                    titlebarHeight = max(0, min(requestedHeight, targetWindow.frame.height))
-                }
+            // The synchronous conversion below runs inside an autoreleasepool:
+            // Task threads have no run loop draining pools, so per-capture
+            // temporaries (crops, resized bitmaps, PNG reps) would otherwise
+            // outlive the call and inflate the transient memory peak.
+            // The returned Data is retained by ARC across the pool boundary.
+            return try autoreleasepool { () throws -> Data in
+                // Crop image if titlebar exclusion is requested
+                let finalImage: CGImage
+                if excludeTitlebar {
+                    // Always set to 0 for fullscreen windows as they have no titlebar
+                    let titlebarHeight: CGFloat
+                    if isFullscreenWindow(targetWindow.frame) {
+                        titlebarHeight = 0.0
+                    } else {
+                        // Use custom value or default (28px) for regular windows
+                        let requestedHeight = customTitlebarHeight ?? 28.0
+                        titlebarHeight = max(0, min(requestedHeight, targetWindow.frame.height))
+                    }
 
-                let cropRect = CGRect(
-                    x: 0,
-                    y: titlebarHeight,
-                    width: targetWindow.frame.width,
-                    height: targetWindow.frame.height - titlebarHeight
-                )
-
-                guard let croppedImage = screenshot.cropping(to: cropRect) else {
-                    throw CaptureError.captureFailed(
-                        code: nil,
-                        domain: nil,
-                        message: "Failed to crop titlebar from image"
+                    let cropRect = CGRect(
+                        x: 0,
+                        y: titlebarHeight,
+                        width: targetWindow.frame.width,
+                        height: targetWindow.frame.height - titlebarHeight
                     )
-                }
-                finalImage = croppedImage
-            } else {
-                finalImage = screenshot
-            }
 
-            // Crop transparent borders (all windows)
-            let croppedFinalImage: CGImage
-            let frameW = Int(targetWindow.frame.width)
-            let frameH = Int(targetWindow.frame.height)
-            if let cropped = cropTransparentBorders(finalImage) {
-                if resizeCroppedToWindowSize,
-                    let restored = resizeImageToExactSize(
-                        cropped, targetWidth: frameW, targetHeight: frameH)
-                {
-                    croppedFinalImage = restored
+                    guard let croppedImage = screenshot.cropping(to: cropRect) else {
+                        throw CaptureError.captureFailed(
+                            code: nil,
+                            domain: nil,
+                            message: "Failed to crop titlebar from image"
+                        )
+                    }
+                    finalImage = croppedImage
                 } else {
-                    croppedFinalImage = cropped
+                    finalImage = screenshot
                 }
-            } else {
-                croppedFinalImage = finalImage
-            }
 
-            // Custom crop: center crop
-            let customCroppedImage: CGImage
-            if let cw = cropContentWidth, let ch = cropContentHeight {
-                let imgW = croppedFinalImage.width
-                let imgH = croppedFinalImage.height
-                let x = max(0, (imgW - cw) / 2)
-                let y = max(0, (imgH - ch) / 2)
-                let clampedW = min(cw, imgW - x)
-                let clampedH = min(ch, imgH - y)
-                if let cropped = croppedFinalImage.cropping(
-                    to: CGRect(x: x, y: y, width: clampedW, height: clampedH))
-                {
-                    customCroppedImage = cropped
+                // Crop transparent borders (all windows)
+                let croppedFinalImage: CGImage
+                let frameW = Int(targetWindow.frame.width)
+                let frameH = Int(targetWindow.frame.height)
+                if let cropped = cropTransparentBorders(finalImage) {
+                    if resizeCroppedToWindowSize,
+                        let restored = resizeImageToExactSize(
+                            cropped, targetWidth: frameW, targetHeight: frameH)
+                    {
+                        croppedFinalImage = restored
+                    } else {
+                        croppedFinalImage = cropped
+                    }
+                } else {
+                    croppedFinalImage = finalImage
+                }
+
+                // Custom crop: center crop
+                let customCroppedImage: CGImage
+                if let cw = cropContentWidth, let ch = cropContentHeight {
+                    let imgW = croppedFinalImage.width
+                    let imgH = croppedFinalImage.height
+                    let x = max(0, (imgW - cw) / 2)
+                    let y = max(0, (imgH - ch) / 2)
+                    let clampedW = min(cw, imgW - x)
+                    let clampedH = min(ch, imgH - y)
+                    if let cropped = croppedFinalImage.cropping(
+                        to: CGRect(x: x, y: y, width: clampedW, height: clampedH))
+                    {
+                        customCroppedImage = cropped
+                    } else {
+                        customCroppedImage = croppedFinalImage
+                    }
+                    // Custom crop: rect crop
+                } else if let cx = cropX, let cy = cropY, let cw = cropWidth, let ch = cropHeight {
+                    let imgW = croppedFinalImage.width
+                    let imgH = croppedFinalImage.height
+                    let clampedX = max(0, min(cx, imgW - 1))
+                    let clampedY = max(0, min(cy, imgH - 1))
+                    let clampedW = min(cw, imgW - clampedX)
+                    let clampedH = min(ch, imgH - clampedY)
+                    if let cropped = croppedFinalImage.cropping(
+                        to: CGRect(x: clampedX, y: clampedY, width: clampedW, height: clampedH))
+                    {
+                        customCroppedImage = cropped
+                    } else {
+                        customCroppedImage = croppedFinalImage
+                    }
                 } else {
                     customCroppedImage = croppedFinalImage
                 }
-                // Custom crop: rect crop
-            } else if let cx = cropX, let cy = cropY, let cw = cropWidth, let ch = cropHeight {
-                let imgW = croppedFinalImage.width
-                let imgH = croppedFinalImage.height
-                let clampedX = max(0, min(cx, imgW - 1))
-                let clampedY = max(0, min(cy, imgH - 1))
-                let clampedW = min(cw, imgW - clampedX)
-                let clampedH = min(ch, imgH - clampedY)
-                if let cropped = croppedFinalImage.cropping(
-                    to: CGRect(x: clampedX, y: clampedY, width: clampedW, height: clampedH))
-                {
-                    customCroppedImage = cropped
-                } else {
-                    customCroppedImage = croppedFinalImage
-                }
-            } else {
-                customCroppedImage = croppedFinalImage
-            }
 
-            // Resize if needed
-            let imageToConvert: CGImage
-            if let width = targetWidth, let height = targetHeight {
-                let resized: CGImage?
-                if preserveAspectRatio {
-                    // Preserve aspect ratio, fill extra space with black
-                    resized = resizeImagePreservingAspectRatio(
-                        customCroppedImage,
-                        targetWidth: width,
-                        targetHeight: height
-                    )
+                // Resize if needed
+                let imageToConvert: CGImage
+                if let width = targetWidth, let height = targetHeight {
+                    let resized: CGImage?
+                    if preserveAspectRatio {
+                        // Preserve aspect ratio, fill extra space with black
+                        resized = resizeImagePreservingAspectRatio(
+                            customCroppedImage,
+                            targetWidth: width,
+                            targetHeight: height
+                        )
+                    } else {
+                        // Force exact size resize (may distort image)
+                        resized = resizeImageToExactSize(
+                            customCroppedImage,
+                            targetWidth: width,
+                            targetHeight: height
+                        )
+                    }
+
+                    guard let finalResized = resized else {
+                        throw CaptureError.captureFailed(
+                            code: nil,
+                            domain: nil,
+                            message: "Failed to resize image"
+                        )
+                    }
+                    imageToConvert = finalResized
                 } else {
-                    // Force exact size resize (may distort image)
-                    resized = resizeImageToExactSize(
-                        customCroppedImage,
-                        targetWidth: width,
-                        targetHeight: height
-                    )
+                    imageToConvert = customCroppedImage
                 }
 
-                guard let finalResized = resized else {
+                // CGImage를 PNG 데이터로 변환
+                guard let pngData = convertCGImageToPNG(imageToConvert) else {
                     throw CaptureError.captureFailed(
                         code: nil,
                         domain: nil,
-                        message: "Failed to resize image"
+                        message: "Failed to convert image to PNG"
                     )
                 }
-                imageToConvert = finalResized
-            } else {
-                imageToConvert = customCroppedImage
-            }
 
-            // CGImage를 PNG 데이터로 변환
-            guard let pngData = convertCGImageToPNG(imageToConvert) else {
-                throw CaptureError.captureFailed(
-                    code: nil,
-                    domain: nil,
-                    message: "Failed to convert image to PNG"
-                )
+                return pngData
             }
-
-            return pngData
 
         } catch let error as CaptureError {
             throw error
