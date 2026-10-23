@@ -116,7 +116,10 @@ class _MemoryHarnessPageState extends State<MemoryHarnessPage> {
 
   void _addLog(String message) {
     setState(() {
-      _log.insert(0, '[${DateTime.now().toIso8601String().substring(11, 19)}] $message');
+      _log.insert(
+        0,
+        '[${DateTime.now().toIso8601String().substring(11, 19)}] $message',
+      );
       if (_log.length > 200) _log.removeRange(200, _log.length);
     });
   }
@@ -128,7 +131,9 @@ class _MemoryHarnessPageState extends State<MemoryHarnessPage> {
         _capturableWindows = windows;
         if (_selectedWindowId == null ||
             !windows.any((w) => w.windowId == _selectedWindowId)) {
-          _selectedWindowId = windows.isNotEmpty ? windows.first.windowId : null;
+          _selectedWindowId = windows.isNotEmpty
+              ? windows.first.windowId
+              : null;
         }
       });
     } catch (e) {
@@ -183,7 +188,8 @@ class _MemoryHarnessPageState extends State<MemoryHarnessPage> {
         _addLog('$scenario $completed/$iterations — RSS ${_mb(rss)}');
       }
       setState(() {
-        _runStatus = '$scenario: $completed/$iterations — RSS ${_mb(rss)} '
+        _runStatus =
+            '$scenario: $completed/$iterations — RSS ${_mb(rss)} '
             '(peak ${_mb(rssPeak)})';
       });
 
@@ -204,17 +210,23 @@ class _MemoryHarnessPageState extends State<MemoryHarnessPage> {
     setState(() {
       _results.add(result);
       _running = false;
-      _runStatus = '$scenario: done — RSS ${_mb(rssEnd)} '
+      _runStatus =
+          '$scenario: done — RSS ${_mb(rssEnd)} '
           '(Δ ${_mb(rssEnd - rssStart)}, peak ${_mb(rssPeak)}). Settling…';
     });
-    _addLog('$scenario finished: start ${_mb(rssStart)} → end ${_mb(rssEnd)}, '
-        'peak ${_mb(rssPeak)}${note != null ? ' ($note)' : ''}');
+    _addLog(
+      '$scenario finished: start ${_mb(rssStart)} → end ${_mb(rssEnd)}, '
+      'peak ${_mb(rssPeak)}${note != null ? ' ($note)' : ''}',
+    );
 
     // Settle samples: distinguish "leak" from "delayed reclaim".
     unawaited(_takeSettleSamples(result, scenario));
   }
 
-  Future<void> _takeSettleSamples(_HarnessResult result, String scenario) async {
+  Future<void> _takeSettleSamples(
+    _HarnessResult result,
+    String scenario,
+  ) async {
     await Future.delayed(const Duration(seconds: 5));
     if (!mounted) return;
     setState(() => result.rssSettle5 = ProcessInfo.currentRss);
@@ -302,8 +314,10 @@ class _MemoryHarnessPageState extends State<MemoryHarnessPage> {
     }
     final count = _watcherSubs.length;
     _watcherSubs.clear();
-    _addLog('$count listener(s) cancelled — watcher isWatching: '
-        '${PermissionWatcher.instance.isWatching}');
+    _addLog(
+      '$count listener(s) cancelled — watcher isWatching: '
+      '${PermissionWatcher.instance.isWatching}',
+    );
     setState(() {});
   }
 
@@ -320,7 +334,8 @@ class _MemoryHarnessPageState extends State<MemoryHarnessPage> {
           rssStart: samples.first,
           rssEnd: samples.last,
           rssPeak: samples.reduce((a, b) => a > b ? a : b),
-          note: 'isWatching=${PermissionWatcher.instance.isWatching}, '
+          note:
+              'isWatching=${PermissionWatcher.instance.isWatching}, '
               'listeners=${_watcherSubs.length}, events=$_watcherEvents',
         );
         _results.add(result);
@@ -335,12 +350,16 @@ class _MemoryHarnessPageState extends State<MemoryHarnessPage> {
       _watcherSampler = Timer.periodic(const Duration(seconds: 2), (_) {
         _watcherSamples.add(ProcessInfo.currentRss);
         if (_watcherSamples.length % 30 == 0) {
-          _addLog('Watcher sampling: ${_watcherSamples.length} samples, '
-              'RSS ${_mb(_watcherSamples.last)}, events=$_watcherEvents');
+          _addLog(
+            'Watcher sampling: ${_watcherSamples.length} samples, '
+            'RSS ${_mb(_watcherSamples.last)}, events=$_watcherEvents',
+          );
         }
       });
-      _addLog('Watcher RSS sampling started (every 2s — leave running '
-          'for several minutes)');
+      _addLog(
+        'Watcher RSS sampling started (every 2s — leave running '
+        'for several minutes)',
+      );
       setState(() {});
     }
   }
@@ -355,8 +374,10 @@ class _MemoryHarnessPageState extends State<MemoryHarnessPage> {
       ..writeln('- PID: $pid (RSS via `ProcessInfo.currentRss`)')
       ..writeln('- maxRss: ${_mb(ProcessInfo.maxRss)}')
       ..writeln()
-      ..writeln('| Scenario | Iterations | Elapsed | RSS start | RSS end '
-          '| RSS peak | Δ end-start | settle +5s | settle +15s | Note |')
+      ..writeln(
+        '| Scenario | Iterations | Elapsed | RSS start | RSS end '
+        '| RSS peak | Δ end-start | settle +5s | settle +15s | Note |',
+      )
       ..writeln('|---|---|---|---|---|---|---|---|---|---|');
     for (final result in _results) {
       buffer.writeln(result.toMarkdownRow());
@@ -407,8 +428,10 @@ class _MemoryHarnessPageState extends State<MemoryHarnessPage> {
             Row(
               children: [
                 Expanded(
-                  child: Text('PID $pid — RSS ${_mb(_liveRss)} '
-                      '(maxRss ${_mb(ProcessInfo.maxRss)})'),
+                  child: Text(
+                    'PID $pid — RSS ${_mb(_liveRss)} '
+                    '(maxRss ${_mb(ProcessInfo.maxRss)})',
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.copy, size: 18),
@@ -439,8 +462,10 @@ class _MemoryHarnessPageState extends State<MemoryHarnessPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Scenario 1 — repeated captureWindow',
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Scenario 1 — repeated captureWindow',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 4),
             const Text(
               'Pick a large window (e.g. a maximized browser) for a '
@@ -456,14 +481,16 @@ class _MemoryHarnessPageState extends State<MemoryHarnessPage> {
                     value: _selectedWindowId,
                     hint: const Text('Select window'),
                     items: _capturableWindows
-                        .map((w) => DropdownMenuItem(
-                              value: w.windowId,
-                              child: Text(
-                                '${w.ownerName} — ${w.title} '
-                                '(${w.frame.width.toInt()}×${w.frame.height.toInt()})',
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ))
+                        .map(
+                          (w) => DropdownMenuItem(
+                            value: w.windowId,
+                            child: Text(
+                              '${w.ownerName} — ${w.title} '
+                              '(${w.frame.width.toInt()}×${w.frame.height.toInt()})',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        )
                         .toList(),
                     onChanged: _running
                         ? null
@@ -513,8 +540,10 @@ class _MemoryHarnessPageState extends State<MemoryHarnessPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Scenario 2 — getAllWindows polling',
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Scenario 2 — getAllWindows polling',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -566,8 +595,10 @@ class _MemoryHarnessPageState extends State<MemoryHarnessPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Scenario 3 — PermissionWatcher long-run',
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Scenario 3 — PermissionWatcher long-run',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 4),
             const Text(
               'Start the watcher and RSS sampling, leave it running for '
@@ -576,8 +607,10 @@ class _MemoryHarnessPageState extends State<MemoryHarnessPage> {
               style: TextStyle(fontSize: 12),
             ),
             const SizedBox(height: 8),
-            Text('isWatching: $watching · listeners: ${_watcherSubs.length} '
-                '· events: $_watcherEvents'),
+            Text(
+              'isWatching: $watching · listeners: ${_watcherSubs.length} '
+              '· events: $_watcherEvents',
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -596,14 +629,18 @@ class _MemoryHarnessPageState extends State<MemoryHarnessPage> {
                   child: const Text('Add listener'),
                 ),
                 OutlinedButton(
-                  onPressed: _watcherSubs.isEmpty ? null : _watcherCancelListeners,
+                  onPressed: _watcherSubs.isEmpty
+                      ? null
+                      : _watcherCancelListeners,
                   child: const Text('Cancel all listeners'),
                 ),
                 FilledButton.icon(
                   icon: Icon(sampling ? Icons.stop : Icons.play_arrow),
-                  label: Text(sampling
-                      ? 'Stop sampling (${_watcherSamples.length})'
-                      : 'Start RSS sampling'),
+                  label: Text(
+                    sampling
+                        ? 'Stop sampling (${_watcherSamples.length})'
+                        : 'Start RSS sampling',
+                  ),
                   onPressed: _watcherToggleSampling,
                 ),
               ],
@@ -624,8 +661,10 @@ class _MemoryHarnessPageState extends State<MemoryHarnessPage> {
             Row(
               children: [
                 Expanded(
-                  child: Text('Current run',
-                      style: Theme.of(context).textTheme.titleMedium),
+                  child: Text(
+                    'Current run',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                 ),
                 if (_running)
                   TextButton.icon(
@@ -664,8 +703,10 @@ class _MemoryHarnessPageState extends State<MemoryHarnessPage> {
             Row(
               children: [
                 Expanded(
-                  child: Text('Results (${_results.length})',
-                      style: Theme.of(context).textTheme.titleMedium),
+                  child: Text(
+                    'Results (${_results.length})',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                 ),
                 TextButton.icon(
                   icon: const Icon(Icons.copy),
@@ -737,7 +778,8 @@ class _SparklinePainter extends CustomPainter {
     final path = Path();
     for (var i = 0; i < samples.length; i++) {
       final x = i / (samples.length - 1) * size.width;
-      final y = size.height -
+      final y =
+          size.height -
           ((samples[i] - minSample) / range) * (size.height - 16) -
           8;
       if (i == 0) {
