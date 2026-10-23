@@ -51,7 +51,7 @@ From reading the source:
 - [user-docs](user-docs.md): the README and `documentations/` still describe legacy capture methods.
 
 ## Known holes / open
-- `REQUIRES_MACOS_14` (macOS 12.3–13) reaches Dart as `CaptureFailureReason.unknown`, not `unsupportedVersion`. Owned by [failure-code-vocabulary](../invariant/failure-code-vocabulary.md).
+- `REQUIRES_MACOS_14` (macOS 12.3–13) reaches Dart as `CaptureFailureReason.unknown`, not `unsupportedVersion`. Tracked: #7. Owned by [failure-code-vocabulary](../invariant/failure-code-vocabulary.md).
 - Output is in points, not pixels. Whether that is intended is not recorded.
 - `isFullscreenWindow` compares an `SCWindow.frame` with `NSScreen.frame`. The two may use different coordinate origins (top-left global vs. bottom-left Cocoa), which would break detection on non-primary displays. This needs confirming against Apple's docs.
 - `CaptureHandler.getWindowInfo` has no caller.

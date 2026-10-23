@@ -31,7 +31,7 @@ From reading the source:
 - [user-docs](user-docs.md): `documentations/api/process_management.md` describes the tree behaviour by hand.
 
 ## Known holes / open
-- `terminateApplicationTree` leaves grandchildren running. The maintainer said single-level is **not** intended (maintainer, 2026-10-23).
+- `terminateApplicationTree` leaves grandchildren running. The maintainer said single-level is **not** intended (maintainer, 2026-10-23). Tracked: #8
 - `kill(pid, 0)` also returns `-1` with `EPERM` for a process owned by another user, so it is reported as `processNotFound`.
 - `getChildProcesses` sizes the buffer, then fetches. A process table that grows in between makes `sysctl` fail, which gives `failedToGetProcessList`.
 - `TERMINATION_FAILED` reaches Dart as `unknown` (see the invariant).

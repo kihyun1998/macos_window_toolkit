@@ -43,7 +43,7 @@ From reading the source:
 - [user-docs](user-docs.md): CHANGELOG 1.8.3 and the API docs describe close results that the code does not produce (see the holes).
 
 ## Known holes / open
-- `closeWindow` on an inaccessible window reaches Dart as `unknown`, not `windowNotAccessible`. The CHANGELOG promises otherwise, and the maintainer confirmed it is a gap (maintainer, 2026-10-23). Owned by [failure-code-vocabulary](../invariant/failure-code-vocabulary.md).
+- `closeWindow` on an inaccessible window reaches Dart as `unknown`, not `windowNotAccessible`. The CHANGELOG promises otherwise, and the maintainer confirmed it is a gap (maintainer, 2026-10-23). Tracked: #7. Owned by [failure-code-vocabulary](../invariant/failure-code-vocabulary.md).
 - The Space-switch path blocks the calling (platform) thread for up to 1s while it polls.
 - Private CGS symbols: the `dlsym` check guards a missing symbol, not a changed signature.
 - If close fails after the Space switch, the switch back still runs, but a crash or early return in between leaves the user on the other Space.

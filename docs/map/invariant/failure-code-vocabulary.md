@@ -20,8 +20,8 @@ No hop reads the others. The reason strings and code strings are literals repeat
 
 ## What a violation looks like
 Codes that currently reach Dart as `unknown`, read on 2026-10-23:
-- `WINDOW_NOT_ACCESSIBLE` from `closeWindow` is not in `isStateError`, and `WindowOperationFailureReason` has no matching value. CHANGELOG 1.8.3 says `closeWindow()` returns `windowNotAccessible`, which the code does not do. (`getScrollInfo` raises the same code, but `_mapErrorCodeToScrollFailureReason` does map it to `windowNotAccessible`. `focusWindow` returns `windowNotFound` in the same situation.) The maintainer confirmed this is a gap, not intent (maintainer, 2026-10-23).
-- `REQUIRES_MACOS_14` from `captureWindow` on macOS 12.3–13 is not a state, and `CaptureOperationsChannel._mapErrorCodeToFailureReason` lacks it, so it becomes `unknown` rather than `unsupportedVersion`.
+- `WINDOW_NOT_ACCESSIBLE` from `closeWindow` is not in `isStateError`, and `WindowOperationFailureReason` has no matching value. CHANGELOG 1.8.3 says `closeWindow()` returns `windowNotAccessible`, which the code does not do. (`getScrollInfo` raises the same code, but `_mapErrorCodeToScrollFailureReason` does map it to `windowNotAccessible`. `focusWindow` returns `windowNotFound` in the same situation.) The maintainer confirmed this is a gap, not intent (maintainer, 2026-10-23). Tracked: #7
+- `REQUIRES_MACOS_14` from `captureWindow` on macOS 12.3–13 is not a state, and `CaptureOperationsChannel._mapErrorCodeToFailureReason` lacks it, so it becomes `unknown` rather than `unsupportedVersion`. Tracked: #7
 - `SPACE_SWITCH_API_UNAVAILABLE`, `CLOSE_ACTION_FAILED`, `TERMINATION_FAILED` and `INSUFFICIENT_WINDOW_INFO` also become `unknown`.
 - `ScrollFailureReason.noScrollableContent` (reason `no_scrollable_content`) is mapped in Dart but no Swift path produces it.
 - `isWindowFullScreen` does not use the typed path at all: `WindowOperationsChannel.isWindowFullScreen` rethrows a state map as `PlatformException(code: reason.toUpperCase())`. That yields codes such as `PERMISSION_DENIED` that `PlatformErrorCode` does not list.
