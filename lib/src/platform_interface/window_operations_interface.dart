@@ -191,6 +191,7 @@ abstract class WindowOperationsInterface {
   /// - [OperationSuccess] if the window was successfully closed
   /// - [OperationFailure] with one of the following reasons:
   ///   - [WindowOperationFailureReason.windowNotFound]: Window no longer exists
+  ///   - [WindowOperationFailureReason.windowNotAccessible]: Window exists but the Accessibility API cannot reach it
   ///   - [WindowOperationFailureReason.accessibilityPermissionDenied]: Permission not granted
   ///   - [WindowOperationFailureReason.closeButtonNotFound]: Unable to find close button
   ///   - [WindowOperationFailureReason.unknown]: Other failure states

@@ -26,6 +26,8 @@ class OperationFailure extends WindowOperationResult {
     switch (reason) {
       case WindowOperationFailureReason.windowNotFound:
         return 'Window not found or no longer exists';
+      case WindowOperationFailureReason.windowNotAccessible:
+        return 'Window is not accessible (may be on a different Space, or its app does not support Accessibility)';
       case WindowOperationFailureReason.processNotFound:
         return 'Process not found or already terminated';
       case WindowOperationFailureReason.accessibilityPermissionDenied:
@@ -45,6 +47,7 @@ class OperationFailure extends WindowOperationResult {
       case WindowOperationFailureReason.accessibilityPermissionDenied:
         return true;
       case WindowOperationFailureReason.windowNotFound:
+      case WindowOperationFailureReason.windowNotAccessible:
       case WindowOperationFailureReason.processNotFound:
       case WindowOperationFailureReason.closeButtonNotFound:
       case WindowOperationFailureReason.focusActionFailed:
@@ -58,6 +61,8 @@ class OperationFailure extends WindowOperationResult {
     switch (reason) {
       case WindowOperationFailureReason.accessibilityPermissionDenied:
         return 'Grant accessibility permission in System Settings';
+      case WindowOperationFailureReason.windowNotAccessible:
+        return 'Switch to the Space where the window is located, or check that its app supports Accessibility';
       case WindowOperationFailureReason.windowNotFound:
       case WindowOperationFailureReason.processNotFound:
       case WindowOperationFailureReason.closeButtonNotFound:
@@ -72,6 +77,10 @@ class OperationFailure extends WindowOperationResult {
 enum WindowOperationFailureReason {
   /// Window ID is invalid or window no longer exists
   windowNotFound,
+
+  /// Window exists but cannot be accessed via Accessibility API
+  /// (e.g., it is on a different Space or the app does not support it)
+  windowNotAccessible,
 
   /// Process ID is invalid or process no longer exists
   processNotFound,

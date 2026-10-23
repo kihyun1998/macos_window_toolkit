@@ -18,7 +18,7 @@ From reading the source:
     3. switches Space and polls `findWindowElement*` for up to 1.0s, running the run loop in 50ms slices;
     4. closes the window and switches back.
 - **Focus.** Sets `kAXMainAttribute = true`, activates the app with `.activateIgnoringOtherApps`, then sends `kAXRaiseAction`. It succeeds if either AX call succeeds. Focus does **no** Space switch, and when no element is found it returns `windowNotFound` (close and scroll say `windowNotAccessible`).
-- **Results.** Results return as `WindowOperationResult`. Which codes arrive typed is [failure-code-vocabulary](../invariant/failure-code-vocabulary.md).
+- **Results.** Results return as `WindowOperationResult`. An inaccessible window is `windowNotAccessible` (#7). Which codes arrive typed is [failure-code-vocabulary](../invariant/failure-code-vocabulary.md).
 
 ## Code
 - `macos/Classes/WindowHandler.swift — WindowHandler.closeWindow`, `closeWindowWithAccessibilityAPI`, `closeWindowViaSpaceSwitch`, `findCloseButton`, `findCloseButtonInChildren`, `searchForCloseButton`, `clickCloseButton`, `focusWindow`, `findWindowElement`, `findWindowElementFlexible`
@@ -40,10 +40,9 @@ From reading the source:
 - [permissions](permissions.md): the precheck is `PermissionHandler.hasAccessibilityPermission`. If that check changes meaning, close and focus fail or proceed differently.
 - [window-listing](window-listing.md): `processId` and `name` come from `getWindowById`'s dictionary.
 - [shipping](shipping.md): `WindowOperationFailureReason` is a public enum, so adding a value breaks consumers' exhaustive `switch`es and needs a release note and version decision.
-- [user-docs](user-docs.md): CHANGELOG 1.8.3 and the API docs describe close results that the code does not produce (see the holes).
+- [user-docs](user-docs.md): `documentations/api/error_handling.md` and the README's close example list close failure reasons by hand, so a new reason needs adding there.
 
 ## Known holes / open
-- `closeWindow` on an inaccessible window reaches Dart as `unknown`, not `windowNotAccessible`. The CHANGELOG promises otherwise, and the maintainer confirmed it is a gap (maintainer, 2026-10-23). Tracked: #7. Owned by [failure-code-vocabulary](../invariant/failure-code-vocabulary.md).
 - The Space-switch path blocks the calling (platform) thread for up to 1s while it polls.
 - Private CGS symbols: the `dlsym` check guards a missing symbol, not a changed signature.
 - If close fails after the Space switch, the switch back still runs, but a crash or early return in between leaves the user on the other Space.

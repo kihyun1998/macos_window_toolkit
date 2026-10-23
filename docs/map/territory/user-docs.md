@@ -28,5 +28,4 @@ From reading the docs against the code:
 ## Known holes / open
 - The legacy capture claims above are false at HEAD.
 - `documentations/api/process_management.md` lists `terminateApplicationTree()` as returning `Future<bool>`. The code returns `WindowOperationResult`. Tracked: #8
-- CHANGELOG 1.8.3's `windowNotAccessible` claim is false (see [failure-code-vocabulary](../invariant/failure-code-vocabulary.md)). Tracked: #7
 - No page says which coordinate space screen frames and window bounds use (see [system-info](system-info.md)).

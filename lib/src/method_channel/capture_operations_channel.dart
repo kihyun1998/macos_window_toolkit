@@ -179,6 +179,7 @@ mixin CaptureOperationsChannel {
       case 'INVALID_WINDOW_ID':
         return CaptureFailureReason.windowNotFound;
       case 'UNSUPPORTED_MACOS_VERSION':
+      case 'REQUIRES_MACOS_14':
         return CaptureFailureReason.unsupportedVersion;
       case 'PERMISSION_DENIED':
       case 'SCREEN_RECORDING_PERMISSION_DENIED':

@@ -11,7 +11,7 @@ From reading the source:
 - **Gates, in order.**
   1. The dispatcher requires macOS 12.3. Below it, `captureWindow` returns the state `unsupported_version` and `getCapturableWindows` throws `UNSUPPORTED_MACOS_VERSION`.
   2. `CaptureHandler.captureWindow` and `isWindowFullScreen` require Screen Recording (`CGPreflightScreenCaptureAccess`).
-  3. They then require **macOS 14.0** for `SCScreenshotManager` (`REQUIRES_MACOS_14`). `getCapturableWindows` needs only 12.3.
+  3. They then require **macOS 14.0** for `SCScreenshotManager` (`REQUIRES_MACOS_14`, which reaches Dart as `unsupportedVersion` since #7). `getCapturableWindows` needs only 12.3.
 - **Lookup.** The window is found by `windowID` in `SCShareableContent.current`. A window missing there is `INVALID_WINDOW_ID` → `windowNotFound`.
 - **Minimized check.** The window is refused if an AX window of the owning app is minimized and its title matches. See [ax-window-identity-by-title](../invariant/ax-window-identity-by-title.md).
 - **Output size.** `SCStreamConfiguration` width/height are the window frame's **points** (`Int(frame.width)`). No scale factor is applied, `scalesToFit = false`, and the cursor is hidden.
@@ -51,7 +51,6 @@ From reading the source:
 - [user-docs](user-docs.md): the README and `documentations/` still describe legacy capture methods.
 
 ## Known holes / open
-- `REQUIRES_MACOS_14` (macOS 12.3–13) reaches Dart as `CaptureFailureReason.unknown`, not `unsupportedVersion`. Tracked: #7. Owned by [failure-code-vocabulary](../invariant/failure-code-vocabulary.md).
 - Output is in points, not pixels. Whether that is intended is not recorded.
 - `isFullscreenWindow` compares an `SCWindow.frame` with `NSScreen.frame`. The two may use different coordinate origins (top-left global vs. bottom-left Cocoa), which would break detection on non-primary displays. This needs confirming against Apple's docs.
 - `CaptureHandler.getWindowInfo` has no caller.

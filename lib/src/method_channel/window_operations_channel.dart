@@ -251,6 +251,8 @@ mixin WindowOperationsChannel {
     switch (code) {
       case 'window_not_found':
         return WindowOperationFailureReason.windowNotFound;
+      case 'window_not_accessible':
+        return WindowOperationFailureReason.windowNotAccessible;
       case 'process_not_found':
         return WindowOperationFailureReason.processNotFound;
       case 'accessibility_permission_denied':
@@ -280,6 +282,8 @@ mixin WindowOperationsChannel {
       case 'WINDOW_NOT_FOUND':
       case 'INVALID_WINDOW_ID':
         return WindowOperationFailureReason.windowNotFound;
+      case 'WINDOW_NOT_ACCESSIBLE':
+        return WindowOperationFailureReason.windowNotAccessible;
       case 'PROCESS_NOT_FOUND':
         return WindowOperationFailureReason.processNotFound;
       case 'ACCESSIBILITY_PERMISSION_DENIED':
@@ -392,6 +396,8 @@ mixin WindowOperationsChannel {
     switch (code) {
       case 'window_not_found':
         return ScrollFailureReason.windowNotFound;
+      case 'window_not_accessible':
+        return ScrollFailureReason.windowNotAccessible;
       case 'accessibility_permission_denied':
         return ScrollFailureReason.accessibilityPermissionDenied;
       case 'no_scrollable_content':

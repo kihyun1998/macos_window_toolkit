@@ -1,3 +1,12 @@
+## Unreleased
+
+### Fixed
+- **FIX**: `closeWindow()` now returns `OperationFailure(reason: WindowOperationFailureReason.windowNotAccessible)` when the window exists but cannot be reached through the Accessibility API, as the 1.8.3 entry described. It previously arrived as `unknown`
+- **FIX**: `captureWindow()` on macOS 12.3–13 now returns `CaptureFailure(reason: CaptureFailureReason.unsupportedVersion)` instead of `unknown`, since window capture requires macOS 14.0
+
+### Changed
+- **BREAKING (source)**: `WindowOperationFailureReason` gains `windowNotAccessible`. An exhaustive `switch` over it needs a new case
+
 ## 1.9.0
 
 ### Changed
