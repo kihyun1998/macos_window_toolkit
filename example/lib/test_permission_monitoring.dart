@@ -129,7 +129,7 @@ class _TestPermissionMonitoringState extends State<TestPermissionMonitoring> {
                           onPressed: () {
                             _toolkit.startPermissionWatching(
                               interval: const Duration(seconds: 2),
-                              emitOnlyChanges: true, // 기본값: 변경시만 emit
+                              emitOnlyChanges: true, // Default: emit only on change
                             );
                             setState(() {
                               _eventLog.insert(
@@ -150,7 +150,7 @@ class _TestPermissionMonitoringState extends State<TestPermissionMonitoring> {
                           onPressed: () {
                             _toolkit.startPermissionWatching(
                               interval: const Duration(seconds: 2),
-                              emitOnlyChanges: false, // 모든 체크마다 emit
+                              emitOnlyChanges: false, // Emit on every check
                             );
                             setState(() {
                               _eventLog.insert(

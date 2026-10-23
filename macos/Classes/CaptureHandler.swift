@@ -112,7 +112,7 @@ class CaptureHandler {
             configuration.height = Int(targetWindow.frame.height)
             configuration.scalesToFit = false
 
-            configuration.capturesAudio = false  // macOS 14.0+에서는 문제없음
+            configuration.capturesAudio = false  // No issue on macOS 14.0+
             configuration.showsCursor = false
             configuration.minimumFrameInterval = CMTime(value: 1, timescale: 60)
 
@@ -247,7 +247,7 @@ class CaptureHandler {
                     imageToConvert = customCroppedImage
                 }
 
-                // CGImage를 PNG 데이터로 변환
+                // Convert the CGImage to PNG data
                 guard let pngData = convertCGImageToPNG(imageToConvert) else {
                     throw CaptureError.captureFailed(
                         code: nil,
@@ -517,9 +517,9 @@ class CaptureHandler {
         return image.cropping(to: cropRect)
     }
 
-    /// 윈도우가 전체화면인지 확인
+    /// Checks whether the window is fullscreen
     private static func isFullscreenWindow(_ windowFrame: CGRect) -> Bool {
-        // 메인 스크린과 비교
+        // Compare against the main screen
         if let mainScreen = NSScreen.main {
             let screenFrame = mainScreen.frame
             if windowFrame.size.width == screenFrame.size.width
@@ -531,7 +531,7 @@ class CaptureHandler {
             }
         }
 
-        // 멀티 디스플레이 환경에서 다른 스크린들과 비교
+        // Compare against the other screens on multi-display setups
         for screen in NSScreen.screens {
             let screenFrame = screen.frame
             if windowFrame.size.width == screenFrame.size.width
@@ -546,7 +546,7 @@ class CaptureHandler {
         return false
     }
 
-    // 윈도우 정보를 가져오는 헬퍼 메서드
+    // Helper that looks up a window's info
     private static func getWindowInfo(windowId: Int) -> [String: Any]? {
         guard
             let windowList = CGWindowListCopyWindowInfo(.optionAll, kCGNullWindowID)
