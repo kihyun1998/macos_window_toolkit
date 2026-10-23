@@ -36,6 +36,6 @@ From reading the source:
 - [user-docs](user-docs.md): `documentations/api_reference.md` restates the public method list by hand.
 
 ## Known holes / open
-- `test/macos_window_toolkit_test.dart` and `test/macos_window_toolkit_method_channel_test.dart` are both `void main() {}`. No test checks a method name, an argument key or a result shape.
+- `test/macos_window_toolkit_method_channel_test.dart` covers only the failure mappings of `closeWindow`, `getScrollInfo` and `captureWindow` (#7). No test checks a method name, an argument key or a success result shape, and `test/macos_window_toolkit_test.dart` is `void main() {}`.
 - `result` is called from inside a Swift `Task` (capture, capturable windows, fullscreen). Nothing here confirms that Flutter's macOS embedder accepts a reply from that thread. This is not checked against Flutter's docs (a summarized source).
 - The Dart reason maps and `_isSystemError` are copied three times, once per mixin (see the invariant).

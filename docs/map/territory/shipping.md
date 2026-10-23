@@ -25,7 +25,7 @@ From reading the files:
 **None.**
 
 ## Blast radius
-- [user-docs](user-docs.md): the README install snippet repeats the version, and the CHANGELOG makes behaviour claims that notes have found false (CHANGELOG 1.8.3, see [window-control](window-control.md)).
+- [user-docs](user-docs.md): the README install snippet repeats the version,, and CHANGELOG entries make behaviour claims a later change can falsify.
 - [channel-bridge](channel-bridge.md): `pluginClass` must match the Swift class registered there.
 - [example-app](example-app.md): it resolves the package through `path: ../`, so a constraint change here changes its resolution.
 

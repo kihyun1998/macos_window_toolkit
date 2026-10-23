@@ -20,14 +20,13 @@ No hop reads the others. The reason strings and code strings are literals repeat
 
 ## What a violation looks like
 Codes that currently reach Dart as `unknown`, read on 2026-10-23:
-- `WINDOW_NOT_ACCESSIBLE` from `closeWindow` is not in `isStateError`, and `WindowOperationFailureReason` has no matching value. CHANGELOG 1.8.3 says `closeWindow()` returns `windowNotAccessible`, which the code does not do. (`getScrollInfo` raises the same code, but `_mapErrorCodeToScrollFailureReason` does map it to `windowNotAccessible`. `focusWindow` returns `windowNotFound` in the same situation.) The maintainer confirmed this is a gap, not intent (maintainer, 2026-10-23). Tracked: #7
-- `REQUIRES_MACOS_14` from `captureWindow` on macOS 12.3–13 is not a state, and `CaptureOperationsChannel._mapErrorCodeToFailureReason` lacks it, so it becomes `unknown` rather than `unsupportedVersion`. Tracked: #7
-- `SPACE_SWITCH_API_UNAVAILABLE`, `CLOSE_ACTION_FAILED`, `TERMINATION_FAILED` and `INSUFFICIENT_WINDOW_INFO` also become `unknown`.
+- `SPACE_SWITCH_API_UNAVAILABLE`, `CLOSE_ACTION_FAILED`, `TERMINATION_FAILED` and `INSUFFICIENT_WINDOW_INFO` become `unknown`.
 - `ScrollFailureReason.noScrollableContent` (reason `no_scrollable_content`) is mapped in Dart but no Swift path produces it.
 - `isWindowFullScreen` does not use the typed path at all: `WindowOperationsChannel.isWindowFullScreen` rethrows a state map as `PlatformException(code: reason.toUpperCase())`. That yields codes such as `PERMISSION_DENIED` that `PlatformErrorCode` does not list.
 
 ## Discovery history
+- #7 fixed `WINDOW_NOT_ACCESSIBLE` (close) and `REQUIRES_MACOS_14` (capture) at the Dart legacy maps only. Both still travel as `FlutterError`, because the maintainer chose not to move them into `isStateError` (scroll and `isWindowFullScreen` would change route) — theirs to reverse; #10 owns the route (maintainer, 2026-10-23). The state-reply shapes `window_not_accessible` are mapped too. `test/macos_window_toolkit_method_channel_test.dart` pins every current mapping, both shapes.
 - Found reading the dispatcher and the three mixins on 2026-10-23, while checking CHANGELOG 1.8.3's `windowNotAccessible` claim against the code.
 
 ## Where it will recur
-If a change adds a `WindowError` / `CaptureError` case or a `*FailureReason` value, it is subject to this. Grep the code string and its lower-snake reason across `macos/Classes/` and `lib/src/` and update every hop above. Moving a code into `isStateError` changes its route for **every** handler that raises it. For example, `getScrollInfo` maps `WINDOW_NOT_ACCESSIBLE` correctly today only through the `FlutterError` route. A new public `*FailureReason` value breaks consumers' exhaustive `switch`es (see [shipping](../territory/shipping.md)).
+If a change adds a `WindowError` / `CaptureError` case or a `*FailureReason` value, it is subject to this. Grep the code string and its lower-snake reason across `macos/Classes/` and `lib/src/` and update every hop above. Moving a code into `isStateError` changes its route for **every** handler that raises it. For example, `isWindowFullScreen` rethrows a state map as an upper-cased reason, so moving `REQUIRES_MACOS_14` there would change its exception code. A new public `*FailureReason` value breaks consumers' exhaustive `switch`es (see [shipping](../territory/shipping.md)).

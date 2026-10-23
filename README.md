@@ -341,19 +341,22 @@ final result = await toolkit.closeWindow(windowId);
 switch (result) {
   case OperationSuccess():
     print('Window closed');
-  case OperationFailure(:final code, :final message):
-    switch (code) {
-      case 'WINDOW_NOT_FOUND':
+  case OperationFailure(:final reason, :final message):
+    switch (reason) {
+      case WindowOperationFailureReason.windowNotFound:
         print('Window no longer exists');
-      case 'WINDOW_NOT_ACCESSIBLE':
+      case WindowOperationFailureReason.windowNotAccessible:
         // Window exists but AX API cannot access it
+        // Common cause: window is on a different Space
         print('Window not accessible: $message');
-      case 'SPACE_SWITCH_API_UNAVAILABLE':
-        // Window is on a different Space but the private CGS APIs
-        // required to switch Spaces are not available on this macOS version
-        print('Cannot switch Space to reach window: $message');
-      case 'ACCESSIBILITY_PERMISSION_DENIED':
+      case WindowOperationFailureReason.accessibilityPermissionDenied:
         await toolkit.openAccessibilitySettings();
+      case WindowOperationFailureReason.closeButtonNotFound:
+        print('No close button: $message');
+      default:
+        // Includes a Space switch that could not run because the
+        // private CGS APIs are unavailable (message says so)
+        print('Failed: $message');
     }
 }
 ```

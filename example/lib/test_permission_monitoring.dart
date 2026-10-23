@@ -129,7 +129,8 @@ class _TestPermissionMonitoringState extends State<TestPermissionMonitoring> {
                           onPressed: () {
                             _toolkit.startPermissionWatching(
                               interval: const Duration(seconds: 2),
-                              emitOnlyChanges: true, // Default: emit only on change
+                              emitOnlyChanges:
+                                  true, // Default: emit only on change
                             );
                             setState(() {
                               _eventLog.insert(

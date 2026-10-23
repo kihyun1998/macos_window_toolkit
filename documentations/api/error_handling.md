@@ -37,7 +37,7 @@ Represented as sealed classes or enums for specific failure scenarios (e.g., `Ca
 
 | Code | Description | Cause | Resolution |
 |------|-------------|-------|------------|
-| `REQUIRES_MACOS_14` | Operation requires macOS 14.0+ | Capture method not supported on current macOS | Use legacy methods or inform user |
+| `REQUIRES_MACOS_14` | Operation requires macOS 14.0+ | Capture method not supported on current macOS | `captureWindow` returns `CaptureFailure(reason: unsupportedVersion)`; inform user |
 | `WINDOW_MINIMIZED` | Window is minimized and cannot be captured | Target window is minimized to dock | Ask user to restore window |
 | `UNSUPPORTED_MACOS_VERSION` | macOS version doesn't support requested operation | ScreenCaptureKit not available | Use legacy methods |
 | `SCREENCAPTUREKIT_NOT_AVAILABLE` | ScreenCaptureKit framework not available | System limitation or restriction | Fall back to legacy capture |
@@ -59,6 +59,7 @@ Represented as sealed classes or enums for specific failure scenarios (e.g., `Ca
 |------|-------------|-------|------------|-------------|
 | `WINDOW_NOT_FOUND` | Specified window not found | Window closed, invalid window ID | Refresh window list | **State Error** (success: false) |
 | `ACCESSIBILITY_PERMISSION_DENIED` | Accessibility permission not granted | Permission required for window closing | Request accessibility permission | **State Error** (success: false) |
+| `WINDOW_NOT_ACCESSIBLE` | Window exists but the Accessibility API cannot reach it | Window on another Space that could not be reached, or app without Accessibility support | Bring the window to the current Space | `OperationFailure(reason: windowNotAccessible)` |
 | `CLOSE_BUTTON_NOT_FOUND` | Close button not found for window | Window structure doesn't support closing | Try alternative closing methods | **State Error** (success: false) |
 | `INSUFFICIENT_WINDOW_INFO` | Not enough information to perform operation | Missing window properties | Use different window source | System Error (throws exception) |
 | `APPLESCRIPT_EXECUTION_FAILED` | AppleScript execution failed | Script error, application incompatibility | Check application AppleScript support | System Error (throws exception) |
