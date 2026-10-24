@@ -10,7 +10,7 @@ The Process Management API provides functionality for controlling application pr
 
 | Method | Description | Parameters | Returns |
 |--------|-------------|------------|---------|
-| [`terminateApplicationByPID()`](#terminateapplicationbypid) | Terminate single process | `processId`, `force` | `Future<bool>` |
+| [`terminateApplicationByPID()`](#terminateapplicationbypid) | Terminate single process | `processId`, `force` | `Future<WindowOperationResult>` |
 | [`terminateApplicationTree()`](#terminateapplicationtree) | Terminate process and all descendants | `processId`, `force` | `Future<WindowOperationResult>` |
 | [`getChildProcesses()`](#getchildprocesses) | Get child process IDs | `processId` | `Future<List<int>>` |
 
@@ -22,7 +22,7 @@ Terminates an application by its process ID.
 
 **Signature:**
 ```dart
-Future<bool> terminateApplicationByPID(
+Future<WindowOperationResult> terminateApplicationByPID(
   int processId, {
   bool force = false,
 })
@@ -33,20 +33,13 @@ Future<bool> terminateApplicationByPID(
 - `force` (optional) - Termination method. `false` for graceful, `true` for forced. Defaults to `false`.
 
 **Returns:**
-- `Future<bool>` - `true` if application was successfully terminated, `false` otherwise
-
-**Returns (v1.4.3+):**
-- `Future<dynamic>` - Either `bool` for success or `Map<String, dynamic>` for state errors:
-  - Success: Returns `true` when process terminates successfully
-  - State Error: Returns `{'success': false, 'reason': String, 'message': String, 'details': dynamic}`
-    - `reason: 'process_not_found'` - Process with specified ID does not exist (consider as success)
+- `OperationSuccess` when termination was requested. The call does not wait for the process to exit.
+- `OperationFailure` with:
+  - `processNotFound` when no process has this PID, or when the PID is refused: PID 1 or below, or a value outside `Int32`. A refused PID is never signalled (PID 0 and negative PIDs would address whole process groups); its failure carries the code `INVALID_PROCESS_ID` and a message saying why
+  - `unknown` when the process exists but could not be terminated, for example one owned by another user
 
 **Throws:**
-- `PlatformException` with error codes (system errors only):
-  - `TERMINATION_FAILED` - System call to terminate process failed (requires elevated privileges)
-  - `INSUFFICIENT_WINDOW_INFO` - Unable to retrieve process information
-
-**Note:** As of v1.4.3, state errors (like `PROCESS_NOT_FOUND`) return structured responses instead of throwing exceptions. Only system-level failures throw `PlatformException`.
+- `PlatformException` only for system errors such as `INVALID_ARGUMENTS`
 
 **Termination Methods:**
 - **Graceful (`force: false`)**: Allows application to clean up resources, save data, and terminate properly
@@ -189,7 +182,7 @@ Future<WindowOperationResult> terminateApplicationTree(
 **Returns:**
 - `OperationSuccess` when termination was requested for the target and every descendant, or they had already exited. The call does not wait for them to exit: an app may still show a "save changes?" sheet, and an ignored `SIGTERM` still counts.
 - `OperationFailure` with:
-  - `processNotFound` when the target does not exist when the call starts, or is PID 0 or 1
+  - `processNotFound` when the target does not exist when the call starts, or is refused: PID 1 or below, or a value outside `Int32` (code `INVALID_PROCESS_ID`, nothing is terminated)
   - `unknown` when some process in the tree could not be terminated, when the target is an ancestor of the calling app (see below), or when the process list cannot be read (then nothing is terminated)
 
 **Throws:**
@@ -382,7 +375,7 @@ Future<List<int>> getChildProcesses(int processId)
 - `processId` - Process ID of the parent process
 
 **Returns:**
-- `Future<List<int>>` - List of child process IDs (empty if none found)
+- `Future<List<int>>` - List of child process IDs (empty if none found, including for a PID outside `Int32`)
 
 **Throws:**
 - `PlatformException` with error codes:

@@ -828,20 +828,23 @@ class WindowHandler {
     }
 
     /// Terminates an application by its process ID using system signals
-    /// This method will terminate the entire application, not just a specific window
+    /// This method will terminate the entire application, not just a specific window.
+    /// A PID that `signalTarget` refuses is reported as `invalidProcessId`, with nothing signalled
     func terminateApplicationByPID(_ processId: Int, force: Bool = false) -> Result<
         Bool, WindowError
     > {
+        guard let pid = WindowHandler.signalTarget(processId) else {
+            return .failure(.invalidProcessId)
+        }
 
         // First verify the process exists
-        let existsResult = kill(Int32(processId), 0)
-        if existsResult == -1 {
+        guard processExists(pid) else {
             return .failure(.processNotFound)
         }
 
         // Try NSRunningApplication approach first (more graceful)
         let runningApps = NSWorkspace.shared.runningApplications
-        if let app = runningApps.first(where: { $0.processIdentifier == Int32(processId) }) {
+        if let app = runningApps.first(where: { $0.processIdentifier == pid }) {
 
             if force {
                 let success = app.forceTerminate()
@@ -854,7 +857,7 @@ class WindowHandler {
 
         // Fallback to signal-based termination
         let signal = force ? SIGKILL : SIGTERM
-        let result = kill(Int32(processId), signal)
+        let result = kill(pid, signal)
 
         if result == 0 {
             return .success(true)
@@ -1088,6 +1091,12 @@ class WindowHandler {
         return path
     }
 
+    /// The PID a terminate call may signal: greater than 1 and within `pid_t`, or nil
+    static func signalTarget(_ processId: Int) -> Int32? {
+        guard let pid = Int32(exactly: processId), pid > 1 else { return nil }
+        return pid
+    }
+
     /// Whether a process with this PID exists, including one the caller may not signal
     private func processExists(_ pid: Int32) -> Bool {
         return kill(pid, 0) == 0 || errno == EPERM
@@ -1111,8 +1120,10 @@ class WindowHandler {
     func terminateApplicationTree(_ processId: Int, force: Bool = false) -> Result<
         Bool, WindowError
     > {
-        let target = Int32(processId)
-        guard target > 1, processExists(target) else {
+        guard let target = WindowHandler.signalTarget(processId) else {
+            return .failure(.invalidProcessId)
+        }
+        guard processExists(target) else {
             return .failure(.processNotFound)
         }
 
@@ -1517,6 +1528,7 @@ enum WindowError: PluginError {
     case closeActionFailed
     case focusActionFailed
     case processNotFound
+    case invalidProcessId
     case terminationFailed
     case failedToGetProcessList
     case windowNotAccessible
@@ -1532,6 +1544,7 @@ enum WindowError: PluginError {
         case .closeActionFailed: return "CLOSE_ACTION_FAILED"
         case .focusActionFailed: return "FOCUS_ACTION_FAILED"
         case .processNotFound: return "PROCESS_NOT_FOUND"
+        case .invalidProcessId: return "INVALID_PROCESS_ID"
         case .terminationFailed: return "TERMINATION_FAILED"
         case .failedToGetProcessList: return "FAILED_TO_GET_PROCESS_LIST"
         case .windowNotAccessible: return "WINDOW_NOT_ACCESSIBLE"
@@ -1545,7 +1558,7 @@ enum WindowError: PluginError {
         case .accessibilityPermissionDenied: return "accessibility_permission_denied"
         case .closeButtonNotFound: return "close_button_not_found"
         case .focusActionFailed: return "focus_action_failed"
-        case .processNotFound: return "process_not_found"
+        case .processNotFound, .invalidProcessId: return "process_not_found"
         case .windowNotAccessible: return "window_not_accessible"
         case .failedToRetrieveWindowList, .insufficientWindowInfo, .closeActionFailed,
             .terminationFailed, .failedToGetProcessList, .spaceSwitchAPIUnavailable:
@@ -1563,6 +1576,7 @@ enum WindowError: PluginError {
         case .closeActionFailed: return "Failed to perform close action on window"
         case .focusActionFailed: return "Failed to focus window"
         case .processNotFound: return "Process not found"
+        case .invalidProcessId: return "Process ID must be greater than 1 and fit in a pid_t"
         case .terminationFailed: return "Failed to terminate process"
         case .failedToGetProcessList: return "Failed to retrieve process list"
         case .windowNotAccessible: return "Window is not accessible via Accessibility API"
@@ -1588,6 +1602,8 @@ enum WindowError: PluginError {
             return "The raise action was found but executing it failed."
         case .processNotFound:
             return "The specified process ID does not exist or has already terminated."
+        case .invalidProcessId:
+            return "PID 0 and negative PIDs address process groups, PID 1 is launchd, and a value outside Int32 is no PID. Nothing was signalled."
         case .terminationFailed:
             return "The process could not be terminated. It may require elevated privileges."
         case .failedToGetProcessList:

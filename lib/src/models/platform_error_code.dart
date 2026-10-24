@@ -34,6 +34,9 @@ enum PlatformErrorCode {
   /// Not currently sent by the native side.
   terminateTreeError('TERMINATE_TREE_ERROR'),
   processNotFound('PROCESS_NOT_FOUND'),
+
+  /// A PID a terminate call refuses to signal: 1 or below, or outside `pid_t`.
+  invalidProcessId('INVALID_PROCESS_ID'),
   terminationFailed('TERMINATION_FAILED'),
   failedToGetProcessList('FAILED_TO_GET_PROCESS_LIST'),
   getChildProcessesError('GET_CHILD_PROCESSES_ERROR'),
@@ -102,6 +105,8 @@ enum PlatformErrorCode {
         return 'Process tree termination error';
       case PlatformErrorCode.processNotFound:
         return 'Process not found';
+      case PlatformErrorCode.invalidProcessId:
+        return 'Invalid process ID';
       case PlatformErrorCode.terminationFailed:
         return 'Termination failed';
       case PlatformErrorCode.failedToGetProcessList:

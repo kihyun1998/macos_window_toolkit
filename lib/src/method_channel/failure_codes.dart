@@ -20,6 +20,7 @@ const _reasonByCode = {
   'INVALID_WINDOW_ID': 'window_not_found',
   'WINDOW_NOT_ACCESSIBLE': 'window_not_accessible',
   'PROCESS_NOT_FOUND': 'process_not_found',
+  'INVALID_PROCESS_ID': 'process_not_found',
   'ACCESSIBILITY_PERMISSION_DENIED': 'accessibility_permission_denied',
   'CLOSE_BUTTON_NOT_FOUND': 'close_button_not_found',
   'FOCUS_ACTION_FAILED': 'focus_action_failed',
