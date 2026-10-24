@@ -113,7 +113,7 @@ Manage application processes and their relationships.
 
 **Process Termination:**
 - `terminateApplicationByPID()` - Terminate single process
-- `terminateApplicationTree()` - Terminate process and all children
+- `terminateApplicationTree()` - Terminate process and all descendants
 
 **Process Information:**
 - `getChildProcesses()` - Get child process IDs

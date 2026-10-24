@@ -1014,8 +1014,16 @@ class WindowHandler {
 
     /// Gets all child process IDs for a given parent process ID
     func getChildProcesses(of parentPID: Int32) -> Result<[Int32], WindowError> {
+        switch processTable() {
+        case .success(let table):
+            return .success(table.filter { $0.parent == parentPID }.map { $0.pid })
+        case .failure(let error):
+            return .failure(error)
+        }
+    }
 
-        var childPIDs: [Int32] = []
+    /// Reads one snapshot of the process table, in the order the kernel lists it
+    private func processTable() -> Result<[(pid: Int32, parent: Int32)], WindowError> {
         var size = 0
 
         // Get size needed for process list
@@ -1036,51 +1044,98 @@ class WindowHandler {
             return .failure(.failedToGetProcessList)
         }
 
-        // Find child processes
-        for i in 0..<count {
-            let process = processes[i]
-            if process.kp_eproc.e_ppid == parentPID {
-                childPIDs.append(process.kp_proc.p_pid)
-            }
-        }
-
-        return .success(childPIDs)
+        return .success(
+            (0..<(size / MemoryLayout<kinfo_proc>.size)).map { i in
+                (pid: processes[i].kp_proc.p_pid, parent: processes[i].kp_eproc.e_ppid)
+            })
     }
 
+    /// Returns every descendant of `root` in post-order (deepest first).
+    /// PIDs in `skipped` are walked through but not returned.
+    private func descendants(
+        of root: Int32, parents: [Int32: Int32], skipped: Set<Int32>
+    ) -> [Int32] {
+        var children: [Int32: [Int32]] = [:]
+        for (pid, parent) in parents where pid != parent {
+            children[parent, default: []].append(pid)
+        }
 
-    /// Terminates an application and all its child processes
+        var ordered: [Int32] = []
+        var visited: Set<Int32> = [root]
+        func visit(_ pid: Int32) {
+            for child in children[pid] ?? [] where visited.insert(child).inserted {
+                visit(child)
+                if !skipped.contains(child) {
+                    ordered.append(child)
+                }
+            }
+        }
+        visit(root)
+        return ordered
+    }
+
+    /// Returns the calling process and its ancestors up to (excluding) `root`, or an
+    /// empty set when the calling process does not descend from `root`
+    private func pathFromCaller(to root: Int32, parents: [Int32: Int32]) -> Set<Int32> {
+        var path: Set<Int32> = []
+        var pid = getpid()
+        while pid != root {
+            guard path.insert(pid).inserted, let parent = parents[pid], parent != pid else {
+                return []
+            }
+            pid = parent
+        }
+        return path
+    }
+
+    /// Whether a process with this PID exists, including one the caller may not signal
+    private func processExists(_ pid: Int32) -> Bool {
+        return kill(pid, 0) == 0 || errno == EPERM
+    }
+
+    /// Terminates `pid` and reports whether it is gone or was asked to quit
+    private func terminateTreeMember(_ pid: Int32, force: Bool) -> Bool {
+        guard processExists(pid) else { return true }
+        switch terminateApplicationByPID(Int(pid), force: force) {
+        case .success(let success):
+            return success || !processExists(pid)
+        case .failure:
+            return !processExists(pid)
+        }
+    }
+
+    /// Terminates an application and all its descendant processes, deepest first, and
+    /// the application last. The calling process and the processes between it and the
+    /// target are left running; when the target is the calling process itself, it is
+    /// terminated last. Nothing is terminated when the process table cannot be read.
     func terminateApplicationTree(_ processId: Int, force: Bool = false) -> Result<
         Bool, WindowError
     > {
-
-        // First get all child processes
-        let childResult = getChildProcesses(of: Int32(processId))
-        var allTerminated = true
-
-        switch childResult {
-        case .success(let childPIDs):
-            // Terminate children first (bottom-up approach)
-            for childPID in childPIDs {
-                let childResult = terminateApplicationByPID(Int(childPID), force: force)
-                if case .failure = childResult {
-                    allTerminated = false
-                }
-            }
-
-        case .failure(_):
-            // Continue with parent termination even if we can't get children
-            break
+        let target = Int32(processId)
+        guard target > 1, processExists(target) else {
+            return .failure(.processNotFound)
         }
 
-        // Finally terminate the parent process
-        let parentResult = terminateApplicationByPID(processId, force: force)
-
-        switch parentResult {
-        case .success(let success):
-            return .success(success && allTerminated)
+        let parents: [Int32: Int32]
+        switch processTable() {
+        case .success(let table):
+            parents = Dictionary(table.map { ($0.pid, $0.parent) }, uniquingKeysWith: { a, _ in a })
         case .failure(let error):
             return .failure(error)
         }
+
+        let callerPath = pathFromCaller(to: target, parents: parents)
+        var allTerminated = true
+        for pid in descendants(of: target, parents: parents, skipped: callerPath) {
+            if !terminateTreeMember(pid, force: force) {
+                allTerminated = false
+            }
+        }
+
+        if !callerPath.isEmpty {
+            return .success(false)
+        }
+        return .success(terminateTreeMember(target, force: force) && allTerminated)
     }
 
     /// Focuses (brings to front) a window by its window ID using Accessibility API

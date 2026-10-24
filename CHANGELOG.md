@@ -3,6 +3,10 @@
 ### Fixed
 - **FIX**: `closeWindow()` now returns `OperationFailure(reason: WindowOperationFailureReason.windowNotAccessible)` when the window exists but cannot be reached through the Accessibility API, as the 1.8.3 entry described. It previously arrived as `unknown`
 - **FIX**: `captureWindow()` on macOS 12.3–13 now returns `CaptureFailure(reason: CaptureFailureReason.unsupportedVersion)` instead of `unknown`, since window capture requires macOS 14.0
+- **FIX**: `terminateApplicationTree()` now terminates the whole descendant tree (grandchildren and deeper), deepest first, instead of direct children only. A descendant or target that exits on its own during the call counts as terminated; the call requests termination and does not wait for exit
+  - Target PIDs 0 and 1 are rejected with `processNotFound`, and nothing is terminated when the process list cannot be read
+  - The calling app is never terminated by its own call: when the target is an ancestor of the calling app, the app and the processes between it and the target are left running and the result is `OperationFailure`. When the target is the calling app itself, it terminates last
+  - `getChildProcesses()` is unchanged and still returns direct children only
 
 ### Changed
 - **BREAKING (source)**: `WindowOperationFailureReason` gains `windowNotAccessible`. An exhaustive `switch` over it needs a new case
