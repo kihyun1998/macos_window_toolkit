@@ -456,7 +456,6 @@ Future<bool> closeWindow(int windowId)
   - `CLOSE_WINDOW_ERROR` - General window closing error
   - `WINDOW_NOT_FOUND` - Window with specified ID was not found
   - `INSUFFICIENT_WINDOW_INFO` - Not enough window information to close
-  - `APPLESCRIPT_EXECUTION_FAILED` - AppleScript execution failed
 
 **Example:**
 ```dart
@@ -474,9 +473,6 @@ try {
   switch (e.code) {
     case 'WINDOW_NOT_FOUND':
       print('Window no longer exists');
-      break;
-    case 'APPLESCRIPT_EXECUTION_FAILED':
-      print('AppleScript failed: ${e.message}');
       break;
     default:
       print('Error closing window: ${e.code} - ${e.message}');

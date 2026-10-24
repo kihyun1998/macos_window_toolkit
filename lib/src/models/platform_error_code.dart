@@ -11,24 +11,45 @@ enum PlatformErrorCode {
   captureInvalidWindowId('INVALID_WINDOW_ID'),
   captureWindowMinimized('WINDOW_MINIMIZED'),
   captureFailed('CAPTURE_FAILED'),
+
+  /// Not currently sent by the native side.
   captureNoCompatibleMethod('NO_COMPATIBLE_CAPTURE_METHOD'),
   captureScreenRecordingPermissionDenied('SCREEN_RECORDING_PERMISSION_DENIED'),
   captureRequiresMacOS14('REQUIRES_MACOS_14'),
 
   // Window management errors
+  /// Not currently sent by the native side.
   closeWindowError('CLOSE_WINDOW_ERROR'),
   windowNotFound('WINDOW_NOT_FOUND'),
   insufficientWindowInfo('INSUFFICIENT_WINDOW_INFO'),
+
+  /// Not currently sent by the native side.
   appleScriptExecutionFailed('APPLESCRIPT_EXECUTION_FAILED'),
   accessibilityPermissionDenied('ACCESSIBILITY_PERMISSION_DENIED'),
 
   // Process termination errors
+  /// Not currently sent by the native side.
   terminateAppError('TERMINATE_APP_ERROR'),
+
+  /// Not currently sent by the native side.
   terminateTreeError('TERMINATE_TREE_ERROR'),
   processNotFound('PROCESS_NOT_FOUND'),
   terminationFailed('TERMINATION_FAILED'),
   failedToGetProcessList('FAILED_TO_GET_PROCESS_LIST'),
-  getChildProcessesError('GET_CHILD_PROCESSES_ERROR');
+  getChildProcessesError('GET_CHILD_PROCESSES_ERROR'),
+
+  // Window operation states and errors
+  failedToRetrieveWindowList('FAILED_TO_RETRIEVE_WINDOW_LIST'),
+  closeButtonNotFound('CLOSE_BUTTON_NOT_FOUND'),
+  closeActionFailed('CLOSE_ACTION_FAILED'),
+  focusActionFailed('FOCUS_ACTION_FAILED'),
+  windowNotAccessible('WINDOW_NOT_ACCESSIBLE'),
+  spaceSwitchAPIUnavailable('SPACE_SWITCH_API_UNAVAILABLE'),
+  fullScreenCheckFailed('FULLSCREEN_CHECK_FAILED'),
+
+  // Application errors
+  getApplicationsError('GET_APPLICATIONS_ERROR'),
+  openAppStoreError('OPEN_APP_STORE_ERROR');
 
   const PlatformErrorCode(this.code);
 
@@ -87,6 +108,24 @@ enum PlatformErrorCode {
         return 'Failed to get process list';
       case PlatformErrorCode.getChildProcessesError:
         return 'Failed to get child processes';
+      case PlatformErrorCode.failedToRetrieveWindowList:
+        return 'Failed to retrieve window list';
+      case PlatformErrorCode.closeButtonNotFound:
+        return 'Unable to find close button for this window';
+      case PlatformErrorCode.closeActionFailed:
+        return 'Failed to press the close button';
+      case PlatformErrorCode.focusActionFailed:
+        return 'Unable to bring window to front';
+      case PlatformErrorCode.windowNotAccessible:
+        return 'Window is not accessible (may be on a different Space, or its app does not support Accessibility)';
+      case PlatformErrorCode.spaceSwitchAPIUnavailable:
+        return 'The window is on another Space and switching Spaces is unavailable on this macOS version';
+      case PlatformErrorCode.fullScreenCheckFailed:
+        return 'Failed to check whether the window is fullscreen';
+      case PlatformErrorCode.getApplicationsError:
+        return 'Failed to retrieve installed applications';
+      case PlatformErrorCode.openAppStoreError:
+        return 'Failed to open the App Store';
     }
   }
 }

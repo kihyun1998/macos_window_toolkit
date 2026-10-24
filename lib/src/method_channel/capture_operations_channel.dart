@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 
 import '../models/capturable_window_info.dart';
 import '../models/capture_result.dart';
+import 'failure_codes.dart';
 
 /// Mixin providing method channel implementations for capture operations.
 mixin CaptureOperationsChannel {
@@ -72,10 +73,10 @@ mixin CaptureOperationsChannel {
       return _parseCaptureResult(result);
     } on PlatformException catch (e) {
       // Only system errors should throw, others should return CaptureFailure
-      if (_isSystemError(e.code)) {
+      if (systemErrorCodes.contains(e.code)) {
         rethrow;
       }
-      return _platformExceptionToCaptureFailure(e);
+      return captureFailureFromException(e);
     }
   }
 
@@ -107,102 +108,7 @@ mixin CaptureOperationsChannel {
         );
       }
     } else {
-      final reasonCode = result['reason'] as String? ?? 'unknown';
-      final message = result['message'] as String?;
-      final details = result['details'] as String?;
-      final errorCode = result['errorCode'] as int?;
-      final errorDomain = result['errorDomain'] as String?;
-
-      final reason = _mapReasonCodeToFailureReason(reasonCode);
-      return CaptureFailure(
-        reason: reason,
-        message: message,
-        details: details,
-        errorCode: errorCode,
-        errorDomain: errorDomain,
-      );
-    }
-  }
-
-  /// Maps native reason codes to CaptureFailureReason enum
-  CaptureFailureReason _mapReasonCodeToFailureReason(String code) {
-    switch (code) {
-      case 'window_minimized':
-        return CaptureFailureReason.windowMinimized;
-      case 'window_not_found':
-        return CaptureFailureReason.windowNotFound;
-      case 'unsupported_version':
-        return CaptureFailureReason.unsupportedVersion;
-      case 'permission_denied':
-        return CaptureFailureReason.permissionDenied;
-      case 'capture_in_progress':
-        return CaptureFailureReason.captureInProgress;
-      case 'window_not_capturable':
-        return CaptureFailureReason.windowNotCapturable;
-      default:
-        return CaptureFailureReason.unknown;
-    }
-  }
-
-  /// Converts PlatformException to CaptureFailure for legacy error handling
-  CaptureFailure _platformExceptionToCaptureFailure(PlatformException e) {
-    final reason = _mapErrorCodeToFailureReason(e.code);
-
-    // Extract errorCode and errorDomain from details if available
-    int? errorCode;
-    String? errorDomain;
-    String? details;
-
-    if (e.details is Map) {
-      final detailsMap = e.details as Map;
-      errorCode = detailsMap['errorCode'] as int?;
-      errorDomain = detailsMap['errorDomain'] as String?;
-      details = detailsMap['details']?.toString();
-    } else {
-      details = e.details?.toString();
-    }
-
-    return CaptureFailure(
-      reason: reason,
-      message: e.message,
-      details: details,
-      errorCode: errorCode,
-      errorDomain: errorDomain,
-    );
-  }
-
-  /// Maps legacy error codes to CaptureFailureReason
-  CaptureFailureReason _mapErrorCodeToFailureReason(String code) {
-    switch (code) {
-      case 'WINDOW_MINIMIZED':
-        return CaptureFailureReason.windowMinimized;
-      case 'INVALID_WINDOW_ID':
-        return CaptureFailureReason.windowNotFound;
-      case 'UNSUPPORTED_MACOS_VERSION':
-      case 'REQUIRES_MACOS_14':
-        return CaptureFailureReason.unsupportedVersion;
-      case 'PERMISSION_DENIED':
-      case 'SCREEN_RECORDING_PERMISSION_DENIED':
-        return CaptureFailureReason.permissionDenied;
-      case 'CAPTURE_IN_PROGRESS':
-        return CaptureFailureReason.captureInProgress;
-      case 'WINDOW_NOT_CAPTURABLE':
-        return CaptureFailureReason.windowNotCapturable;
-      default:
-        return CaptureFailureReason.unknown;
-    }
-  }
-
-  /// Determines if an error code represents a system error that should throw
-  bool _isSystemError(String code) {
-    switch (code) {
-      case 'INVALID_ARGUMENTS':
-      case 'SYSTEM_ERROR':
-      case 'OUT_OF_MEMORY':
-      case 'INTERNAL_ERROR':
-        return true;
-      default:
-        return false;
+      return captureFailureFromState(result);
     }
   }
 }

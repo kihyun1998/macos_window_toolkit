@@ -40,7 +40,6 @@ Represented as sealed classes or enums for specific failure scenarios (e.g., `Ca
 | `REQUIRES_MACOS_14` | Operation requires macOS 14.0+ | Capture method not supported on current macOS | `captureWindow` returns `CaptureFailure(reason: unsupportedVersion)`; inform user |
 | `WINDOW_MINIMIZED` | Window is minimized and cannot be captured | Target window is minimized to dock | Ask user to restore window |
 | `UNSUPPORTED_MACOS_VERSION` | macOS version doesn't support requested operation | ScreenCaptureKit not available | Use legacy methods |
-| `SCREENCAPTUREKIT_NOT_AVAILABLE` | ScreenCaptureKit framework not available | System limitation or restriction | Fall back to legacy capture |
 | `CAPTURE_FAILED` | General capture operation failed | System restriction, window unavailable | Check window status, retry |
 
 ### Process Management Errors
@@ -59,11 +58,13 @@ Represented as sealed classes or enums for specific failure scenarios (e.g., `Ca
 |------|-------------|-------|------------|-------------|
 | `WINDOW_NOT_FOUND` | Specified window not found | Window closed, invalid window ID | Refresh window list | **State Error** (success: false) |
 | `ACCESSIBILITY_PERMISSION_DENIED` | Accessibility permission not granted | Permission required for window closing | Request accessibility permission | **State Error** (success: false) |
-| `WINDOW_NOT_ACCESSIBLE` | Window exists but the Accessibility API cannot reach it | Window on another Space that could not be reached, or app without Accessibility support | Bring the window to the current Space | `OperationFailure(reason: windowNotAccessible)` |
+| `WINDOW_NOT_ACCESSIBLE` | Window exists but the Accessibility API cannot reach it | Window on another Space that could not be reached, or app without Accessibility support | Bring the window to the current Space | **State Error** (success: false) |
 | `CLOSE_BUTTON_NOT_FOUND` | Close button not found for window | Window structure doesn't support closing | Try alternative closing methods | **State Error** (success: false) |
-| `INSUFFICIENT_WINDOW_INFO` | Not enough information to perform operation | Missing window properties | Use different window source | System Error (throws exception) |
-| `APPLESCRIPT_EXECUTION_FAILED` | AppleScript execution failed | Script error, application incompatibility | Check application AppleScript support | System Error (throws exception) |
-| `CLOSE_ACTION_FAILED` | Failed to perform close action | Click action failed on close button | Try manual close or force quit | System Error (throws exception) |
+| `FOCUS_ACTION_FAILED` | Failed to bring the window to front | Neither making it main nor raising it succeeded | Retry, or focus it manually | **State Error** (success: false) |
+| `INSUFFICIENT_WINDOW_INFO` | Not enough information to perform operation | Missing window properties | Use different window source | Platform error, returned as `OperationFailure(reason: unknown)` |
+| `CLOSE_ACTION_FAILED` | Failed to perform close action | Click action failed on close button | Try manual close or force quit | Platform error, returned as `OperationFailure(reason: unknown)` |
+| `SPACE_SWITCH_API_UNAVAILABLE` | The window is on another Space and the Space-switch APIs are unavailable | Private CGS APIs missing on this macOS version | Ask the user to switch to the window's Space | Platform error, returned as `OperationFailure(reason: unknown)` |
+| `WINDOW_LIST_ERROR` | Failed to retrieve the window list | CoreGraphics returned no list | Retry | Throws from the window listing calls |
 
 **Note:** As of v1.4.3, window closing operations use the same error handling pattern as capture operations, distinguishing between recoverable state errors and system exceptions.
 
@@ -803,9 +804,6 @@ class UserErrorMessages {
 
       case 'REQUIRES_MACOS_14':
         return 'This advanced feature requires macOS 14.0 or later.';
-
-      case 'APPLESCRIPT_EXECUTION_FAILED':
-        return 'Unable to control this window. The application may not support this operation.';
 
       case 'TERMINATION_FAILED':
         return 'Unable to close the application. It may be protected by the system or require administrator privileges.';

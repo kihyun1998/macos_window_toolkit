@@ -28,7 +28,7 @@ From reading the source:
 - **Input bounds.** `targetWidth/Height` and the crop values are not validated. Zero or negative values make `CGContext` return nil (→ `captureFailed`), and a huge value allocates that size.
 
 ## Code
-- `macos/Classes/CaptureHandler.swift — CaptureHandler.captureWindow`, `getCapturableWindows`, `isWindowFullScreen`, `isFullscreenWindow`, `cropTransparentBorders`, `resizeImageToExactSize`, `resizeImagePreservingAspectRatio`, `convertCGImageToPNG`, `handleCaptureError`, `CaptureError`
+- `macos/Classes/CaptureHandler.swift — CaptureHandler.captureWindow`, `getCapturableWindows`, `isWindowFullScreen`, `isFullscreenWindow`, `cropTransparentBorders`, `resizeImageToExactSize`, `resizeImagePreservingAspectRatio`, `convertCGImageToPNG`, `CaptureError` (top-level, so the pre-12.3 dispatcher branches can use it)
 - `macos/Classes/MacosWindowToolkitPlugin.swift — captureWindow`, `getCapturableWindows`, `isWindowFullScreen`
 - `lib/src/method_channel/capture_operations_channel.dart — CaptureOperationsChannel`
 - `lib/src/method_channel/window_operations_channel.dart — WindowOperationsChannel.isWindowFullScreen`

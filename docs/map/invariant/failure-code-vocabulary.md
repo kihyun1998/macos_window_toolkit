@@ -1,32 +1,30 @@
 # Failure-code vocabulary
 
 ## The fact
-A native failure reaches Dart as a typed failure reason only when every hop below names it. Any hop that misses it turns the failure into `unknown`.
+A native failure reaches Dart as a typed failure reason only when two tables agree, one per language:
 
-1. Swift raises a `WindowError` / `CaptureHandler.CaptureError`, and `WindowHandler.handleWindowError` / `CaptureHandler.handleCaptureError` turn it into an upper-snake `code`.
-2. `MacosWindowToolkitPlugin.isStateError` decides whether that code returns as a `{"success": false, "reason": …}` map (state) or as a `FlutterError` (everything else).
-3. For a state, `MacosWindowToolkitPlugin.mapErrorCodeToReasonCode` gives the lower-snake `reason`, and the Dart mixin's `_mapReasonCodeToFailureReason` (or `_mapReasonCodeToScrollFailureReason`) gives the enum.
-4. For a `FlutterError`, the mixin's `_isSystemError` rethrows only `INVALID_ARGUMENTS`, `SYSTEM_ERROR`, `OUT_OF_MEMORY` and `INTERNAL_ERROR`. Every other code goes through the mixin's `_mapErrorCodeToFailureReason` (the "legacy" map), and a code missing there becomes `unknown`.
+1. **Swift** — every error type conforms to `PluginError` (`macos/Classes/PluginError.swift`) and declares, per case, its wire `code`, its `stateReason` (non-nil: returned as a `{"success": false, "reason": …, "code": …}` state map; nil: reported as a `FlutterError`), `message`, `details` and any native `NSError` code and domain. `PluginError.reply(to:code:allowState:)` is the only place a failure becomes a reply; the `FlutterError`'s details carry the same fields as a map.
+2. **Dart** — `lib/src/method_channel/failure_codes.dart` holds one code→reason table (for failures arriving as a `PlatformException`), one reason→enum table per failure enum (`WindowOperationFailureReason`, `CaptureFailureReason`, `ScrollFailureReason`), and `systemErrorCodes`, the codes rethrown instead of returned (`INVALID_ARGUMENTS`, `SYSTEM_ERROR`, `OUT_OF_MEMORY`, `INTERNAL_ERROR`); of these only `INVALID_ARGUMENTS` is ever sent. Every channel mixin builds its failures through it. A code or reason missing from it becomes `unknown`.
+
+`PlatformErrorCode` (`lib/src/models/platform_error_code.dart`) must list every code the Swift side can send, so `PlatformExceptionExtension.errorCode` resolves it.
 
 ## Why it is cross-cutting
-No hop reads the others. The reason strings and code strings are literals repeated in Swift and in each Dart mixin, and each mixin keeps its own private copy of the maps and of `_isSystemError`. Read in `macos/Classes/MacosWindowToolkitPlugin.swift`, `lib/src/method_channel/window_operations_channel.dart`, `application_operations_channel.dart` and `capture_operations_channel.dart`. Adding a reason in one place and not the others gives a failure the caller cannot switch on.
+The two tables are literals in two languages that never call each other; the method channel carries only strings. A case added to a Swift error enum with a reason the Dart table lacks, or a code `PlatformErrorCode` lacks, arrives as `unknown` or with a `null` `errorCode`. Since #10 each language has one table, so the agreement is two edits, not five (commit history of #10, 2026-10-24).
 
 ## Territories it holds in
-- [channel-bridge](../territory/channel-bridge.md): `MacosWindowToolkitPlugin.isStateError` and `mapErrorCodeToReasonCode`, `PlatformErrorCode` (`lib/src/models/platform_error_code.dart`).
-- [window-control](../territory/window-control.md): `WindowOperationsChannel._mapReasonCodeToFailureReason` / `_mapErrorCodeToFailureReason`, `WindowOperationFailureReason`.
-- [scroll-inspection](../territory/scroll-inspection.md): `WindowOperationsChannel._mapReasonCodeToScrollFailureReason` / `_mapErrorCodeToScrollFailureReason`, `ScrollFailureReason`.
-- [process-control](../territory/process-control.md): `ApplicationOperationsChannel`'s own copies of the same maps.
-- [window-capture](../territory/window-capture.md): `CaptureOperationsChannel`'s maps, `CaptureFailureReason`, `CaptureHandler.handleCaptureError`.
+- [channel-bridge](../territory/channel-bridge.md): `PluginError.reply`, `DispatcherError`, the dispatcher's per-call codes (`WINDOW_LIST_ERROR`, `GET_CHILD_PROCESSES_ERROR`, `GET_APPLICATIONS_ERROR`) and `failure_codes.dart`, `PlatformErrorCode`.
+- [window-control](../territory/window-control.md): `WindowError`'s states and `WindowOperationFailureReason`.
+- [scroll-inspection](../territory/scroll-inspection.md): `WindowError.windowNotAccessible` and friends through `ScrollFailureReason`.
+- [process-control](../territory/process-control.md): `WindowError.processNotFound` / `.terminationFailed`; the process calls share the window reason table.
+- [window-capture](../territory/window-capture.md): `CaptureError` and `CaptureFailureReason`; `isWindowFullScreen` rethrows a state map as `PlatformException` with the map's wire `code`.
 
 ## What a violation looks like
-Codes that currently reach Dart as `unknown`, read on 2026-10-23:
-- `SPACE_SWITCH_API_UNAVAILABLE`, `CLOSE_ACTION_FAILED`, `TERMINATION_FAILED` and `INSUFFICIENT_WINDOW_INFO` become `unknown`.
-- `ScrollFailureReason.noScrollableContent` (reason `no_scrollable_content`) is mapped in Dart but no Swift path produces it.
-- `isWindowFullScreen` does not use the typed path at all: `WindowOperationsChannel.isWindowFullScreen` rethrows a state map as `PlatformException(code: reason.toUpperCase())`. That yields codes such as `PERMISSION_DENIED` that `PlatformErrorCode` does not list.
+Codes that still reach Dart as `unknown`, read on 2026-10-24: `SPACE_SWITCH_API_UNAVAILABLE`, `CLOSE_ACTION_FAILED`, `TERMINATION_FAILED`, `INSUFFICIENT_WINDOW_INFO` (thrown, no Dart reason). Dart reasons no Swift path produces: `noScrollableContent`, `captureInProgress`, `windowNotCapturable` (documented as not produced; kept, since an exhaustive `switch` cannot drop them). The Dart code table still accepts dead codes (`PERMISSION_DENIED`, `CAPTURE_IN_PROGRESS`, `WINDOW_NOT_CAPTURABLE`, `NO_SCROLLABLE_CONTENT`), pinned by the channel tests.
 
 ## Discovery history
-- #7 fixed `WINDOW_NOT_ACCESSIBLE` (close) and `REQUIRES_MACOS_14` (capture) at the Dart legacy maps only. Both still travel as `FlutterError`, because the maintainer chose not to move them into `isStateError` (scroll and `isWindowFullScreen` would change route) — theirs to reverse; #10 owns the route (maintainer, 2026-10-23). The state-reply shapes `window_not_accessible` are mapped too. `test/macos_window_toolkit_method_channel_test.dart` pins every current mapping, both shapes.
 - Found reading the dispatcher and the three mixins on 2026-10-23, while checking CHANGELOG 1.8.3's `windowNotAccessible` claim against the code.
+- #7 fixed `WINDOW_NOT_ACCESSIBLE` and `REQUIRES_MACOS_14` at the Dart tables only, leaving the route to #10 (maintainer, 2026-10-23). #10 made both states and moved the facts to one table per language (2026-10-24).
+- `test/macos_window_toolkit_method_channel_test.dart` pins, in both reply shapes, every state the Swift side declares for each method that can raise it, and lists every native code against `PlatformErrorCode`. The native-code list is copied by hand from `macos/Classes/`, so a new Swift case is caught only when someone adds its row.
 
 ## Where it will recur
-If a change adds a `WindowError` / `CaptureError` case or a `*FailureReason` value, it is subject to this. Grep the code string and its lower-snake reason across `macos/Classes/` and `lib/src/` and update every hop above. Moving a code into `isStateError` changes its route for **every** handler that raises it. For example, `isWindowFullScreen` rethrows a state map as an upper-cased reason, so moving `REQUIRES_MACOS_14` there would change its exception code. A new public `*FailureReason` value breaks consumers' exhaustive `switch`es (see [shipping](../territory/shipping.md)).
+A new `PluginError` case, a new `*FailureReason` value, or a new per-call code is subject to this: add the Swift case, its reason to `failure_codes.dart`, its code to `PlatformErrorCode`, and a row to the channel test's native-code list.

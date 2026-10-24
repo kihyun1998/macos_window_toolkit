@@ -5,17 +5,6 @@ import ScreenCaptureKit
 @available(macOS 12.3, *)
 class CaptureHandler {
 
-    enum CaptureError: Error {
-        case screenCaptureKitNotAvailable(code: Int?, domain: String?, message: String)
-        case invalidWindowId(code: Int?, domain: String?, message: String)
-        case windowMinimized(code: Int?, domain: String?, message: String)
-        case captureNotSupported(code: Int?, domain: String?, message: String)
-        case captureFailed(code: Int?, domain: String?, message: String)
-        case unsupportedMacOSVersion(code: Int?, domain: String?, message: String)
-        case requiresMacOS14(code: Int?, domain: String?, message: String)
-        case screenRecordingPermissionDenied(code: Int?, domain: String?, message: String)
-    }
-
     static func captureWindow(
         windowId: Int, excludeTitlebar: Bool = false, customTitlebarHeight: CGFloat? = nil,
         targetWidth: Int? = nil, targetHeight: Int? = nil, preserveAspectRatio: Bool = false,
@@ -657,76 +646,79 @@ class CaptureHandler {
             )
         }
     }
+}
 
-    // Helper method to pass errors to Flutter
-    static func handleCaptureError(_ error: CaptureError) -> [String: Any] {
-        switch error {
-        case .screenCaptureKitNotAvailable(let code, let domain, let message):
-            return [
-                "code": "SCREENCAPTUREKIT_NOT_AVAILABLE",
-                "message": message,
-                "details": "Requires macOS 12.3 or later",
-                "errorCode": code ?? NSNull(),
-                "errorDomain": domain ?? NSNull(),
-            ]
-        case .invalidWindowId(let code, let domain, let message):
-            return [
-                "code": "INVALID_WINDOW_ID",
-                "message": message,
-                "details": NSNull(),
-                "errorCode": code ?? NSNull(),
-                "errorDomain": domain ?? NSNull(),
-            ]
-        case .windowMinimized(let code, let domain, let message):
-            return [
-                "code": "WINDOW_MINIMIZED",
-                "message": message,
-                "details":
-                    "The window is currently minimized. Please restore the window to capture it.",
-                "errorCode": code ?? NSNull(),
-                "errorDomain": domain ?? NSNull(),
-            ]
-        case .captureNotSupported(let code, let domain, let message):
-            return [
-                "code": "CAPTURE_NOT_SUPPORTED",
-                "message": message,
-                "details": NSNull(),
-                "errorCode": code ?? NSNull(),
-                "errorDomain": domain ?? NSNull(),
-            ]
-        case .captureFailed(let code, let domain, let message):
-            return [
-                "code": "CAPTURE_FAILED",
-                "message": message,
-                "details": message,
-                "errorCode": code ?? NSNull(),
-                "errorDomain": domain ?? NSNull(),
-            ]
-        case .unsupportedMacOSVersion(let code, let domain, let message):
-            return [
-                "code": "UNSUPPORTED_MACOS_VERSION",
-                "message": message,
-                "details": "Current version: \(VersionUtil.getMacOSVersion()), Required: 12.3+",
-                "errorCode": code ?? NSNull(),
-                "errorDomain": domain ?? NSNull(),
-            ]
-        case .requiresMacOS14(let code, let domain, let message):
-            return [
-                "code": "REQUIRES_MACOS_14",
-                "message": message,
-                "details": "Current version: \(VersionUtil.getMacOSVersion()), Required: 14.0+",
-                "errorCode": code ?? NSNull(),
-                "errorDomain": domain ?? NSNull(),
-            ]
-        case .screenRecordingPermissionDenied(let code, let domain, let message):
-            return [
-                "code": "SCREEN_RECORDING_PERMISSION_DENIED",
-                "message": message,
-                "details":
-                    "Please grant screen recording permission in System Settings > Privacy & Security > Screen Recording",
-                "errorCode": code ?? NSNull(),
-                "errorDomain": domain ?? NSNull(),
-            ]
+/// Screen capture errors
+enum CaptureError: PluginError {
+    case invalidWindowId(code: Int?, domain: String?, message: String)
+    case windowMinimized(code: Int?, domain: String?, message: String)
+    case captureFailed(code: Int?, domain: String?, message: String)
+    case unsupportedMacOSVersion(code: Int?, domain: String?, message: String)
+    case requiresMacOS14(code: Int?, domain: String?, message: String)
+    case screenRecordingPermissionDenied(code: Int?, domain: String?, message: String)
+
+    var code: String {
+        switch self {
+        case .invalidWindowId: return "INVALID_WINDOW_ID"
+        case .windowMinimized: return "WINDOW_MINIMIZED"
+        case .captureFailed: return "CAPTURE_FAILED"
+        case .unsupportedMacOSVersion: return "UNSUPPORTED_MACOS_VERSION"
+        case .requiresMacOS14: return "REQUIRES_MACOS_14"
+        case .screenRecordingPermissionDenied: return "SCREEN_RECORDING_PERMISSION_DENIED"
+        }
+    }
+
+    var stateReason: String? {
+        switch self {
+        case .invalidWindowId: return "window_not_found"
+        case .windowMinimized: return "window_minimized"
+        case .unsupportedMacOSVersion, .requiresMacOS14: return "unsupported_version"
+        case .screenRecordingPermissionDenied: return "permission_denied"
+        case .captureFailed: return nil
+        }
+    }
+
+    var message: String {
+        switch self {
+        case .invalidWindowId(_, _, let message), .windowMinimized(_, _, let message),
+            .captureFailed(_, _, let message), .unsupportedMacOSVersion(_, _, let message),
+            .requiresMacOS14(_, _, let message), .screenRecordingPermissionDenied(_, _, let message):
+            return message
+        }
+    }
+
+    var details: String? {
+        switch self {
+        case .invalidWindowId:
+            return nil
+        case .windowMinimized:
+            return "The window is currently minimized. Please restore the window to capture it."
+        case .captureFailed(_, _, let message):
+            return message
+        case .unsupportedMacOSVersion:
+            return "Current version: \(VersionUtil.getMacOSVersion()), Required: 12.3+"
+        case .requiresMacOS14:
+            return "Current version: \(VersionUtil.getMacOSVersion()), Required: 14.0+"
+        case .screenRecordingPermissionDenied:
+            return "Please grant screen recording permission in System Settings > Privacy & Security > Screen Recording"
+        }
+    }
+
+    var nativeErrorCode: Int? {
+        switch self {
+        case .invalidWindowId(let code, _, _), .windowMinimized(let code, _, _),
+            .captureFailed(let code, _, _), .unsupportedMacOSVersion(let code, _, _),
+            .requiresMacOS14(let code, _, _), .screenRecordingPermissionDenied(let code, _, _):
+            return code
+        }
+    }
+
+    var nativeErrorDomain: String? {
+        switch self {
+        case .invalidWindowId(_, let domain, _), .windowMinimized(_, let domain, _),
+            .captureFailed(_, let domain, _), .unsupportedMacOSVersion(_, let domain, _),
+            .requiresMacOS14(_, let domain, _), .screenRecordingPermissionDenied(_, let domain, _):
+            return domain
         }
     }
 }

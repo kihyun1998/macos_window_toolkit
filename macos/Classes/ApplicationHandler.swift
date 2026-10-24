@@ -95,29 +95,12 @@ class ApplicationHandler {
     }
 }
 
-/// Enum representing application operation errors
-enum ApplicationError: Error, LocalizedError {
-    case failedToRetrieveApplicationList
-    case applicationNotFound
-    case insufficientApplicationInfo
-    case failedToOpenAppStore
+/// Application operation errors
+enum ApplicationError: PluginError {
     case invalidURL
-    case systemError(String)
 
-    var errorDescription: String? {
-        switch self {
-        case .failedToRetrieveApplicationList:
-            return "Failed to retrieve application list"
-        case .applicationNotFound:
-            return "Application not found"
-        case .insufficientApplicationInfo:
-            return "Insufficient application information"
-        case .failedToOpenAppStore:
-            return "Failed to open App Store"
-        case .invalidURL:
-            return "Invalid URL for App Store search"
-        case .systemError(let message):
-            return "System error: \(message)"
-        }
-    }
+    var code: String { "OPEN_APP_STORE_ERROR" }
+    var stateReason: String? { nil }
+    var message: String { "Invalid URL for App Store search" }
+    var details: String? { nil }
 }
