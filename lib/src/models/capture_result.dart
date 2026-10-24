@@ -95,9 +95,13 @@ enum CaptureFailureReason {
   permissionDenied,
 
   /// Another capture operation is in progress
+  ///
+  /// Not currently produced by the native side.
   captureInProgress,
 
   /// Window exists but cannot be captured (e.g., system windows)
+  ///
+  /// Not currently produced by the native side.
   windowNotCapturable,
 
   /// Unknown capture state (not a system error)

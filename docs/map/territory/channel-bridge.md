@@ -4,7 +4,7 @@
 This is the one path every call takes from Dart to Swift and back. The public `MacosWindowToolkit` facade calls `MacosWindowToolkitPlatform.instance`. That defaults to `MethodChannelMacosWindowToolkit`, which mixes in five `*Channel` mixins over a single `MethodChannel('macos_window_toolkit')`. On the Swift side, `MacosWindowToolkitPlugin.handle` switches on the method name and calls the handler classes. This area also decides how a failure is returned: as a result value, a thrown exception, or a typed failure.
 
 ## Governing decisions
-**None.** No decision records exist (`docs/adr/` is absent). The state-vs-system-error split is described only in comments ("v1.4.3+ state errors" in the Dart mixins) and CHANGELOG entries.
+**None.** No decision records exist (`docs/adr/` is absent). The state-vs-system-error split is declared per error case in `PluginError.stateReason` (#10, 2026-10-24); see [failure-code-vocabulary](../invariant/failure-code-vocabulary.md).
 
 ## Design model
 From reading the source:
@@ -16,7 +16,9 @@ From reading the source:
 - **Swappable platform.** `MacosWindowToolkitPlatform` extends `PlatformInterface` with a private token. Tests replace `instance` with a fake (`test/permission_watcher_test.dart — _FakePlatform`).
 
 ## Code
-- `macos/Classes/MacosWindowToolkitPlugin.swift — MacosWindowToolkitPlugin.register`, `handle`, `isStateError`, `mapErrorCodeToReasonCode`, `handleWindowResult`
+- `macos/Classes/MacosWindowToolkitPlugin.swift — MacosWindowToolkitPlugin.register`, `handle`, `required`, `replyWindows`, `reply`, `replyUnexpected`
+- `macos/Classes/PluginError.swift — PluginError`, `PluginError.reply`, `DispatcherError`
+- `lib/src/method_channel/failure_codes.dart` (failure tables, `systemErrorCodes`)
 - `lib/macos_window_toolkit.dart` (library exports)
 - `lib/src/macos_window_toolkit.dart — MacosWindowToolkit`
 - `lib/src/platform_interface/macos_window_toolkit_platform_interface.dart — MacosWindowToolkitPlatform`, plus the five `*_interface.dart` files beside it
@@ -36,6 +38,5 @@ From reading the source:
 - [user-docs](user-docs.md): `documentations/api_reference.md` restates the public method list by hand.
 
 ## Known holes / open
-- `test/macos_window_toolkit_method_channel_test.dart` covers only the failure mappings of `closeWindow`, `getScrollInfo` and `captureWindow` (#7). No test checks a method name, an argument key or a success result shape, and `test/macos_window_toolkit_test.dart` is `void main() {}`.
+- `test/macos_window_toolkit_method_channel_test.dart` covers the failure mappings of every result-typed call and `isWindowFullScreen`, both reply shapes, plus every native code against `PlatformErrorCode` (#7, #10). No test checks a method name, an argument key or a success result shape, and `test/macos_window_toolkit_test.dart` is `void main() {}`.
 - `result` is called from inside a Swift `Task` (capture, capturable windows, fullscreen). Nothing here confirms that Flutter's macOS embedder accepts a reply from that thread. This is not checked against Flutter's docs (a summarized source).
-- The Dart reason maps and `_isSystemError` are copied three times, once per mixin (see the invariant).

@@ -110,8 +110,7 @@ abstract class ApplicationOperationsInterface {
   /// Note: This method does NOT require accessibility permissions.
   ///
   /// Throws [PlatformException] with appropriate error codes:
-  /// - `GET_CHILD_PROCESSES_ERROR`: Failed to retrieve child processes
-  /// - `FAILED_TO_GET_PROCESS_LIST`: Unable to retrieve system process list
+  /// - `GET_CHILD_PROCESSES_ERROR`: Failed to retrieve the system process list
   ///
   /// Example usage:
   /// ```dart

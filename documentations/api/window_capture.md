@@ -328,7 +328,6 @@ Future<List<CapturableWindowInfo>> getCapturableWindows()
 **Throws:**
 - `PlatformException` with error codes:
   - `UNSUPPORTED_MACOS_VERSION` - macOS version doesn't support ScreenCaptureKit
-  - `SCREENCAPTUREKIT_NOT_AVAILABLE` - ScreenCaptureKit framework unavailable
   - `CAPTURE_FAILED` - Failed to retrieve windows
 
 **Example:**
@@ -355,10 +354,6 @@ try {
       print('ScreenCaptureKit requires macOS 12.3+');
       // Use legacy method instead
       final legacyWindows = await toolkit.getCapturableWindowsLegacy();
-      break;
-      
-    case 'SCREENCAPTUREKIT_NOT_AVAILABLE':
-      print('ScreenCaptureKit framework not available');
       break;
       
     default:

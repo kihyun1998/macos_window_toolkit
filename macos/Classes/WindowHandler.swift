@@ -1505,98 +1505,13 @@ class WindowHandler {
 
         return result
     }
-
-    /// Helper method to pass WindowError errors to Flutter
-    static func handleWindowError(_ error: WindowError) -> [String: Any] {
-        switch error {
-        case .failedToRetrieveWindowList:
-            return [
-                "code": "FAILED_TO_RETRIEVE_WINDOW_LIST",
-                "message": "Failed to retrieve window list",
-                "details": NSNull(),
-            ]
-        case .windowNotFound:
-            return [
-                "code": "WINDOW_NOT_FOUND",
-                "message": "Window not found",
-                "details": "The specified window could not be found. It may have been closed or the ID is invalid.",
-            ]
-        case .insufficientWindowInfo:
-            return [
-                "code": "INSUFFICIENT_WINDOW_INFO",
-                "message": "Insufficient window information",
-                "details": "Unable to retrieve necessary information (process ID or window name) to perform the operation.",
-            ]
-        case .appleScriptExecutionFailed:
-            return [
-                "code": "APPLESCRIPT_EXECUTION_FAILED",
-                "message": "Failed to execute AppleScript for window closure",
-                "details": NSNull(),
-            ]
-        case .accessibilityPermissionDenied:
-            return [
-                "code": "ACCESSIBILITY_PERMISSION_DENIED",
-                "message": "Accessibility permission is required",
-                "details": "Please grant accessibility permission in System Settings > Privacy & Security > Accessibility",
-            ]
-        case .closeButtonNotFound:
-            return [
-                "code": "CLOSE_BUTTON_NOT_FOUND",
-                "message": "Could not find close button for the specified window",
-                "details": "The window structure may not support programmatic closing via Accessibility API.",
-            ]
-        case .closeActionFailed:
-            return [
-                "code": "CLOSE_ACTION_FAILED",
-                "message": "Failed to perform close action on window",
-                "details": "The close button was found but clicking it failed.",
-            ]
-        case .focusActionFailed:
-            return [
-                "code": "FOCUS_ACTION_FAILED",
-                "message": "Failed to focus window",
-                "details": "The raise action was found but executing it failed.",
-            ]
-        case .processNotFound:
-            return [
-                "code": "PROCESS_NOT_FOUND",
-                "message": "Process not found",
-                "details": "The specified process ID does not exist or has already terminated.",
-            ]
-        case .terminationFailed:
-            return [
-                "code": "TERMINATION_FAILED",
-                "message": "Failed to terminate process",
-                "details": "The process could not be terminated. It may require elevated privileges.",
-            ]
-        case .failedToGetProcessList:
-            return [
-                "code": "FAILED_TO_GET_PROCESS_LIST",
-                "message": "Failed to retrieve process list",
-                "details": "Unable to query system process information.",
-            ]
-        case .windowNotAccessible:
-            return [
-                "code": "WINDOW_NOT_ACCESSIBLE",
-                "message": "Window is not accessible via Accessibility API",
-                "details": "The window exists but cannot be accessed. It may be on a different Space, or the application does not support the Accessibility API.",
-            ]
-        case .spaceSwitchAPIUnavailable:
-            return [
-                "code": "SPACE_SWITCH_API_UNAVAILABLE",
-                "message": "Private CGS Space APIs are not available",
-                "details": "The window is on a different Space but the required private APIs are unavailable on this macOS version.",
-            ]
-        }
-    }
 }
 
-/// Enum representing window operation errors
-enum WindowError: Error, LocalizedError {
+/// Window, Accessibility and process operation errors
+enum WindowError: PluginError {
     case failedToRetrieveWindowList
     case windowNotFound
     case insufficientWindowInfo
-    case appleScriptExecutionFailed
     case accessibilityPermissionDenied
     case closeButtonNotFound
     case closeActionFailed
@@ -1607,34 +1522,80 @@ enum WindowError: Error, LocalizedError {
     case windowNotAccessible
     case spaceSwitchAPIUnavailable
 
-    var errorDescription: String? {
+    var code: String {
+        switch self {
+        case .failedToRetrieveWindowList: return "FAILED_TO_RETRIEVE_WINDOW_LIST"
+        case .windowNotFound: return "WINDOW_NOT_FOUND"
+        case .insufficientWindowInfo: return "INSUFFICIENT_WINDOW_INFO"
+        case .accessibilityPermissionDenied: return "ACCESSIBILITY_PERMISSION_DENIED"
+        case .closeButtonNotFound: return "CLOSE_BUTTON_NOT_FOUND"
+        case .closeActionFailed: return "CLOSE_ACTION_FAILED"
+        case .focusActionFailed: return "FOCUS_ACTION_FAILED"
+        case .processNotFound: return "PROCESS_NOT_FOUND"
+        case .terminationFailed: return "TERMINATION_FAILED"
+        case .failedToGetProcessList: return "FAILED_TO_GET_PROCESS_LIST"
+        case .windowNotAccessible: return "WINDOW_NOT_ACCESSIBLE"
+        case .spaceSwitchAPIUnavailable: return "SPACE_SWITCH_API_UNAVAILABLE"
+        }
+    }
+
+    var stateReason: String? {
+        switch self {
+        case .windowNotFound: return "window_not_found"
+        case .accessibilityPermissionDenied: return "accessibility_permission_denied"
+        case .closeButtonNotFound: return "close_button_not_found"
+        case .focusActionFailed: return "focus_action_failed"
+        case .processNotFound: return "process_not_found"
+        case .windowNotAccessible: return "window_not_accessible"
+        case .failedToRetrieveWindowList, .insufficientWindowInfo, .closeActionFailed,
+            .terminationFailed, .failedToGetProcessList, .spaceSwitchAPIUnavailable:
+            return nil
+        }
+    }
+
+    var message: String {
+        switch self {
+        case .failedToRetrieveWindowList: return "Failed to retrieve window list"
+        case .windowNotFound: return "Window not found"
+        case .insufficientWindowInfo: return "Insufficient window information"
+        case .accessibilityPermissionDenied: return "Accessibility permission is required"
+        case .closeButtonNotFound: return "Could not find close button for the specified window"
+        case .closeActionFailed: return "Failed to perform close action on window"
+        case .focusActionFailed: return "Failed to focus window"
+        case .processNotFound: return "Process not found"
+        case .terminationFailed: return "Failed to terminate process"
+        case .failedToGetProcessList: return "Failed to retrieve process list"
+        case .windowNotAccessible: return "Window is not accessible via Accessibility API"
+        case .spaceSwitchAPIUnavailable: return "Private CGS Space APIs are not available"
+        }
+    }
+
+    var details: String? {
         switch self {
         case .failedToRetrieveWindowList:
-            return "Failed to retrieve window list"
+            return nil
         case .windowNotFound:
-            return "Window not found"
+            return "The specified window could not be found. It may have been closed or the ID is invalid."
         case .insufficientWindowInfo:
-            return "Insufficient window information to close window"
-        case .appleScriptExecutionFailed:
-            return "Failed to execute AppleScript for window closure"
+            return "Unable to retrieve necessary information (process ID or window name) to perform the operation."
         case .accessibilityPermissionDenied:
-            return "Accessibility permission is required to close windows"
+            return "Please grant accessibility permission in System Settings > Privacy & Security > Accessibility"
         case .closeButtonNotFound:
-            return "Could not find close button for the specified window"
+            return "The window structure may not support programmatic closing via Accessibility API."
         case .closeActionFailed:
-            return "Failed to perform close action on window"
+            return "The close button was found but clicking it failed."
         case .focusActionFailed:
-            return "Failed to focus window - raise action did not succeed"
+            return "The raise action was found but executing it failed."
         case .processNotFound:
-            return "Process not found"
+            return "The specified process ID does not exist or has already terminated."
         case .terminationFailed:
-            return "Failed to terminate process"
+            return "The process could not be terminated. It may require elevated privileges."
         case .failedToGetProcessList:
-            return "Failed to retrieve process list"
+            return "Unable to query system process information."
         case .windowNotAccessible:
-            return "Window is not accessible via Accessibility API"
+            return "The window exists but cannot be accessed. It may be on a different Space, or the application does not support the Accessibility API."
         case .spaceSwitchAPIUnavailable:
-            return "Private CGS Space APIs are not available on this macOS version"
+            return "The window is on a different Space but the required private APIs are unavailable on this macOS version."
         }
     }
 }

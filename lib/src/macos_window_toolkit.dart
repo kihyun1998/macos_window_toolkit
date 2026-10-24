@@ -650,7 +650,7 @@ class MacosWindowToolkit {
   ///
   /// Throws [PlatformException] with the following error codes:
   /// - `UNSUPPORTED_MACOS_VERSION`: Current macOS version doesn't support ScreenCaptureKit
-  /// - `SCREENCAPTUREKIT_NOT_AVAILABLE`: ScreenCaptureKit framework is not available
+  /// - `SCREEN_RECORDING_PERMISSION_DENIED`: Screen recording permission is not granted
   /// - `CAPTURE_FAILED`: Failed to retrieve capturable windows due to system restrictions
   Future<List<CapturableWindowInfo>> getCapturableWindows() async {
     return await MacosWindowToolkitPlatform.instance.getCapturableWindows();
@@ -844,7 +844,12 @@ class MacosWindowToolkit {
   /// }
   /// ```
   ///
-  /// Throws [PlatformException] for system errors or missing permissions.
+  /// Throws [PlatformException] under the native error code, with a details
+  /// map holding `code`, `message`, `details`, `errorCode` and `errorDomain`:
+  /// - `SCREEN_RECORDING_PERMISSION_DENIED`: Screen recording permission is not granted
+  /// - `INVALID_WINDOW_ID`: No window with this ID
+  /// - `UNSUPPORTED_MACOS_VERSION` / `REQUIRES_MACOS_14`: The macOS version is too old
+  /// - `FULLSCREEN_CHECK_FAILED`: Any other failure
   Future<bool> isWindowFullScreen(int windowId) async {
     return await MacosWindowToolkitPlatform.instance
         .isWindowFullScreen(windowId);
@@ -1086,8 +1091,7 @@ class MacosWindowToolkit {
   /// by querying the system process table directly.
   ///
   /// Throws [PlatformException] with appropriate error codes:
-  /// - `GET_CHILD_PROCESSES_ERROR`: Failed to retrieve child processes
-  /// - `FAILED_TO_GET_PROCESS_LIST`: Unable to retrieve system process list
+  /// - `GET_CHILD_PROCESSES_ERROR`: Failed to retrieve the system process list
   Future<List<int>> getChildProcesses(int processId) async {
     return await MacosWindowToolkitPlatform.instance.getChildProcesses(
       processId,

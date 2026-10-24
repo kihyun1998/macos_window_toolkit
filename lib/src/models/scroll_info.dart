@@ -160,6 +160,9 @@ enum ScrollFailureReason {
   accessibilityPermissionDenied,
 
   /// Window has no scrollable content.
+  ///
+  /// Not currently produced: a window without scroll bars returns
+  /// [ScrollSuccess] with both scroll flags false.
   noScrollableContent,
 
   /// Unknown operation state.

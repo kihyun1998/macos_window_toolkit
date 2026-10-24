@@ -239,6 +239,257 @@ void main() {
     }
   });
 
+  test('every code the native side sends is a PlatformErrorCode', () {
+    // The codes macos/Classes can put on the wire: WindowError, CaptureError,
+    // ApplicationError, the per-call codes and the dispatcher's own.
+    const nativeCodes = [
+      'FAILED_TO_RETRIEVE_WINDOW_LIST',
+      'WINDOW_NOT_FOUND',
+      'INSUFFICIENT_WINDOW_INFO',
+      'ACCESSIBILITY_PERMISSION_DENIED',
+      'CLOSE_BUTTON_NOT_FOUND',
+      'CLOSE_ACTION_FAILED',
+      'FOCUS_ACTION_FAILED',
+      'PROCESS_NOT_FOUND',
+      'TERMINATION_FAILED',
+      'FAILED_TO_GET_PROCESS_LIST',
+      'WINDOW_NOT_ACCESSIBLE',
+      'SPACE_SWITCH_API_UNAVAILABLE',
+      'INVALID_WINDOW_ID',
+      'WINDOW_MINIMIZED',
+      'CAPTURE_FAILED',
+      'UNSUPPORTED_MACOS_VERSION',
+      'REQUIRES_MACOS_14',
+      'SCREEN_RECORDING_PERMISSION_DENIED',
+      'OPEN_APP_STORE_ERROR',
+      'WINDOW_LIST_ERROR',
+      'GET_CHILD_PROCESSES_ERROR',
+      'GET_APPLICATIONS_ERROR',
+      'INVALID_ARGUMENTS',
+      'FULLSCREEN_CHECK_FAILED',
+    ];
+
+    final missing =
+        nativeCodes.where((c) => PlatformErrorCode.fromCode(c) == null);
+    expect(missing, isEmpty);
+  });
+
+  test('isWindowFullScreen carries the native fields as a details map',
+      () async {
+    answer(
+      'isWindowFullScreen',
+      () => {
+        'success': false,
+        'reason': 'unsupported_version',
+        'code': 'REQUIRES_MACOS_14',
+        'message': 'Fullscreen detection requires macOS 14.0 or later',
+        'details': 'Current version: 13.6.0, Required: 14.0+',
+        'errorCode': null,
+        'errorDomain': null,
+      },
+    );
+
+    await expectLater(
+      toolkit.isWindowFullScreen(42),
+      throwsA(
+        isA<PlatformException>().having(
+          (e) => e.details,
+          'details',
+          {
+            'code': 'REQUIRES_MACOS_14',
+            'message': 'Fullscreen detection requires macOS 14.0 or later',
+            'details': 'Current version: 13.6.0, Required: 14.0+',
+            'errorCode': null,
+            'errorDomain': null,
+          },
+        ),
+      ),
+    );
+  });
+
+  // Every state macos/Classes declares (PluginError.stateReason), per method
+  // that can raise it, with the native code it travels under.
+  group('every native state reaches its typed reason, both shapes', () {
+    const windowStates = {
+      ('window_not_found', 'WINDOW_NOT_FOUND'):
+          WindowOperationFailureReason.windowNotFound,
+      ('window_not_accessible', 'WINDOW_NOT_ACCESSIBLE'):
+          WindowOperationFailureReason.windowNotAccessible,
+      ('accessibility_permission_denied', 'ACCESSIBILITY_PERMISSION_DENIED'):
+          WindowOperationFailureReason.accessibilityPermissionDenied,
+      ('close_button_not_found', 'CLOSE_BUTTON_NOT_FOUND'):
+          WindowOperationFailureReason.closeButtonNotFound,
+      ('focus_action_failed', 'FOCUS_ACTION_FAILED'):
+          WindowOperationFailureReason.focusActionFailed,
+      ('process_not_found', 'PROCESS_NOT_FOUND'):
+          WindowOperationFailureReason.processNotFound,
+    };
+    final windowCalls = <String, Future<WindowOperationResult> Function()>{
+      'closeWindow': () => toolkit.closeWindow(42),
+      'focusWindow': () => toolkit.focusWindow(42),
+      'terminateApplicationByPID': () => toolkit.terminateApplicationByPID(42),
+      'terminateApplicationTree': () => toolkit.terminateApplicationTree(42),
+    };
+    windowCalls.forEach((method, call) {
+      windowStates.forEach((wire, expected) {
+        final (reason, code) = wire;
+        test('$method: state $reason → $expected', () async {
+          answer(
+              method, () => {'success': false, 'reason': reason, 'code': code});
+          expect(((await call()) as OperationFailure).reason, expected);
+        });
+        test('$method: platform error $code → $expected', () async {
+          answer(method, () => throw PlatformException(code: code));
+          expect(((await call()) as OperationFailure).reason, expected);
+        });
+      });
+    });
+
+    const scrollStates = {
+      ('window_not_found', 'WINDOW_NOT_FOUND'):
+          ScrollFailureReason.windowNotFound,
+      ('window_not_accessible', 'WINDOW_NOT_ACCESSIBLE'):
+          ScrollFailureReason.windowNotAccessible,
+      ('accessibility_permission_denied', 'ACCESSIBILITY_PERMISSION_DENIED'):
+          ScrollFailureReason.accessibilityPermissionDenied,
+    };
+    scrollStates.forEach((wire, expected) {
+      final (reason, code) = wire;
+      test('getScrollInfo: state $reason and platform error $code → $expected',
+          () async {
+        answer('getScrollInfo',
+            () => {'success': false, 'reason': reason, 'code': code});
+        expect(
+          ((await toolkit.getScrollInfo(42)) as ScrollFailure).reason,
+          expected,
+        );
+        answer('getScrollInfo', () => throw PlatformException(code: code));
+        expect(
+          ((await toolkit.getScrollInfo(42)) as ScrollFailure).reason,
+          expected,
+        );
+      });
+    });
+
+    const captureStates = {
+      ('window_not_found', 'INVALID_WINDOW_ID'):
+          CaptureFailureReason.windowNotFound,
+      ('window_minimized', 'WINDOW_MINIMIZED'):
+          CaptureFailureReason.windowMinimized,
+      ('unsupported_version', 'UNSUPPORTED_MACOS_VERSION'):
+          CaptureFailureReason.unsupportedVersion,
+      ('unsupported_version', 'REQUIRES_MACOS_14'):
+          CaptureFailureReason.unsupportedVersion,
+      ('permission_denied', 'SCREEN_RECORDING_PERMISSION_DENIED'):
+          CaptureFailureReason.permissionDenied,
+    };
+    captureStates.forEach((wire, expected) {
+      final (reason, code) = wire;
+      test(
+          'captureWindow: $code keeps its reason and native error, both shapes',
+          () async {
+        final fields = {
+          'code': code,
+          'message': 'm',
+          'details': 'd',
+          'errorCode': -3801,
+          'errorDomain': 'com.apple.ScreenCaptureKit.SCStreamErrorDomain',
+        };
+        for (final shape in ['state', 'platform error']) {
+          answer(
+            'captureWindow',
+            () => shape == 'state'
+                ? {'success': false, 'reason': reason, ...fields}
+                : throw PlatformException(
+                    code: code, message: 'm', details: fields),
+          );
+          final failure = (await toolkit.captureWindow(42)) as CaptureFailure;
+          expect(failure.reason, expected, reason: shape);
+          expect(failure.details, 'd', reason: shape);
+          expect(failure.errorCode, -3801, reason: shape);
+          expect(failure.errorDomain,
+              'com.apple.ScreenCaptureKit.SCStreamErrorDomain',
+              reason: shape);
+        }
+      });
+    });
+  });
+
+  test('isWindowFullScreen throws the native code of a state reply', () async {
+    answer(
+      'isWindowFullScreen',
+      () => {
+        'success': false,
+        'reason': 'permission_denied',
+        'code': 'SCREEN_RECORDING_PERMISSION_DENIED',
+        'message': 'Screen recording permission is required',
+      },
+    );
+
+    await expectLater(
+      toolkit.isWindowFullScreen(42),
+      throwsA(
+        isA<PlatformException>()
+            .having(
+              (e) => e.code,
+              'code',
+              'SCREEN_RECORDING_PERMISSION_DENIED',
+            )
+            .having(
+              (e) => e.errorCode,
+              'errorCode',
+              PlatformErrorCode.captureScreenRecordingPermissionDenied,
+            ),
+      ),
+    );
+  });
+
+  test('a platform error carries the native message and details', () async {
+    answer(
+      'closeWindow',
+      () => throw PlatformException(
+        code: 'CLOSE_ACTION_FAILED',
+        message: 'Failed to perform close action on window',
+        details: {
+          'code': 'CLOSE_ACTION_FAILED',
+          'details': 'The close button was found but clicking it failed.',
+        },
+      ),
+    );
+
+    final failure = await toolkit.closeWindow(42) as OperationFailure;
+
+    expect(failure.message, 'Failed to perform close action on window');
+    expect(
+      failure.details,
+      'The close button was found but clicking it failed.',
+    );
+  });
+
+  group('process operations share the window reason table', () {
+    for (final method in [
+      'terminateApplicationByPID',
+      'terminateApplicationTree',
+    ]) {
+      test('$method maps focus_action_failed like the window operations',
+          () async {
+        answer(
+          method,
+          () => {'success': false, 'reason': 'focus_action_failed'},
+        );
+
+        final result = method == 'terminateApplicationByPID'
+            ? await toolkit.terminateApplicationByPID(42)
+            : await toolkit.terminateApplicationTree(42);
+
+        expect(
+          (result as OperationFailure).reason,
+          WindowOperationFailureReason.focusActionFailed,
+        );
+      });
+    }
+  });
+
   group('captureWindow', () {
     test('capture on macOS before 14.0 is reported as unsupportedVersion',
         () async {

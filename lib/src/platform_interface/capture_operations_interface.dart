@@ -65,7 +65,7 @@ abstract class CaptureOperationsInterface {
   ///
   /// Throws [PlatformException] with appropriate error codes:
   /// - `UNSUPPORTED_MACOS_VERSION`: macOS version does not support ScreenCaptureKit
-  /// - `SCREENCAPTUREKIT_NOT_AVAILABLE`: ScreenCaptureKit is not available
+  /// - `SCREEN_RECORDING_PERMISSION_DENIED`: Screen recording permission is not granted
   /// - `CAPTURE_FAILED`: Failed to retrieve capturable windows
   Future<List<CapturableWindowInfo>> getCapturableWindows() {
     throw UnimplementedError(

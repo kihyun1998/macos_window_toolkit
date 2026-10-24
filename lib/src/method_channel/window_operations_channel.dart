@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 
 import '../models/scroll_info.dart';
 import '../models/window_operation_result.dart';
+import 'failure_codes.dart';
 
 /// Mixin providing method channel implementations for window operations.
 mixin WindowOperationsChannel {
@@ -181,10 +182,10 @@ mixin WindowOperationsChannel {
       );
     } on PlatformException catch (e) {
       // Only system errors should throw, others should return OperationFailure
-      if (_isSystemError(e.code)) {
+      if (systemErrorCodes.contains(e.code)) {
         rethrow;
       }
-      return _platformExceptionToOperationFailure(e);
+      return operationFailureFromException(e);
     }
   }
 
@@ -222,92 +223,19 @@ mixin WindowOperationsChannel {
       );
     } on PlatformException catch (e) {
       // Only system errors should throw, others should return OperationFailure
-      if (_isSystemError(e.code)) {
+      if (systemErrorCodes.contains(e.code)) {
         rethrow;
       }
-      return _platformExceptionToOperationFailure(e);
+      return operationFailureFromException(e);
     }
   }
 
   /// Helper method to parse operation result from native response
   WindowOperationResult _parseOperationResult(Map<dynamic, dynamic> result) {
     final success = result['success'] as bool? ?? false;
-
-    if (success) {
-      return const OperationSuccess();
-    } else {
-      final reasonCode = result['reason'] as String? ?? 'unknown';
-      final message = result['message'] as String?;
-      final details = result['details'] as String?;
-
-      final reason = _mapReasonCodeToFailureReason(reasonCode);
-      return OperationFailure(
-          reason: reason, message: message, details: details);
-    }
-  }
-
-  /// Maps native reason codes to WindowOperationFailureReason enum
-  WindowOperationFailureReason _mapReasonCodeToFailureReason(String code) {
-    switch (code) {
-      case 'window_not_found':
-        return WindowOperationFailureReason.windowNotFound;
-      case 'window_not_accessible':
-        return WindowOperationFailureReason.windowNotAccessible;
-      case 'process_not_found':
-        return WindowOperationFailureReason.processNotFound;
-      case 'accessibility_permission_denied':
-        return WindowOperationFailureReason.accessibilityPermissionDenied;
-      case 'close_button_not_found':
-        return WindowOperationFailureReason.closeButtonNotFound;
-      case 'focus_action_failed':
-        return WindowOperationFailureReason.focusActionFailed;
-      default:
-        return WindowOperationFailureReason.unknown;
-    }
-  }
-
-  /// Converts PlatformException to OperationFailure for legacy error handling
-  OperationFailure _platformExceptionToOperationFailure(PlatformException e) {
-    final reason = _mapErrorCodeToFailureReason(e.code);
-    return OperationFailure(
-      reason: reason,
-      message: e.message,
-      details: e.details?.toString(),
-    );
-  }
-
-  /// Maps legacy error codes to WindowOperationFailureReason
-  WindowOperationFailureReason _mapErrorCodeToFailureReason(String code) {
-    switch (code) {
-      case 'WINDOW_NOT_FOUND':
-      case 'INVALID_WINDOW_ID':
-        return WindowOperationFailureReason.windowNotFound;
-      case 'WINDOW_NOT_ACCESSIBLE':
-        return WindowOperationFailureReason.windowNotAccessible;
-      case 'PROCESS_NOT_FOUND':
-        return WindowOperationFailureReason.processNotFound;
-      case 'ACCESSIBILITY_PERMISSION_DENIED':
-        return WindowOperationFailureReason.accessibilityPermissionDenied;
-      case 'CLOSE_BUTTON_NOT_FOUND':
-        return WindowOperationFailureReason.closeButtonNotFound;
-      case 'FOCUS_ACTION_FAILED':
-        return WindowOperationFailureReason.focusActionFailed;
-      default:
-        return WindowOperationFailureReason.unknown;
-    }
-  }
-
-  /// Determines if an error code represents a system error that should throw
-  bool _isSystemError(String code) {
-    switch (code) {
-      case 'INVALID_ARGUMENTS':
-      case 'SYSTEM_ERROR':
-      case 'OUT_OF_MEMORY':
-      case 'INTERNAL_ERROR':
-        return true;
-      default:
-        return false;
-    }
+    return success
+        ? const OperationSuccess()
+        : operationFailureFromState(result);
   }
 
   Future<bool> isWindowFullScreen(int windowId) async {
@@ -326,9 +254,11 @@ mixin WindowOperationsChannel {
       final reason = map['reason'] as String? ?? 'unknown';
       final message = map['message'] as String? ?? 'Unknown error';
       throw PlatformException(
-        code: reason.toUpperCase(),
+        code: map['code'] as String? ?? reason.toUpperCase(),
         message: message,
-        details: map['details'],
+        details: Map<dynamic, dynamic>.from(map)
+          ..remove('success')
+          ..remove('reason'),
       );
     }
 
@@ -358,10 +288,10 @@ mixin WindowOperationsChannel {
         message: 'Unexpected response type',
       );
     } on PlatformException catch (e) {
-      if (_isSystemError(e.code)) {
+      if (systemErrorCodes.contains(e.code)) {
         rethrow;
       }
-      return _platformExceptionToScrollFailure(e);
+      return scrollFailureFromException(e);
     }
   }
 
@@ -382,55 +312,7 @@ mixin WindowOperationsChannel {
         message: 'Missing scroll info in response',
       );
     } else {
-      final reasonCode = result['reason'] as String? ?? 'unknown';
-      final message = result['message'] as String?;
-      final details = result['details'] as String?;
-
-      final reason = _mapReasonCodeToScrollFailureReason(reasonCode);
-      return ScrollFailure(reason: reason, message: message, details: details);
-    }
-  }
-
-  /// Maps native reason codes to ScrollFailureReason enum
-  ScrollFailureReason _mapReasonCodeToScrollFailureReason(String code) {
-    switch (code) {
-      case 'window_not_found':
-        return ScrollFailureReason.windowNotFound;
-      case 'window_not_accessible':
-        return ScrollFailureReason.windowNotAccessible;
-      case 'accessibility_permission_denied':
-        return ScrollFailureReason.accessibilityPermissionDenied;
-      case 'no_scrollable_content':
-        return ScrollFailureReason.noScrollableContent;
-      default:
-        return ScrollFailureReason.unknown;
-    }
-  }
-
-  /// Converts PlatformException to ScrollFailure
-  ScrollFailure _platformExceptionToScrollFailure(PlatformException e) {
-    final reason = _mapErrorCodeToScrollFailureReason(e.code);
-    return ScrollFailure(
-      reason: reason,
-      message: e.message,
-      details: e.details?.toString(),
-    );
-  }
-
-  /// Maps legacy error codes to ScrollFailureReason
-  ScrollFailureReason _mapErrorCodeToScrollFailureReason(String code) {
-    switch (code) {
-      case 'WINDOW_NOT_FOUND':
-      case 'INVALID_WINDOW_ID':
-        return ScrollFailureReason.windowNotFound;
-      case 'WINDOW_NOT_ACCESSIBLE':
-        return ScrollFailureReason.windowNotAccessible;
-      case 'ACCESSIBILITY_PERMISSION_DENIED':
-        return ScrollFailureReason.accessibilityPermissionDenied;
-      case 'NO_SCROLLABLE_CONTENT':
-        return ScrollFailureReason.noScrollableContent;
-      default:
-        return ScrollFailureReason.unknown;
+      return scrollFailureFromState(result);
     }
   }
 }

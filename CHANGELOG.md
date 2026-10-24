@@ -10,6 +10,12 @@
 
 ### Changed
 - **BREAKING (source)**: `WindowOperationFailureReason` gains `windowNotAccessible`. An exhaustive `switch` over it needs a new case
+- **CHANGED**: `isWindowFullScreen()` now throws a state failure under its native code, matching `PlatformErrorCode`: e.g. `SCREEN_RECORDING_PERMISSION_DENIED` instead of `PERMISSION_DENIED`, `INVALID_WINDOW_ID` instead of `WINDOW_NOT_FOUND`, `UNSUPPORTED_MACOS_VERSION` instead of `UNSUPPORTED_VERSION`
+- **CHANGED**: a `PlatformException` from the plugin now always carries a details map with `code`, `message`, `details`, `errorCode` and `errorDomain`; window and process operations previously sent a plain string
+- **CHANGED**: `captureWindow()` also maps a `WINDOW_NOT_FOUND` platform error to `windowNotFound` (it previously became `unknown`); the native side sends `INVALID_WINDOW_ID` for capture, so this only matters to custom platform implementations
+- **BREAKING (source)**: `PlatformErrorCode` gains every code the native side sends that it lacked (`windowNotAccessible`, `closeButtonNotFound`, `closeActionFailed`, `focusActionFailed`, `spaceSwitchAPIUnavailable`, `failedToRetrieveWindowList`, `fullScreenCheckFailed`, `getApplicationsError`, `openAppStoreError`); codes the native side never sends are documented as such. An exhaustive `switch` over it needs the new cases
+- **CHANGED**: `terminateApplicationByPID()` / `terminateApplicationTree()` now map every window-operation reason, including `focusActionFailed`
+- **INTERNAL**: every native failure is described once (its code, whether it is a state, its message) and replied through one function; the Dart side resolves failures through one table per failure type
 
 ## 1.9.0
 
