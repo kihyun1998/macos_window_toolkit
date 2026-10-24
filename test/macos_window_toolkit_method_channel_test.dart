@@ -251,6 +251,7 @@ void main() {
       'CLOSE_ACTION_FAILED',
       'FOCUS_ACTION_FAILED',
       'PROCESS_NOT_FOUND',
+      'INVALID_PROCESS_ID',
       'TERMINATION_FAILED',
       'FAILED_TO_GET_PROCESS_LIST',
       'WINDOW_NOT_ACCESSIBLE',
@@ -322,6 +323,8 @@ void main() {
       ('focus_action_failed', 'FOCUS_ACTION_FAILED'):
           WindowOperationFailureReason.focusActionFailed,
       ('process_not_found', 'PROCESS_NOT_FOUND'):
+          WindowOperationFailureReason.processNotFound,
+      ('process_not_found', 'INVALID_PROCESS_ID'):
           WindowOperationFailureReason.processNotFound,
     };
     final windowCalls = <String, Future<WindowOperationResult> Function()>{
@@ -464,6 +467,50 @@ void main() {
       failure.details,
       'The close button was found but clicking it failed.',
     );
+  });
+
+  group('a refused PID is processNotFound with its own code and message', () {
+    const message = 'Process ID must be greater than 1 and fit in a pid_t';
+    for (final method in [
+      'terminateApplicationByPID',
+      'terminateApplicationTree',
+    ]) {
+      Future<WindowOperationResult> call() =>
+          method == 'terminateApplicationByPID'
+              ? toolkit.terminateApplicationByPID(-1)
+              : toolkit.terminateApplicationTree(-1);
+
+      test('$method: state reply', () async {
+        answer(
+            method,
+            () => {
+                  'success': false,
+                  'reason': 'process_not_found',
+                  'code': 'INVALID_PROCESS_ID',
+                  'message': message,
+                });
+        final failure = (await call()) as OperationFailure;
+        expect(failure.reason, WindowOperationFailureReason.processNotFound);
+        expect(failure.message, message);
+      });
+
+      test('$method: platform error', () async {
+        answer(
+            method,
+            () => throw PlatformException(
+                code: 'INVALID_PROCESS_ID', message: message));
+        final failure = (await call()) as OperationFailure;
+        expect(failure.reason, WindowOperationFailureReason.processNotFound);
+        expect(failure.message, message);
+      });
+    }
+
+    test('INVALID_PROCESS_ID resolves to its PlatformErrorCode', () {
+      expect(
+        PlatformException(code: 'INVALID_PROCESS_ID').errorCode,
+        PlatformErrorCode.invalidProcessId,
+      );
+    });
   });
 
   group('process operations share the window reason table', () {

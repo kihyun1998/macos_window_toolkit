@@ -79,4 +79,65 @@ void main() {
       timeout: const Timeout(Duration(seconds: 30)),
     );
   }
+
+  // Never passes a PID <= 0 to a terminate call, nor PID 1 to tree
+  // termination: with the guard broken, those signal the caller's process
+  // group, every process the user may signal, or every descendant of launchd.
+  // PID 1 alone is safe to pass, since a non-root caller cannot signal launchd.
+  group('a PID no terminate call may signal', () {
+    const outOfRange = 1 << 40;
+    final isRoot =
+        (Process.runSync('id', ['-u']).stdout as String).trim() == '0';
+
+    final refused = isA<OperationFailure>()
+        .having(
+          (f) => f.reason,
+          'reason',
+          WindowOperationFailureReason.processNotFound,
+        )
+        .having((f) => f.message, 'message', contains('greater than 1'));
+
+    for (final pid in [1, outOfRange]) {
+      test(
+        'terminateApplicationByPID($pid) is refused as processNotFound',
+        () async {
+          expect(await toolkit.terminateApplicationByPID(pid), refused);
+        },
+        skip: isRoot,
+      );
+    }
+
+    test(
+      'terminateApplicationTree($outOfRange) is refused as processNotFound',
+      () async {
+        expect(await toolkit.terminateApplicationTree(outOfRange), refused);
+      },
+    );
+
+    test('getChildProcesses of an out-of-range PID is empty', () async {
+      expect(await toolkit.getChildProcesses(outOfRange), isEmpty);
+    });
+
+    test(
+      'a live process the caller may not signal is not processNotFound',
+      () async {
+        final ps = await Process.run('ps', ['-U', '0', '-o', 'pid=']);
+        final rootPid = (ps.stdout as String)
+            .split('\n')
+            .map((line) => int.tryParse(line.trim()))
+            .firstWhere((pid) => pid != null && pid > 1);
+
+        final result = await toolkit.terminateApplicationByPID(rootPid!);
+        expect(
+          result,
+          isA<OperationFailure>().having(
+            (f) => f.reason,
+            'reason',
+            isNot(WindowOperationFailureReason.processNotFound),
+          ),
+        );
+      },
+      skip: isRoot,
+    );
+  });
 }

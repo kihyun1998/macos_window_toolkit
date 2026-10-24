@@ -24,8 +24,11 @@ mixin ApplicationOperationsInterface {
   /// Returns:
   /// - [OperationSuccess] if the application was successfully terminated
   /// - [OperationFailure] with one of the following reasons:
-  ///   - [WindowOperationFailureReason.processNotFound]: Process does not exist
-  ///   - [WindowOperationFailureReason.unknown]: Other failure states
+  ///   - [WindowOperationFailureReason.processNotFound]: Process does not exist, or
+  ///     the PID is refused without being signalled: 1 or below, or outside `Int32`
+  ///     ([PlatformErrorCode.invalidProcessId], with a message saying why)
+  ///   - [WindowOperationFailureReason.unknown]: Other failure states, including a
+  ///     live process the caller may not signal
   ///
   /// Throws [PlatformException] only for system errors (invalid arguments, internal errors).
   ///

@@ -335,7 +335,12 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   private func getChildProcesses(call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let processId: Int = required("processId", of: call, result, "processId is required")
     else { return }
-    switch windowHandler.getChildProcesses(of: Int32(processId)) {
+    // A PID outside pid_t has no children
+    guard let parent = Int32(exactly: processId) else {
+      result([Int]())
+      return
+    }
+    switch windowHandler.getChildProcesses(of: parent) {
     case .success(let childPIDs):
       result(childPIDs.map { Int($0) })
     case .failure(let error):
