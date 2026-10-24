@@ -50,14 +50,15 @@ abstract class ApplicationOperationsInterface {
     );
   }
 
-  /// Terminates an application and all its child processes.
+  /// Terminates an application and all its descendant processes.
   ///
-  /// This method first identifies all child processes of the target application,
-  /// then terminates them in bottom-up order (children first, then parent).
+  /// This method first identifies every descendant of the target application,
+  /// then terminates them deepest first, and the target last. The calling app
+  /// and the processes between it and the target are never terminated.
   ///
   /// Returns a [WindowOperationResult] indicating success or failure with details.
   ///
-  /// [processId] is the process ID of the parent application to terminate.
+  /// [processId] is the process ID of the application to terminate.
   /// [force] determines the termination method for all processes:
   /// - `false` (default): Graceful termination
   /// - `true`: Force termination

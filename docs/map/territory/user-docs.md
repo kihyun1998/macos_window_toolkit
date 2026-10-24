@@ -27,5 +27,4 @@ From reading the docs against the code:
 
 ## Known holes / open
 - The legacy capture claims above are false at HEAD.
-- `documentations/api/process_management.md` lists `terminateApplicationTree()` as returning `Future<bool>`. The code returns `WindowOperationResult`. Tracked: #8
 - No page says which coordinate space screen frames and window bounds use (see [system-info](system-info.md)).

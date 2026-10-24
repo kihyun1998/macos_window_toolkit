@@ -516,7 +516,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     }
   }
 
-  /// Terminates an application and all its child processes
+  /// Terminates an application and all its descendant processes
   private func terminateApplicationTree(call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let args = call.arguments as? [String: Any],
       let processId = args["processId"] as? Int

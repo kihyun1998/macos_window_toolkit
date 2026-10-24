@@ -126,7 +126,7 @@ if (apps case ApplicationSuccess(applications: final appList)) {
 | `getApplicationByName(String name)` | Search apps by name |
 | `openAppStoreSearch(String term)` | Open App Store search |
 | `terminateApplicationByPID(int pid)` | Terminate app (requires Accessibility) |
-| `terminateApplicationTree(int pid)` | Terminate app and children (requires Accessibility) |
+| `terminateApplicationTree(int pid)` | Terminate app and all its descendants |
 
 ### System Info (4 methods)
 

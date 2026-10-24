@@ -11,7 +11,7 @@ The Process Management API provides functionality for controlling application pr
 | Method | Description | Parameters | Returns |
 |--------|-------------|------------|---------|
 | [`terminateApplicationByPID()`](#terminateapplicationbypid) | Terminate single process | `processId`, `force` | `Future<bool>` |
-| [`terminateApplicationTree()`](#terminateapplicationtree) | Terminate process and all children | `processId`, `force` | `Future<bool>` |
+| [`terminateApplicationTree()`](#terminateapplicationtree) | Terminate process and all descendants | `processId`, `force` | `Future<WindowOperationResult>` |
 | [`getChildProcesses()`](#getchildprocesses) | Get child process IDs | `processId` | `Future<List<int>>` |
 
 ## Methods
@@ -172,38 +172,37 @@ Future<bool> safeTerminateApplication(
 
 ### `terminateApplicationTree()`
 
-Terminates an application and all its child processes.
+Terminates an application and all its descendant processes (children, grandchildren and deeper).
 
 **Signature:**
 ```dart
-Future<bool> terminateApplicationTree(
+Future<WindowOperationResult> terminateApplicationTree(
   int processId, {
   bool force = false,
 })
 ```
 
 **Parameters:**
-- `processId` - Process ID of the parent application to terminate
-- `force` (optional) - Termination method for all processes. Defaults to `false`.
+- `processId` - Process ID of the application to terminate
+- `force` (optional) - Termination method for every process in the tree. Defaults to `false`.
 
-**Returns (v1.4.3+):**
-- `Future<dynamic>` - Either `bool` for success or `Map<String, dynamic>` for state errors:
-  - Success: Returns `true` when all processes terminate successfully
-  - Partial Success: Returns `false` if some processes failed (check logs for details)
-  - State Error: Returns `{'success': false, 'reason': String, 'message': String, 'details': dynamic}`
-    - `reason: 'process_not_found'` - Parent process does not exist (consider as success)
+**Returns:**
+- `OperationSuccess` when termination was requested for the target and every descendant, or they had already exited. The call does not wait for them to exit: an app may still show a "save changes?" sheet, and an ignored `SIGTERM` still counts.
+- `OperationFailure` with:
+  - `processNotFound` when the target does not exist when the call starts, or is PID 0 or 1
+  - `unknown` when some process in the tree could not be terminated, when the target is an ancestor of the calling app (see below), or when the process list cannot be read (then nothing is terminated)
 
 **Throws:**
-- `PlatformException` with error codes (system errors only):
-  - `FAILED_TO_GET_PROCESS_LIST` - Unable to retrieve system process list (system restriction)
-  - `TERMINATION_FAILED` - Critical system call failure
-
-**Note:** As of v1.4.3, recoverable errors return structured responses. Only critical system failures throw exceptions.
+- `PlatformException` only for system errors such as `INVALID_ARGUMENTS`
 
 **Termination Process:**
-1. **Discovery**: Identifies all child processes using system process list
-2. **Child Termination**: Terminates child processes first (bottom-up approach)
-3. **Parent Termination**: Finally terminates the parent process
+1. **Discovery**: Reads the system process list once and collects every descendant of the target
+2. **Descendant Termination**: Requests termination of descendants deepest first
+3. **Target Termination**: Finally terminates the target
+
+**The calling app is never killed by its own call.** When the target is an ancestor of the calling app, the calling app and the processes between it and the target are left running, as is the target itself; the rest of the tree is terminated and the result is `OperationFailure`. When the target is the calling app itself, its descendants are terminated and then the app terminates, so no result is delivered.
+
+A process started after the call reads the process list is not covered. `getChildProcesses()` still returns direct children only.
 
 **Example:**
 ```dart
@@ -227,12 +226,12 @@ print('Found ${childPIDs.length} child processes: $childPIDs');
 
 // Terminate entire process tree
 try {
-  final success = await toolkit.terminateApplicationTree(
+  final result = await toolkit.terminateApplicationTree(
     electronApp.processId,
     force: false, // Try graceful first
   );
   
-  if (success) {
+  if (result is OperationSuccess) {
     print('✅ Successfully terminated application tree');
     print('Parent and ${childPIDs.length} children terminated');
   } else {
@@ -240,12 +239,12 @@ try {
     
     // Try force termination as fallback
     print('Retrying with force termination...');
-    final forceSuccess = await toolkit.terminateApplicationTree(
+    final forceResult = await toolkit.terminateApplicationTree(
       electronApp.processId,
       force: true,
     );
     
-    print(forceSuccess 
+    print(forceResult is OperationSuccess 
           ? '✅ Force termination successful' 
           : '❌ Force termination failed');
   }
@@ -306,9 +305,9 @@ class ProcessTreeManager {
     
     // Try graceful termination
     print('Attempting graceful termination of process tree...');
-    bool success = await toolkit.terminateApplicationTree(parentPid);
+    var result = await toolkit.terminateApplicationTree(parentPid);
     
-    if (success) {
+    if (result is OperationSuccess) {
       print('✅ Graceful termination successful');
       return true;
     }
@@ -330,9 +329,9 @@ class ProcessTreeManager {
     }
     
     // Force termination as last resort
-    success = await toolkit.terminateApplicationTree(parentPid, force: true);
+    result = await toolkit.terminateApplicationTree(parentPid, force: true);
     
-    if (success) {
+    if (result is OperationSuccess) {
       print('✅ Force termination successful');
     } else {
       print('❌ Force termination failed');
@@ -366,7 +365,7 @@ class ProcessTreeInfo {
 - More thorough than single process termination
 - Prevents orphaned child processes
 - Essential for applications that spawn multiple processes
-- Bottom-up termination order prevents race conditions
+- Termination is requested deepest first; the call does not wait for processes to exit
 
 ---
 
@@ -625,10 +624,11 @@ class SecurityProcessMonitor {
     
     try {
       // Terminate entire process tree to prevent escape
-      final success = await toolkit.terminateApplicationTree(
+      final result = await toolkit.terminateApplicationTree(
         suspicious.pid,
         force: true, // Use force for security threats
       );
+      final success = result is OperationSuccess;
       
       if (success) {
         print('✅ Successfully quarantined process tree');
@@ -751,11 +751,11 @@ class _ProcessManagerWidgetState extends State<ProcessManagerWidget> {
     setState(() => isLoading = true);
     
     try {
-      final success = process.childPids.isNotEmpty
+      final result = process.childPids.isNotEmpty
           ? await toolkit.terminateApplicationTree(process.pid, force: force)
           : await toolkit.terminateApplicationByPID(process.pid, force: force);
       
-      if (success) {
+      if (result is OperationSuccess) {
         _showSuccess('${process.name} terminated successfully');
         await _loadProcesses(); // Refresh list
       } else {
@@ -987,8 +987,8 @@ class SecurityMonitor {
     print('🚨 QUARANTINE: Terminating process $pid - $reason');
     
     try {
-      final success = await toolkit.terminateApplicationTree(pid, force: true);
-      if (success) {
+      final result = await toolkit.terminateApplicationTree(pid, force: true);
+      if (result is OperationSuccess) {
         print('✅ Process $pid quarantined successfully');
       } else {
         print('❌ Failed to quarantine process $pid');

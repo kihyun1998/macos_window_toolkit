@@ -974,11 +974,11 @@ class MacosWindowToolkit {
     );
   }
 
-  /// Terminates an application and all its child processes.
+  /// Terminates an application and all its descendant processes.
   ///
-  /// This method provides comprehensive process termination by first identifying
-  /// all child processes spawned by the target application, then terminating them
-  /// in the correct order (children first, then parent).
+  /// This method first identifies every descendant of the target application
+  /// (children, grandchildren and deeper), then requests their termination
+  /// deepest first, and the target last. It does not wait for them to exit.
   ///
   /// Returns a [WindowOperationResult] indicating success or failure with details.
   ///
@@ -986,21 +986,27 @@ class MacosWindowToolkit {
   /// that all related processes are terminated, preventing potential security bypasses
   /// where child processes might continue running after the parent is terminated.
   ///
-  /// [processId] is the process ID of the parent application to terminate.
+  /// [processId] is the process ID of the application to terminate.
   /// [force] determines the termination method for all processes:
   /// - `false` (default): Graceful termination for all processes
   /// - `true`: Force termination for all processes
   ///
   /// The termination process:
-  /// 1. Discovers all child processes using system process list
-  /// 2. Terminates child processes first (bottom-up approach)
-  /// 3. Finally terminates the parent process
+  /// 1. Reads the system process list once and collects every descendant
+  /// 2. Terminates descendants deepest first
+  /// 3. Finally terminates the target
   ///
   /// Returns:
-  /// - [OperationSuccess] if all processes were successfully terminated
+  /// - [OperationSuccess] if termination was requested for every process (or it had already exited)
   /// - [OperationFailure] with one of the following reasons:
-  ///   - [WindowOperationFailureReason.processNotFound]: Parent process does not exist
+  ///   - [WindowOperationFailureReason.processNotFound]: Target does not exist, or is PID 0 or 1
   ///   - [WindowOperationFailureReason.unknown]: Other failure states (including partial failures)
+  ///
+  /// The calling app is never terminated by its own call: when the target is
+  /// an ancestor of it, the calling app and the processes between it and the
+  /// target are left running and the result is [OperationFailure]. When the
+  /// target is the calling app itself, it terminates last and no result is
+  /// delivered.
   ///
   /// Throws [PlatformException] only for system errors (invalid arguments, internal errors).
   ///

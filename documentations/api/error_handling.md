@@ -397,7 +397,8 @@ Future<bool> terminateProcessSafely(int processId) async {
 Future<bool> _tryAlternativeTermination(int processId) async {
   // Alternative: Try terminating entire process tree
   try {
-    return await toolkit.terminateApplicationTree(processId, force: true);
+    final result = await toolkit.terminateApplicationTree(processId, force: true);
+    return result is OperationSuccess;
   } catch (e) {
     print('Alternative termination also failed: $e');
     return false;
