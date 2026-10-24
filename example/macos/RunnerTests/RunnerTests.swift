@@ -70,3 +70,70 @@ class ProcessTargetTests: XCTestCase {
       .first { $0 > 1 && !apps.contains($0) }
   }
 }
+
+class SpaceSwitchWaitTests: XCTestCase {
+
+  func testPollOnMainReturnsToItsCallerBeforeRetryingAndYieldsTheFirstValue() {
+    var attempts = 0
+    var returned = false
+    var returnedBeforeRetry = false
+    let finished = expectation(description: "finished")
+
+    WindowHandler.pollOnMain(every: 0.05, for: 1.0, attempt: { () -> Int? in
+      attempts += 1
+      // A retry that runs before pollOnMain has returned means it waited in place
+      // (blocking or spinning the run loop) instead of scheduling the retry.
+      if attempts == 2 { returnedBeforeRetry = returned }
+      return attempts == 3 ? 42 : nil
+    }) { value in
+      XCTAssertEqual(value, 42)
+      XCTAssertEqual(attempts, 3)
+      XCTAssertTrue(returnedBeforeRetry, "the poll waited in place before retrying")
+      finished.fulfill()
+    }
+    returned = true
+    waitForExpectations(timeout: 2)
+  }
+
+  func testPollOnMainGivesUpAtTheDeadline() {
+    var attempts = 0
+    let start = Date()
+    let finished = expectation(description: "finished")
+
+    WindowHandler.pollOnMain(every: 0.05, for: 0.3, attempt: { () -> Int? in
+      attempts += 1
+      return nil
+    }) { value in
+      XCTAssertNil(value)
+      XCTAssertGreaterThanOrEqual(Date().timeIntervalSince(start), 0.3)
+      XCTAssertGreaterThanOrEqual(attempts, 4)
+      XCTAssertLessThanOrEqual(attempts, 8)
+      finished.fulfill()
+    }
+    waitForExpectations(timeout: 2)
+  }
+
+  func testSerialGateStartsTheNextOperationOnlyAfterTheCurrentOneIsDone() {
+    let gate = SerialGate()
+    var log: [String] = []
+    let bothDone = expectation(description: "both done")
+    bothDone.expectedFulfillmentCount = 2
+
+    gate.run { done in
+      log.append("first started")
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        log.append("first done")
+        done()
+        bothDone.fulfill()
+      }
+    }
+    gate.run { done in
+      log.append("second started")
+      done()
+      bothDone.fulfill()
+    }
+
+    waitForExpectations(timeout: 2)
+    XCTAssertEqual(log, ["first started", "first done", "second started"])
+  }
+}
