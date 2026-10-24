@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import '../macos_window_toolkit.dart';
+import 'models/permission_status.dart';
+import 'platform_interface/macos_window_toolkit_platform_interface.dart';
 
 /// A singleton class that monitors permission changes using a periodic timer.
 ///
@@ -49,7 +50,7 @@ class PermissionWatcher {
   StreamController<PermissionStatus>? _controller;
 
   /// Previous permission state for change detection
-  Map<String, bool?>? _previousState;
+  PermissionStatus? _previousState;
 
   /// Whether to emit only when permissions change
   bool _emitOnlyChanges = true;
@@ -174,15 +175,11 @@ class PermissionWatcher {
       final accessibility = await MacosWindowToolkitPlatform.instance
           .hasAccessibilityPermission();
 
-      final currentState = <String, bool?>{
-        'screenRecording': screenRecording,
-        'accessibility': accessibility,
-      };
-
       // Check for changes
-      final hasChanges = _previousState == null ||
-          _previousState!['screenRecording'] != screenRecording ||
-          _previousState!['accessibility'] != accessibility;
+      final previous = _previousState;
+      final hasChanges = previous == null ||
+          previous.screenRecording != screenRecording ||
+          previous.accessibility != accessibility;
 
       // Create typed permission status
       final permissionStatus = PermissionStatus(
@@ -200,7 +197,7 @@ class PermissionWatcher {
       }
 
       // Update previous state for next comparison
-      _previousState = currentState;
+      _previousState = permissionStatus;
     } catch (e) {
       // Emit error state
       final errorStatus = PermissionStatus(

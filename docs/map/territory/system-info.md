@@ -12,7 +12,7 @@ From reading the source:
 - **Screens.**
   - `getAllScreensInfo` reports `NSScreen.screens` in Cocoa coordinates. Their origin is bottom-left, unlike the CG window `x`/`y` that [window-listing](window-listing.md) reports (reading; the coordinate convention needs confirming against Apple's docs).
   - `pixelWidth`/`pixelHeight` are frame × `backingScaleFactor`.
-- **Map conversion.** `SystemInfoChannel._convertMap` deep-converts nested maps, so `MacosScreenInfo.fromMap` can cast the nested `frame`.
+- **Map conversion.** `getAllScreensInfo` goes through `invokeList` and `getMacOSVersionInfo` through `stringKeyed` (both in `lib/src/method_channel/channel_calls.dart`). `MacosScreenInfo.fromMap` also copies its nested `frame` and `visibleFrame` itself; see [channel-bridge](channel-bridge.md).
 
 ## Code
 - `macos/Classes/VersionUtil.swift — VersionUtil.getMacOSVersionInfo`, `isScreenCaptureKitAvailable`, `getMacOSVersion`, `isMacOSVersionSupported`

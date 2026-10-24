@@ -100,14 +100,15 @@ class MacosScreenInfo {
   /// Creates a [MacosScreenInfo] from a map representation
   factory MacosScreenInfo.fromMap(Map<String, dynamic> map) {
     return MacosScreenInfo(
-      index: map['index'] as int? ?? 0,
+      index: (map['index'] as num?)?.toInt() ?? 0,
       isMain: map['isMain'] as bool? ?? false,
       scaleFactor: (map['scaleFactor'] as num?)?.toDouble() ?? 1.0,
-      frame: ScreenRect.fromMap(map['frame'] as Map<String, dynamic>? ?? {}),
+      frame: ScreenRect.fromMap(
+          Map<String, dynamic>.from(map['frame'] as Map? ?? const {})),
       visibleFrame: ScreenRect.fromMap(
-          map['visibleFrame'] as Map<String, dynamic>? ?? {}),
-      pixelWidth: map['pixelWidth'] as int? ?? 0,
-      pixelHeight: map['pixelHeight'] as int? ?? 0,
+          Map<String, dynamic>.from(map['visibleFrame'] as Map? ?? const {})),
+      pixelWidth: (map['pixelWidth'] as num?)?.toInt() ?? 0,
+      pixelHeight: (map['pixelHeight'] as num?)?.toInt() ?? 0,
     );
   }
 

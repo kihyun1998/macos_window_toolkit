@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 
 import '../models/capturable_window_info.dart';
 import '../models/capture_result.dart';
+import 'channel_calls.dart';
 import 'failure_codes.dart';
 
 /// Mixin providing method channel implementations for capture operations.
@@ -23,7 +24,7 @@ mixin CaptureOperationsChannel {
     int? cropWidth,
     int? cropHeight,
     bool resizeCroppedToWindowSize = true,
-  }) async {
+  }) {
     final arguments = <String, dynamic>{
       'windowId': windowId,
       'excludeTitlebar': excludeTitlebar,
@@ -58,39 +59,23 @@ mixin CaptureOperationsChannel {
       arguments['cropHeight'] = cropHeight;
     }
 
-    try {
-      final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
-        'captureWindow',
-        arguments,
-      );
-      if (result == null) {
-        return const CaptureFailure(
-          reason: CaptureFailureReason.unknown,
-          message: 'No data returned from capture',
-        );
-      }
-
-      return _parseCaptureResult(result);
-    } on PlatformException catch (e) {
-      // Only system errors should throw, others should return CaptureFailure
-      if (systemErrorCodes.contains(e.code)) {
-        rethrow;
-      }
-      return captureFailureFromException(e);
-    }
+    return invokeResult(
+      methodChannel,
+      'captureWindow',
+      arguments: arguments,
+      parse: _parseCaptureResult,
+      fromException: captureFailureFromException,
+      unknown: (message) => CaptureFailure(
+          reason: CaptureFailureReason.unknown, message: message),
+    );
   }
 
-  Future<List<CapturableWindowInfo>> getCapturableWindows() async {
-    final result = await methodChannel.invokeMethod<List<dynamic>>(
+  Future<List<CapturableWindowInfo>> getCapturableWindows() {
+    return invokeList(
+      methodChannel,
       'getCapturableWindows',
+      CapturableWindowInfo.fromMap,
     );
-    if (result == null) {
-      return [];
-    }
-    return result
-        .map((item) => Map<String, dynamic>.from(item as Map))
-        .map((map) => CapturableWindowInfo.fromMap(map))
-        .toList();
   }
 
   /// Helper method to parse capture result from native response

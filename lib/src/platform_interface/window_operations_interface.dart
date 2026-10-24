@@ -1,25 +1,19 @@
+import '../models/macos_window_info.dart';
 import '../models/scroll_info.dart';
 import '../models/window_operation_result.dart';
 
 /// Platform interface for window-related operations.
-abstract class WindowOperationsInterface {
+mixin WindowOperationsInterface {
   /// Retrieves information about all windows currently open on the system.
   ///
   /// [excludeEmptyNames] if true, windows with empty or missing names will be
   /// filtered out from the results. This is useful when you only want windows
   /// that have actual titles.
   ///
-  /// Returns a list of maps containing window properties:
-  /// - `windowId`: Unique identifier for the window (int)
-  /// - `name`: Window title/name (String)
-  /// - `ownerName`: Name of the application that owns the window (String)
-  /// - `bounds`: Window position and size as [x, y, width, height] (List\<double\>)
-  /// - `layer`: Window layer level (int)
-  /// - `isOnScreen`: Whether the window is currently visible on screen (bool)
-  /// - `processId`: Process ID of the application that owns the window (int)
+  /// Returns a [MacosWindowInfo] for each window.
   ///
   /// Throws [PlatformException] if unable to retrieve window information.
-  Future<List<Map<String, dynamic>>> getAllWindows({
+  Future<List<MacosWindowInfo>> getAllWindows({
     bool excludeEmptyNames = false,
   }) {
     throw UnimplementedError('getAllWindows() has not been implemented.');
@@ -27,23 +21,21 @@ abstract class WindowOperationsInterface {
 
   /// Retrieves windows filtered by name (window title).
   ///
-  /// Returns a list of maps containing window properties for windows whose
-  /// name/title contains the specified [name] string. The search is case-sensitive
+  /// Returns the windows whose name/title contains the specified [name] string. The search is case-sensitive
   /// and uses substring matching.
   ///
   /// Throws [PlatformException] if unable to retrieve window information.
-  Future<List<Map<String, dynamic>>> getWindowsByName(String name) {
+  Future<List<MacosWindowInfo>> getWindowsByName(String name) {
     throw UnimplementedError('getWindowsByName() has not been implemented.');
   }
 
   /// Retrieves windows filtered by owner name (application name).
   ///
-  /// Returns a list of maps containing window properties for windows owned by
-  /// applications whose name contains the specified [ownerName] string.
+  /// Returns the windows owned by applications whose name contains the specified [ownerName] string.
   /// The search is case-sensitive and uses substring matching.
   ///
   /// Throws [PlatformException] if unable to retrieve window information.
-  Future<List<Map<String, dynamic>>> getWindowsByOwnerName(String ownerName) {
+  Future<List<MacosWindowInfo>> getWindowsByOwnerName(String ownerName) {
     throw UnimplementedError(
       'getWindowsByOwnerName() has not been implemented.',
     );
@@ -55,17 +47,16 @@ abstract class WindowOperationsInterface {
   /// Returns an empty list if no window with the given ID is found.
   ///
   /// Throws [PlatformException] if unable to retrieve window information.
-  Future<List<Map<String, dynamic>>> getWindowById(int windowId) {
+  Future<List<MacosWindowInfo>> getWindowById(int windowId) {
     throw UnimplementedError('getWindowById() has not been implemented.');
   }
 
   /// Retrieves windows filtered by process ID.
   ///
-  /// Returns a list of maps containing window properties for windows owned by
-  /// the application with the specified [processId].
+  /// Returns the windows owned by the application with the specified [processId].
   ///
   /// Throws [PlatformException] if unable to retrieve window information.
-  Future<List<Map<String, dynamic>>> getWindowsByProcessId(int processId) {
+  Future<List<MacosWindowInfo>> getWindowsByProcessId(int processId) {
     throw UnimplementedError(
       'getWindowsByProcessId() has not been implemented.',
     );
@@ -113,7 +104,7 @@ abstract class WindowOperationsInterface {
   /// ```
   ///
   /// Throws [PlatformException] if unable to retrieve window information.
-  Future<List<Map<String, dynamic>>> getWindowsAdvanced({
+  Future<List<MacosWindowInfo>> getWindowsAdvanced({
     int? windowId,
     String? name,
     bool? nameExactMatch,

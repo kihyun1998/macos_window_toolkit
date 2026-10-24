@@ -59,11 +59,9 @@ class MacosWindowToolkit {
   Future<List<MacosWindowInfo>> getAllWindows({
     bool excludeEmptyNames = false,
   }) async {
-    final List<Map<String, dynamic>> windowMaps =
-        await MacosWindowToolkitPlatform.instance.getAllWindows(
+    return MacosWindowToolkitPlatform.instance.getAllWindows(
       excludeEmptyNames: excludeEmptyNames,
     );
-    return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
   }
 
   /// Checks if the app has screen recording permission.
@@ -260,9 +258,7 @@ class MacosWindowToolkit {
   ///
   /// Throws [PlatformException] if unable to retrieve window information.
   Future<List<MacosWindowInfo>> getWindowsByName(String name) async {
-    final List<Map<String, dynamic>> windowMaps =
-        await MacosWindowToolkitPlatform.instance.getWindowsByName(name);
-    return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
+    return MacosWindowToolkitPlatform.instance.getWindowsByName(name);
   }
 
   /// Retrieves windows filtered by owner name (application name).
@@ -282,11 +278,9 @@ class MacosWindowToolkit {
   ///
   /// Throws [PlatformException] if unable to retrieve window information.
   Future<List<MacosWindowInfo>> getWindowsByOwnerName(String ownerName) async {
-    final List<Map<String, dynamic>> windowMaps =
-        await MacosWindowToolkitPlatform.instance.getWindowsByOwnerName(
+    return MacosWindowToolkitPlatform.instance.getWindowsByOwnerName(
       ownerName,
     );
-    return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
   }
 
   /// Retrieves a specific window by its window ID.
@@ -307,9 +301,7 @@ class MacosWindowToolkit {
   ///
   /// Throws [PlatformException] if unable to retrieve window information.
   Future<List<MacosWindowInfo>> getWindowById(int windowId) async {
-    final List<Map<String, dynamic>> windowMaps =
-        await MacosWindowToolkitPlatform.instance.getWindowById(windowId);
-    return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
+    return MacosWindowToolkitPlatform.instance.getWindowById(windowId);
   }
 
   /// Retrieves windows filtered by process ID.
@@ -326,11 +318,9 @@ class MacosWindowToolkit {
   ///
   /// Throws [PlatformException] if unable to retrieve window information.
   Future<List<MacosWindowInfo>> getWindowsByProcessId(int processId) async {
-    final List<Map<String, dynamic>> windowMaps =
-        await MacosWindowToolkitPlatform.instance.getWindowsByProcessId(
+    return MacosWindowToolkitPlatform.instance.getWindowsByProcessId(
       processId,
     );
-    return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
   }
 
   /// Retrieves windows with advanced filtering options.
@@ -441,8 +431,7 @@ class MacosWindowToolkit {
     double? width,
     double? height,
   }) async {
-    final List<Map<String, dynamic>> windowMaps =
-        await MacosWindowToolkitPlatform.instance.getWindowsAdvanced(
+    return MacosWindowToolkitPlatform.instance.getWindowsAdvanced(
       windowId: windowId,
       name: name,
       nameExactMatch: nameExactMatch,
@@ -460,7 +449,6 @@ class MacosWindowToolkit {
       width: width,
       height: height,
     );
-    return windowMaps.map((map) => MacosWindowInfo.fromMap(map)).toList();
   }
 
   /// Gets macOS version information.
@@ -485,9 +473,7 @@ class MacosWindowToolkit {
   /// }
   /// ```
   Future<MacosVersionInfo> getMacOSVersionInfo() async {
-    final versionMap =
-        await MacosWindowToolkitPlatform.instance.getMacOSVersionInfo();
-    return MacosVersionInfo.fromMap(versionMap);
+    return MacosWindowToolkitPlatform.instance.getMacOSVersionInfo();
   }
 
   /// Gets the screen scale factor (backingScaleFactor) of the main screen.
@@ -1137,20 +1123,15 @@ class MacosWindowToolkit {
   /// All failures are returned as [ApplicationFailure] objects.
   Future<ApplicationResult> getAllInstalledApplications() async {
     try {
-      final List<Map<String, dynamic>> applicationMaps =
-          await MacosWindowToolkitPlatform.instance
-              .getAllInstalledApplications();
+      final applications = await MacosWindowToolkitPlatform.instance
+          .getAllInstalledApplications();
 
-      if (applicationMaps.isEmpty) {
+      if (applications.isEmpty) {
         return const ApplicationFailure(
           reason: ApplicationFailureReason.notFound,
           message: 'No applications found on the system',
         );
       }
-
-      final applications = applicationMaps
-          .map((map) => MacosApplicationInfo.fromMap(map))
-          .toList();
 
       return ApplicationSuccess(applications);
     } catch (e) {
@@ -1205,12 +1186,8 @@ class MacosWindowToolkit {
   /// All failures are returned as [ApplicationFailure] objects.
   Future<ApplicationResult> getApplicationByName(String name) async {
     try {
-      final List<Map<String, dynamic>> applicationMaps =
+      final applications =
           await MacosWindowToolkitPlatform.instance.getApplicationByName(name);
-
-      final applications = applicationMaps
-          .map((map) => MacosApplicationInfo.fromMap(map))
-          .toList();
 
       // Note: Empty results are still success, not failure
       return ApplicationSuccess(applications);

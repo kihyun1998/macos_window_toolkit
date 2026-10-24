@@ -1,7 +1,8 @@
 import 'package:flutter/services.dart';
 
+import '../models/macos_application_info.dart';
 import '../models/window_operation_result.dart';
-import 'failure_codes.dart';
+import 'channel_calls.dart';
 
 /// Mixin providing method channel implementations for application operations.
 mixin ApplicationOperationsChannel {
@@ -11,91 +12,23 @@ mixin ApplicationOperationsChannel {
   Future<WindowOperationResult> terminateApplicationByPID(
     int processId, {
     bool force = false,
-  }) async {
-    try {
-      final result = await methodChannel.invokeMethod<dynamic>(
-        'terminateApplicationByPID',
-        {'processId': processId, 'force': force},
-      );
-
-      if (result == null) {
-        return const OperationFailure(
-          reason: WindowOperationFailureReason.unknown,
-          message: 'No response from terminateApplicationByPID',
-        );
-      }
-
-      // Handle Map response (v1.4.3+ state errors)
-      if (result is Map) {
-        return _parseOperationResult(Map<dynamic, dynamic>.from(result));
-      }
-
-      // Handle bool response (backward compatible or success case)
-      if (result is bool) {
-        return result
-            ? const OperationSuccess()
-            : const OperationFailure(
-                reason: WindowOperationFailureReason.unknown,
-                message: 'Operation returned false',
-              );
-      }
-
-      return const OperationFailure(
-        reason: WindowOperationFailureReason.unknown,
-        message: 'Unexpected response type',
-      );
-    } on PlatformException catch (e) {
-      // Only system errors should throw, others should return OperationFailure
-      if (systemErrorCodes.contains(e.code)) {
-        rethrow;
-      }
-      return operationFailureFromException(e);
-    }
+  }) {
+    return invokeOperation(
+      methodChannel,
+      'terminateApplicationByPID',
+      {'processId': processId, 'force': force},
+    );
   }
 
   Future<WindowOperationResult> terminateApplicationTree(
     int processId, {
     bool force = false,
-  }) async {
-    try {
-      final result = await methodChannel.invokeMethod<dynamic>(
-        'terminateApplicationTree',
-        {'processId': processId, 'force': force},
-      );
-
-      if (result == null) {
-        return const OperationFailure(
-          reason: WindowOperationFailureReason.unknown,
-          message: 'No response from terminateApplicationTree',
-        );
-      }
-
-      // Handle Map response (v1.4.3+ state errors)
-      if (result is Map) {
-        return _parseOperationResult(Map<dynamic, dynamic>.from(result));
-      }
-
-      // Handle bool response (backward compatible or success case)
-      if (result is bool) {
-        return result
-            ? const OperationSuccess()
-            : const OperationFailure(
-                reason: WindowOperationFailureReason.unknown,
-                message: 'Operation returned false',
-              );
-      }
-
-      return const OperationFailure(
-        reason: WindowOperationFailureReason.unknown,
-        message: 'Unexpected response type',
-      );
-    } on PlatformException catch (e) {
-      // Only system errors should throw, others should return OperationFailure
-      if (systemErrorCodes.contains(e.code)) {
-        rethrow;
-      }
-      return operationFailureFromException(e);
-    }
+  }) {
+    return invokeOperation(
+      methodChannel,
+      'terminateApplicationTree',
+      {'processId': processId, 'force': force},
+    );
   }
 
   Future<List<int>> getChildProcesses(int processId) async {
@@ -109,29 +42,21 @@ mixin ApplicationOperationsChannel {
     return result.cast<int>();
   }
 
-  Future<List<Map<String, dynamic>>> getAllInstalledApplications() async {
-    final result = await methodChannel.invokeMethod<List<dynamic>>(
+  Future<List<MacosApplicationInfo>> getAllInstalledApplications() {
+    return invokeList(
+      methodChannel,
       'getAllInstalledApplications',
+      MacosApplicationInfo.fromMap,
     );
-    if (result == null) {
-      return [];
-    }
-    return result
-        .map((item) => Map<String, dynamic>.from(item as Map))
-        .toList();
   }
 
-  Future<List<Map<String, dynamic>>> getApplicationByName(String name) async {
-    final result = await methodChannel.invokeMethod<List<dynamic>>(
+  Future<List<MacosApplicationInfo>> getApplicationByName(String name) {
+    return invokeList(
+      methodChannel,
       'getApplicationByName',
-      {'name': name},
+      MacosApplicationInfo.fromMap,
+      arguments: {'name': name},
     );
-    if (result == null) {
-      return [];
-    }
-    return result
-        .map((item) => Map<String, dynamic>.from(item as Map))
-        .toList();
   }
 
   Future<bool> openAppStoreSearch(String searchTerm) async {
@@ -140,13 +65,5 @@ mixin ApplicationOperationsChannel {
       {'searchTerm': searchTerm},
     );
     return result ?? false;
-  }
-
-  /// Helper method to parse operation result from native response
-  WindowOperationResult _parseOperationResult(Map<dynamic, dynamic> result) {
-    final success = result['success'] as bool? ?? false;
-    return success
-        ? const OperationSuccess()
-        : operationFailureFromState(result);
   }
 }

@@ -8,7 +8,7 @@ import 'system_info_interface.dart';
 import 'window_operations_interface.dart';
 
 abstract class MacosWindowToolkitPlatform extends PlatformInterface
-    implements
+    with
         PermissionOperationsInterface,
         WindowOperationsInterface,
         CaptureOperationsInterface,

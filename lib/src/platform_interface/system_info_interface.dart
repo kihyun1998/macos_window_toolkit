@@ -1,16 +1,12 @@
 import '../models/macos_screen_info.dart';
+import '../models/macos_version_info.dart';
 
 /// Platform interface for system information operations.
-abstract class SystemInfoInterface {
+mixin SystemInfoInterface {
   /// Gets macOS version information.
   ///
-  /// Returns a map containing:
-  /// - `majorVersion`: Major version number (int)
-  /// - `minorVersion`: Minor version number (int)
-  /// - `patchVersion`: Patch version number (int)
-  /// - `versionString`: Full version string (String)
-  /// - `isScreenCaptureKitAvailable`: Whether ScreenCaptureKit is available (bool)
-  Future<Map<String, dynamic>> getMacOSVersionInfo() {
+  /// Returns the version numbers and whether ScreenCaptureKit is available.
+  Future<MacosVersionInfo> getMacOSVersionInfo() {
     throw UnimplementedError('getMacOSVersionInfo() has not been implemented.');
   }
 

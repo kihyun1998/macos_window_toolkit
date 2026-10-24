@@ -1,5 +1,5 @@
 /// Platform interface for permission-related operations.
-abstract class PermissionOperationsInterface {
+mixin PermissionOperationsInterface {
   /// Checks if the app has screen recording permission.
   ///
   /// Returns `true` if the app has been granted screen recording permission,

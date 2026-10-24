@@ -29,15 +29,14 @@ class CapturableWindowInfo {
 
   /// Creates a [CapturableWindowInfo] from a map representation
   factory CapturableWindowInfo.fromMap(Map<String, dynamic> map) {
-    final frameMap = Map<String, dynamic>.from(map['frame'] as Map);
-
     return CapturableWindowInfo(
-      windowId: map['windowId'] as int,
-      title: map['title'] as String,
-      ownerName: map['ownerName'] as String,
-      bundleIdentifier: map['bundleIdentifier'] as String,
-      frame: CapturableWindowFrame.fromMap(frameMap),
-      isOnScreen: map['isOnScreen'] as bool,
+      windowId: (map['windowId'] as num?)?.toInt() ?? 0,
+      title: map['title'] as String? ?? '',
+      ownerName: map['ownerName'] as String? ?? '',
+      bundleIdentifier: map['bundleIdentifier'] as String? ?? '',
+      frame: CapturableWindowFrame.fromMap(
+          Map<String, dynamic>.from(map['frame'] as Map? ?? const {})),
+      isOnScreen: map['isOnScreen'] as bool? ?? false,
     );
   }
 
@@ -79,12 +78,14 @@ class CapturableWindowInfo {
 
   @override
   int get hashCode {
-    return windowId.hashCode ^
-        title.hashCode ^
-        ownerName.hashCode ^
-        bundleIdentifier.hashCode ^
-        frame.hashCode ^
-        isOnScreen.hashCode;
+    return Object.hash(
+      windowId,
+      title,
+      ownerName,
+      bundleIdentifier,
+      frame,
+      isOnScreen,
+    );
   }
 }
 
@@ -112,10 +113,10 @@ class CapturableWindowFrame {
   /// Creates a [CapturableWindowFrame] from a map representation
   factory CapturableWindowFrame.fromMap(Map<String, dynamic> map) {
     return CapturableWindowFrame(
-      x: (map['x'] as num).toDouble(),
-      y: (map['y'] as num).toDouble(),
-      width: (map['width'] as num).toDouble(),
-      height: (map['height'] as num).toDouble(),
+      x: (map['x'] as num?)?.toDouble() ?? 0.0,
+      y: (map['y'] as num?)?.toDouble() ?? 0.0,
+      width: (map['width'] as num?)?.toDouble() ?? 0.0,
+      height: (map['height'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -142,6 +143,6 @@ class CapturableWindowFrame {
 
   @override
   int get hashCode {
-    return x.hashCode ^ y.hashCode ^ width.hashCode ^ height.hashCode;
+    return Object.hash(x, y, width, height);
   }
 }

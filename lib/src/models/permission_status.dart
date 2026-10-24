@@ -117,9 +117,6 @@ class PermissionStatus {
 
   @override
   int get hashCode {
-    return screenRecording.hashCode ^
-        accessibility.hashCode ^
-        hasChanges.hashCode ^
-        timestamp.hashCode;
+    return Object.hash(screenRecording, accessibility, hasChanges, timestamp);
   }
 }
