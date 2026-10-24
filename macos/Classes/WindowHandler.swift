@@ -105,6 +105,8 @@ private final class AXRoleResolver {
 
 /// Handler class responsible for window-related operations
 class WindowHandler {
+    /// Space-switch closes, one at a time
+    private let spaceSwitchGate = SerialGate()
 
     /// Retrieves information about all windows currently open on the system
     /// Returns an array of dictionaries containing window properties such as:
@@ -774,8 +776,29 @@ class WindowHandler {
 
     /// Closes a window by its window ID using Accessibility API
     /// This method uses modern Accessibility API instead of AppleScript for better reliability
-    /// Returns a Result indicating success or failure
-    func closeWindow(_ windowId: Int) -> Result<Bool, WindowError> {
+    /// Calls `completion` with the result: at once, or on the main queue after a Space switch
+    func closeWindow(_ windowId: Int, completion: @escaping (Result<Bool, WindowError>) -> Void) {
+        let immediate = closeWindowOnCurrentSpace(windowId) { processId, windowName in
+            // Window exists but is on a different Space — switch to it and retry
+            self.spaceSwitchGate.run { done in
+                self.closeWindowViaSpaceSwitch(
+                    processId: processId, windowId: windowId, windowName: windowName
+                ) { result in
+                    completion(result)
+                    done()
+                }
+            }
+        }
+        if let immediate = immediate {
+            completion(immediate)
+        }
+    }
+
+    /// Closes the window if the Accessibility API can reach it from the current Space.
+    /// Returns nil when it hands the window to `onOtherSpace` instead.
+    private func closeWindowOnCurrentSpace(
+        _ windowId: Int, onOtherSpace: (_ processId: Int, _ windowName: String) -> Void
+    ) -> Result<Bool, WindowError>? {
 
         // Step 1: Check accessibility permissions
         let permissionHandler = PermissionHandler()
@@ -814,9 +837,9 @@ class WindowHandler {
                 }
 
             case .failure(.windowNotAccessible):
-                // Step 4: Window exists but is on a different Space — switch to it and retry
-                return closeWindowViaSpaceSwitch(
-                    processId: processId, windowId: windowId, windowName: windowName)
+                // Step 4: Window exists but is on a different Space
+                onOtherSpace(processId, windowName)
+                return nil
 
             case .failure(let error):
                 return .failure(error)
@@ -1453,10 +1476,35 @@ class WindowHandler {
         _cgsManagedDisplaySetCurrentSpace(cid, uuidString as CFString, spaceID)
     }
 
-    /// Closes a window on a different Space by temporarily switching to it
+    /// Calls `attempt` now, then every `interval` on the main queue, until it returns a
+    /// value or `timeout` passes, then calls `completion` with the value, or nil at the
+    /// deadline. Each retry is scheduled, so the caller returns before the first one.
+    static func pollOnMain<T>(
+        every interval: TimeInterval, for timeout: TimeInterval,
+        attempt: @escaping () -> T?, completion: @escaping (T?) -> Void
+    ) {
+        let deadline = Date(timeIntervalSinceNow: timeout)
+        func step() {
+            guard Date() < deadline else {
+                completion(nil)
+                return
+            }
+            if let value = attempt() {
+                completion(value)
+                return
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + interval, execute: step)
+        }
+        step()
+    }
+
+    /// Closes a window on a different Space by temporarily switching to it. The wait for
+    /// the window runs on the main queue; `completion` is called once the original Space
+    /// is restored, on every exit after the switch.
     private func closeWindowViaSpaceSwitch(
-        processId: Int, windowId: Int, windowName: String
-    ) -> Result<Bool, WindowError> {
+        processId: Int, windowId: Int, windowName: String,
+        completion: @escaping (Result<Bool, WindowError>) -> Void
+    ) {
         // 0. Verify required private CGS symbols exist at runtime
         let requiredSymbols = [
             "CGSMainConnectionID",
@@ -1465,12 +1513,14 @@ class WindowHandler {
             "CGSManagedDisplaySetCurrentSpace",
         ]
         guard requiredSymbols.allSatisfy({ dlsym(UnsafeMutableRawPointer(bitPattern: -2), $0) != nil }) else {
-            return .failure(.spaceSwitchAPIUnavailable)
+            completion(.failure(.spaceSwitchAPIUnavailable))
+            return
         }
 
         // 1. Get the target window's Space
         guard let targetSpace = spaceForWindow(windowId) else {
-            return .failure(.windowNotAccessible)
+            completion(.failure(.windowNotAccessible))
+            return
         }
 
         // 2. Save the currently active Space and find the window's display
@@ -1486,35 +1536,29 @@ class WindowHandler {
 
         // 4. Poll until AX API can see the window, then close
         // Space switch is async, so we retry until the window element becomes accessible
-        var windowElement: AXUIElement?
-        let deadline = Date(timeIntervalSinceNow: 1.0)
-        while Date() < deadline {
-            windowElement = findWindowElementFlexible(processId: processId, windowName: windowName)
-                ?? findWindowElement(processId: processId, windowName: windowName)
-            if windowElement != nil { break }
-            CFRunLoopRunInMode(.defaultMode, 0.05, true)
+        WindowHandler.pollOnMain(every: 0.05, for: 1.0, attempt: {
+            self.findWindowElementFlexible(processId: processId, windowName: windowName)
+                ?? self.findWindowElement(processId: processId, windowName: windowName)
+        }) { windowElement in
+            let result: Result<Bool, WindowError>
+            if let element = windowElement {
+                if let closeButton = self.findCloseButton(for: element) {
+                    result = self.clickCloseButton(closeButton)
+                        ? .success(true)
+                        : .failure(.closeActionFailed)
+                } else {
+                    result = .failure(.closeButtonNotFound)
+                }
+            } else {
+                result = .failure(.windowNotAccessible)
+            }
+
+            // 5. Switch back to the original Space on the same display
+            if needsSwitch {
+                self.activateSpace(originalSpace, on: displayID)
+            }
+            completion(result)
         }
-
-        guard let element = windowElement else {
-            if needsSwitch { activateSpace(originalSpace, on: displayID) }
-            return .failure(.windowNotAccessible)
-        }
-
-        guard let closeButton = findCloseButton(for: element) else {
-            if needsSwitch { activateSpace(originalSpace, on: displayID) }
-            return .failure(.closeButtonNotFound)
-        }
-
-        let result: Result<Bool, WindowError> = clickCloseButton(closeButton)
-            ? .success(true)
-            : .failure(.closeActionFailed)
-
-        // 5. Switch back to the original Space on the same display
-        if needsSwitch {
-            activateSpace(originalSpace, on: displayID)
-        }
-
-        return result
     }
 }
 
@@ -1612,6 +1656,28 @@ enum WindowError: PluginError {
             return "The window exists but cannot be accessed. It may be on a different Space, or the application does not support the Accessibility API."
         case .spaceSwitchAPIUnavailable:
             return "The window is on a different Space but the required private APIs are unavailable on this macOS version."
+        }
+    }
+}
+
+/// Runs operations one at a time, in the order given; each calls `done` when it has
+/// finished. Used from the main thread only.
+final class SerialGate {
+    private var pending: [(_ done: @escaping () -> Void) -> Void] = []
+    private var running = false
+
+    func run(_ operation: @escaping (_ done: @escaping () -> Void) -> Void) {
+        pending.append(operation)
+        startNext()
+    }
+
+    private func startNext() {
+        guard !running, !pending.isEmpty else { return }
+        running = true
+        let operation = pending.removeFirst()
+        operation { [weak self] in
+            self?.running = false
+            self?.startNext()
         }
     }
 }
