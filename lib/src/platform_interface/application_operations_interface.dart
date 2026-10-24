@@ -1,7 +1,8 @@
+import '../models/macos_application_info.dart';
 import '../models/window_operation_result.dart';
 
 /// Platform interface for application management operations.
-abstract class ApplicationOperationsInterface {
+mixin ApplicationOperationsInterface {
   /// Terminates an application by its process ID.
   ///
   /// This method will terminate the entire application, not just a specific window.
@@ -134,27 +135,21 @@ abstract class ApplicationOperationsInterface {
 
   /// Gets all installed applications on the system.
   ///
-  /// Returns a list of maps containing application properties:
-  /// - `name`: Application display name (String)
-  /// - `bundleId`: Bundle identifier (String)
-  /// - `version`: Application version (String)
-  /// - `path`: Full path to application bundle (String)
-  /// - `iconPath`: Path to application icon file (String)
+  /// Returns a [MacosApplicationInfo] for each installed application.
   ///
   /// Throws [PlatformException] if unable to retrieve application information.
-  Future<List<Map<String, dynamic>>> getAllInstalledApplications() {
+  Future<List<MacosApplicationInfo>> getAllInstalledApplications() {
     throw UnimplementedError(
         'getAllInstalledApplications() has not been implemented.');
   }
 
   /// Gets applications filtered by name.
   ///
-  /// Returns a list of maps containing application properties for applications whose
-  /// name contains the specified [name] string. The search is case-insensitive
+  /// Returns the applications whose name contains the specified [name] string. The search is case-insensitive
   /// and uses substring matching.
   ///
   /// Throws [PlatformException] if unable to retrieve application information.
-  Future<List<Map<String, dynamic>>> getApplicationByName(String name) {
+  Future<List<MacosApplicationInfo>> getApplicationByName(String name) {
     throw UnimplementedError(
         'getApplicationByName() has not been implemented.');
   }

@@ -12,12 +12,18 @@ From reading the source:
 - **Arguments are a map of literal keys.** Dart mixins omit `null` optionals, and Swift reads them with `as? Int/Bool/Double/CGFloat`. A missing required key gives `FlutterError("INVALID_ARGUMENTS")`, which the Dart mixins rethrow. Swift reads `customTitlebarHeight` `as? CGFloat` while Dart sends a `double`.
 - **Three result shapes.** Results come back as a plain value (lists, bools), a `{"success": …}` map for operations that return typed results, or a `FlutterError`. How a code is routed between them is [failure-code-vocabulary](../invariant/failure-code-vocabulary.md).
 - **Threading.** Synchronous handlers run on the platform thread that delivers the call. `captureWindow`, `getCapturableWindows` and `isWindowFullScreen` start an unstructured `Task` and call `result` from inside it.
-- **Facade adds models, nothing else.** `lib/src/macos_window_toolkit.dart — MacosWindowToolkit` turns maps into models (`MacosWindowInfo.fromMap`, `MacosApplicationInfo.fromMap`, …). It wraps application listing into `ApplicationResult` and forwards permission watching to `PermissionWatcher.instance`.
-- **Swappable platform.** `MacosWindowToolkitPlatform` extends `PlatformInterface` with a private token. Tests replace `instance` with a fake (`test/permission_watcher_test.dart — _FakePlatform`).
+- **Two call helpers.** `lib/src/method_channel/channel_calls.dart` holds every reply-parsing path (#11, 2026-10-24):
+  - `invokeResult` serves the result-typed calls (`closeWindow`, `focusWindow`, both terminations through `invokeOperation`, `captureWindow`, `getScrollInfo`). A map goes to the caller's parser and a bool to its optional bool shortcut. The operations take a bool for compatibility with the reply shape from before the `{"success": …}` map of v1.4.3 (moved from the removed mixin comments). `null` and any other type become the caller's `unknown` failure with one message (`No response from <method>` / `Unexpected response from <method>`). A `PlatformException` is rethrown for `systemErrorCodes`, otherwise built by the caller's converter from `failure_codes.dart`.
+  - `invokeList` serves every model list: `null` is `[]`, and each item goes through `stringKeyed` (nested maps deep-converted) into the model's `fromMap`.
+  - Outside both: the bool calls (`?? false`), `getScreenScaleFactor` (`?? 1.0`), `getChildProcesses` (`List<int>`), `getMacOSVersionInfo` (one map, `stringKeyed`), and `isWindowFullScreen`, whose state map is thrown as a `PlatformException`, not returned.
+- **Models are made in the channel layer.** The platform interface returns models for every call, so the facade only forwards. Its one addition is `ApplicationResult`: an empty `getAllInstalledApplications` is `notFound`, an empty `getApplicationByName` is success, and any thrown error, a parse error included, is `systemError`. It also forwards permission watching to `PermissionWatcher.instance`.
+- **One parsing policy in every `fromMap`.** Each key is read with a typed nullable cast and a default. Numbers go through `num`. A nested map is copied with `Map<String, dynamic>.from`, so `fromMap` also accepts a map that never went through `stringKeyed`. Equality hashes with `Object.hash`. A key of the wrong type still throws.
+- **Swappable platform.** `MacosWindowToolkitPlatform` extends `PlatformInterface` with a private token, and composes the five `*Interface` mixins `with`, not `implements`. So a subclass inherits each method's `UnimplementedError` default, and a method added later does not break it. Tests replace `instance` with a fake that overrides only what it uses (`test/permission_watcher_test.dart — _FakePlatform`).
 
 ## Code
 - `macos/Classes/MacosWindowToolkitPlugin.swift — MacosWindowToolkitPlugin.register`, `handle`, `required`, `replyWindows`, `reply`, `replyUnexpected`
 - `macos/Classes/PluginError.swift — PluginError`, `PluginError.reply`, `DispatcherError`
+- `lib/src/method_channel/channel_calls.dart — invokeResult`, `invokeOperation`, `invokeList`, `stringKeyed`
 - `lib/src/method_channel/failure_codes.dart` (failure tables, `systemErrorCodes`)
 - `lib/macos_window_toolkit.dart` (library exports)
 - `lib/src/macos_window_toolkit.dart — MacosWindowToolkit`
@@ -38,5 +44,6 @@ From reading the source:
 - [user-docs](user-docs.md): `documentations/api_reference.md` restates the public method list by hand.
 
 ## Known holes / open
-- `test/macos_window_toolkit_method_channel_test.dart` covers the failure mappings of every result-typed call and `isWindowFullScreen`, both reply shapes, plus every native code against `PlatformErrorCode` (#7, #10). No test checks a method name, an argument key or a success result shape, and `test/macos_window_toolkit_test.dart` is `void main() {}`.
+- `test/macos_window_toolkit_method_channel_test.dart` covers the failure mappings of every result-typed call and `isWindowFullScreen`, both reply shapes, plus every native code against `PlatformErrorCode` (#7, #10). `test/macos_window_toolkit_test.dart` checks every facade method's name, argument keys and parsed result, and each result-typed call's null, unexpected, system-code and other-code paths (#11). The method names and keys in it are copied by hand from the Swift `handle` switch, so a rename on the Swift side alone still passes.
+- Removing `stringKeyed`'s nested conversion fails no test: the two models with nested maps (`CapturableWindowInfo`, `MacosScreenInfo`) copy their nested maps themselves (mutation run during #11, 2026-10-24).
 - `result` is called from inside a Swift `Task` (capture, capturable windows, fullscreen). Nothing here confirms that Flutter's macOS embedder accepts a reply from that thread. This is not checked against Flutter's docs (a summarized source).

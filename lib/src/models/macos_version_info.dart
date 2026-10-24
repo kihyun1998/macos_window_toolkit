@@ -26,9 +26,9 @@ class MacosVersionInfo {
   /// Creates a [MacosVersionInfo] from a map representation
   factory MacosVersionInfo.fromMap(Map<String, dynamic> map) {
     return MacosVersionInfo(
-      majorVersion: map['majorVersion'] as int? ?? 0,
-      minorVersion: map['minorVersion'] as int? ?? 0,
-      patchVersion: map['patchVersion'] as int? ?? 0,
+      majorVersion: (map['majorVersion'] as num?)?.toInt() ?? 0,
+      minorVersion: (map['minorVersion'] as num?)?.toInt() ?? 0,
+      patchVersion: (map['patchVersion'] as num?)?.toInt() ?? 0,
       versionString: map['versionString'] as String? ?? '',
       isScreenCaptureKitAvailable:
           map['isScreenCaptureKitAvailable'] as bool? ?? false,
@@ -76,10 +76,12 @@ class MacosVersionInfo {
 
   @override
   int get hashCode {
-    return majorVersion.hashCode ^
-        minorVersion.hashCode ^
-        patchVersion.hashCode ^
-        versionString.hashCode ^
-        isScreenCaptureKitAvailable.hashCode;
+    return Object.hash(
+      majorVersion,
+      minorVersion,
+      patchVersion,
+      versionString,
+      isScreenCaptureKitAvailable,
+    );
   }
 }

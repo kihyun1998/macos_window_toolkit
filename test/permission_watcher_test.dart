@@ -19,9 +19,6 @@ class _FakePlatform extends MacosWindowToolkitPlatform {
     permissionCalls++;
     return accessibility;
   }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 void main() {
@@ -121,6 +118,27 @@ void main() {
         reason: 'explicit start polls even before a listener subscribes');
     await pumpTicks();
     expect(platform.permissionCalls, greaterThanOrEqualTo(2));
+  });
+
+  test('emitOnlyChanges emits the initial state, then only changes', () async {
+    final events = <PermissionStatus>[];
+    final sub = watcher.permissionStream.listen(events.add);
+    watcher.startWatching(interval: tick);
+    await pumpTicks();
+    expect(events, hasLength(1), reason: 'unchanged polls emit nothing');
+
+    platform.accessibility = false;
+    await pumpTicks();
+    expect(events, hasLength(2));
+    expect(events.last.accessibility, isFalse);
+    expect(events.last.hasChanges, isTrue);
+
+    platform.screenRecording = false;
+    await pumpTicks();
+    expect(events, hasLength(3));
+    expect(events.last.screenRecording, isFalse);
+
+    await sub.cancel();
   });
 
   test('dispose resets the watcher and it can be reused', () async {

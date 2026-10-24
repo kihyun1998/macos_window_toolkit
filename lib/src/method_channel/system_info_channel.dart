@@ -1,19 +1,19 @@
 import 'package:flutter/services.dart';
+
 import '../models/macos_screen_info.dart';
+import '../models/macos_version_info.dart';
+import 'channel_calls.dart';
 
 /// Mixin providing method channel implementations for system info operations.
 mixin SystemInfoChannel {
   /// Method channel accessor - must be provided by the implementing class.
   MethodChannel get methodChannel;
 
-  Future<Map<String, dynamic>> getMacOSVersionInfo() async {
+  Future<MacosVersionInfo> getMacOSVersionInfo() async {
     final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
       'getMacOSVersionInfo',
     );
-    if (result == null) {
-      return {};
-    }
-    return Map<String, dynamic>.from(result);
+    return MacosVersionInfo.fromMap(stringKeyed(result ?? const {}));
   }
 
   Future<double> getScreenScaleFactor() async {
@@ -23,24 +23,11 @@ mixin SystemInfoChannel {
     return result ?? 1.0;
   }
 
-  Future<List<MacosScreenInfo>> getAllScreensInfo() async {
-    final result = await methodChannel.invokeMethod<List<dynamic>>(
+  Future<List<MacosScreenInfo>> getAllScreensInfo() {
+    return invokeList(
+      methodChannel,
       'getAllScreensInfo',
+      MacosScreenInfo.fromMap,
     );
-    if (result == null) {
-      return [];
-    }
-    return result
-        .map((e) => MacosScreenInfo.fromMap(_convertMap(e as Map)))
-        .toList();
-  }
-
-  Map<String, dynamic> _convertMap(Map map) {
-    return map.map((key, value) {
-      if (value is Map) {
-        return MapEntry(key.toString(), _convertMap(value));
-      }
-      return MapEntry(key.toString(), value);
-    });
   }
 }

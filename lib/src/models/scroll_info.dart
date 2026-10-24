@@ -29,10 +29,10 @@ class ScrollInfo {
   /// Creates a [ScrollInfo] from a map (typically from native code).
   factory ScrollInfo.fromMap(Map<String, dynamic> map) {
     return ScrollInfo(
-      verticalPosition: map['verticalPosition']?.toDouble(),
-      horizontalPosition: map['horizontalPosition']?.toDouble(),
-      hasVerticalScroll: map['hasVerticalScroll'] ?? false,
-      hasHorizontalScroll: map['hasHorizontalScroll'] ?? false,
+      verticalPosition: (map['verticalPosition'] as num?)?.toDouble(),
+      horizontalPosition: (map['horizontalPosition'] as num?)?.toDouble(),
+      hasVerticalScroll: map['hasVerticalScroll'] as bool? ?? false,
+      hasHorizontalScroll: map['hasHorizontalScroll'] as bool? ?? false,
     );
   }
 

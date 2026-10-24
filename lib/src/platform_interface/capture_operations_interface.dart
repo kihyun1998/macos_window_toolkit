@@ -2,7 +2,7 @@ import '../models/capturable_window_info.dart';
 import '../models/capture_result.dart';
 
 /// Platform interface for window capture operations.
-abstract class CaptureOperationsInterface {
+mixin CaptureOperationsInterface {
   /// Captures a window using ScreenCaptureKit.
   ///
   /// Returns a [CaptureResult] indicating success with image data or failure with reason.
