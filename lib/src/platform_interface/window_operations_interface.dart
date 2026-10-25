@@ -178,14 +178,26 @@ mixin WindowOperationsInterface {
   ///
   /// **Note**: This method requires accessibility permissions.
   ///
+  /// [waitUntilClosed], when given, must be positive. Without it the call
+  /// replies as soon as the window's close button has been pressed. With it,
+  /// the call replies once the window has really closed, and fails with
+  /// [WindowOperationFailureReason.windowStillOpen] if it is still open when
+  /// the duration runs out: an app may close a window late, ask whether to
+  /// save changes first, or ignore the close button.
+  ///
   /// Returns:
-  /// - [OperationSuccess] if the window was successfully closed
+  /// - [OperationSuccess] without [waitUntilClosed]: the close button was
+  ///   pressed, which does not mean the window has closed yet. With
+  ///   [waitUntilClosed]: the window has closed
   /// - [OperationFailure] with one of the following reasons:
   ///   - [WindowOperationFailureReason.windowNotFound]: Window no longer exists
   ///   - [WindowOperationFailureReason.windowNotAccessible]: Window exists but the Accessibility API cannot reach it
   ///   - [WindowOperationFailureReason.accessibilityPermissionDenied]: Permission not granted
   ///   - [WindowOperationFailureReason.closeButtonNotFound]: Unable to find close button
+  ///   - [WindowOperationFailureReason.windowStillOpen]: Only with [waitUntilClosed]: the window was still open when it ran out
   ///   - [WindowOperationFailureReason.unknown]: Other failure states
+  ///
+  /// Throws [ArgumentError] when [waitUntilClosed] is zero or negative.
   ///
   /// Throws [PlatformException] only for system errors (invalid arguments, internal errors).
   ///
@@ -194,7 +206,7 @@ mixin WindowOperationsInterface {
   /// final result = await toolkit.closeWindow(12345);
   /// switch (result) {
   ///   case OperationSuccess():
-  ///     print('Window closed successfully');
+  ///     print('Close requested');
   ///   case OperationFailure(:final reason, :final message):
   ///     if (reason == WindowOperationFailureReason.accessibilityPermissionDenied) {
   ///       print('Need accessibility permission: $message');
@@ -204,7 +216,10 @@ mixin WindowOperationsInterface {
   ///     }
   /// }
   /// ```
-  Future<WindowOperationResult> closeWindow(int windowId) {
+  Future<WindowOperationResult> closeWindow(
+    int windowId, {
+    Duration? waitUntilClosed,
+  }) {
     throw UnimplementedError('closeWindow() has not been implemented.');
   }
 

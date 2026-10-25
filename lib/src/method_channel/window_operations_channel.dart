@@ -123,9 +123,19 @@ mixin WindowOperationsChannel {
     return result ?? false;
   }
 
-  Future<WindowOperationResult> closeWindow(int windowId) {
-    return invokeOperation(
-        methodChannel, 'closeWindow', {'windowId': windowId});
+  Future<WindowOperationResult> closeWindow(
+    int windowId, {
+    Duration? waitUntilClosed,
+  }) {
+    if (waitUntilClosed != null && waitUntilClosed <= Duration.zero) {
+      throw ArgumentError.value(
+          waitUntilClosed, 'waitUntilClosed', 'must be positive');
+    }
+    return invokeOperation(methodChannel, 'closeWindow', {
+      'windowId': windowId,
+      if (waitUntilClosed != null)
+        'waitUntilClosedMs': waitUntilClosed.inMilliseconds,
+    });
   }
 
   Future<WindowOperationResult> focusWindow(int windowId) {

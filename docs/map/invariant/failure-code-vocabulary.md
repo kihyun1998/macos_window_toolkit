@@ -13,7 +13,7 @@ The two tables are literals in two languages that never call each other; the met
 
 ## Territories it holds in
 - [channel-bridge](../territory/channel-bridge.md): `PluginError.reply`, `DispatcherError`, the dispatcher's per-call codes (`WINDOW_LIST_ERROR`, `GET_CHILD_PROCESSES_ERROR`, `GET_APPLICATIONS_ERROR`) and `failure_codes.dart`, `PlatformErrorCode`.
-- [window-control](../territory/window-control.md): `WindowError`'s states and `WindowOperationFailureReason`.
+- [window-control](../territory/window-control.md): `WindowError`'s states and `WindowOperationFailureReason`, including `windowStillOpen` (`WINDOW_STILL_OPEN`, only with `closeWindow`'s `waitUntilClosed`, #25).
 - [scroll-inspection](../territory/scroll-inspection.md): `WindowError.windowNotAccessible` and friends through `ScrollFailureReason`.
 - [process-control](../territory/process-control.md): `WindowError.processNotFound` / `.invalidProcessId` / `.terminationFailed`; the process calls share the window reason table. Like `INVALID_WINDOW_ID` and `REQUIRES_MACOS_14`, `INVALID_PROCESS_ID` shares its state reason (`process_not_found`) with another code, so it needs its own `_reasonByCode` row (#17).
 - [window-capture](../territory/window-capture.md): `CaptureError` and `CaptureFailureReason`; `isWindowFullScreen` rethrows a state map as `PlatformException` with the map's wire `code`.

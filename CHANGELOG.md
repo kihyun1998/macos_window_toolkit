@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Added
+- **FEAT**: `closeWindow()` takes an optional `waitUntilClosed` duration. With it, the call replies once the window has really closed, or fails with the new `WindowOperationFailureReason.windowStillOpen` when the window is still open after the duration (an app asking whether to save changes, or ignoring the close button). Without it, nothing changes
+  - "Closed" is read from the window's Accessibility element, not from the window list: an app can keep a closed window in the window list, off screen, for up to a minute
+
 ### Fixed
 - **FIX**: `closeWindow()` now returns `OperationFailure(reason: WindowOperationFailureReason.windowNotAccessible)` when the window exists but cannot be reached through the Accessibility API, as the 1.8.3 entry described. It previously arrived as `unknown`
 - **FIX**: `captureWindow()` on macOS 12.3–13 now returns `CaptureFailure(reason: CaptureFailureReason.unsupportedVersion)` instead of `unknown`, since window capture requires macOS 14.0
@@ -12,6 +16,8 @@
 - **FIX**: `terminateApplicationByPID()` on a live process the caller may not signal (for example one owned by another user) now returns `OperationFailure(reason: unknown)` instead of `processNotFound`
 
 ### Changed
+- **BREAKING (source)**: `WindowOperationFailureReason` gains `windowStillOpen`, and `PlatformErrorCode` gains `windowStillOpen` (`WINDOW_STILL_OPEN`). An exhaustive `switch` over either needs the new case
+- **CHANGED**: the `closeWindow()` docs now say that, without `waitUntilClosed`, `OperationSuccess` means the close button was pressed, not that the window has closed
 - **CHANGED**: `closeWindow()` on a window in another Space no longer holds the main thread while it waits up to one second for the window after switching Space; the wait is scheduled, and the reply comes when it ends. Two closes that both need a Space switch run one after the other (a close whose window is already visible because of the other's switch closes at once), and the original Space is restored on every outcome. Results and failure reasons are unchanged
 - **CHANGED**: replies to `captureWindow()`, `getCapturableWindows()`, `isWindowFullScreen()` and `closeWindow()` are delivered on the main thread, as Flutter's platform-channel rules ask
 - **BREAKING (source)**: `WindowOperationFailureReason` gains `windowNotAccessible`. An exhaustive `switch` over it needs a new case

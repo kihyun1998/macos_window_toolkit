@@ -17,7 +17,7 @@ The Window Management API provides comprehensive functionality for discovering a
 | [`getWindowsByProcessId()`](#getwindowsbyprocessid) | Filter windows by process | `processId` | `Future<List<MacosWindowInfo>>` |
 | [`getWindowsAdvanced()`](#getwindowsadvanced) | Advanced filtering with multiple criteria | 14 optional parameters | `Future<List<MacosWindowInfo>>` |
 | [`isWindowAlive()`](#iswindowalive) | Check window existence | `windowId` | `Future<bool>` |
-| [`closeWindow()`](#closewindow) | Close window via AppleScript | `windowId` | `Future<bool>` |
+| [`closeWindow()`](#closewindow) | Close window via Accessibility | `windowId`, `waitUntilClosed` | `Future<WindowOperationResult>` |
 
 ## Methods
 
@@ -438,66 +438,59 @@ Timer.periodic(Duration(seconds: 1), (timer) async {
 
 ### `closeWindow()`
 
-Closes a window by its window ID using AppleScript.
+Closes a window by its window ID, by pressing its close button through the Accessibility API. A window on another Space is reached by switching to that Space and back.
 
 **Signature:**
 ```dart
-Future<bool> closeWindow(int windowId)
+Future<WindowOperationResult> closeWindow(
+  int windowId, {
+  Duration? waitUntilClosed,
+})
 ```
 
 **Parameters:**
 - `windowId` - Unique window identifier of the window to close
+- `waitUntilClosed` (optional, positive) - How long to wait for the window to really close. Without it the call replies as soon as the close button is pressed
 
 **Returns:**
-- `Future<bool>` - `true` if the window was successfully closed, `false` otherwise
+- `OperationSuccess`:
+  - without `waitUntilClosed`: the close button was pressed. The window may still be open: an app can close it late, ask whether to save changes, or ignore the button
+  - with `waitUntilClosed`: the window has closed
+- `OperationFailure` with:
+  - `windowNotFound` - no window has this ID
+  - `windowNotAccessible` - the window exists but the Accessibility API cannot reach it
+  - `accessibilityPermissionDenied` - Accessibility permission is not granted
+  - `closeButtonNotFound` - the window has no close button the plugin can find
+  - `windowStillOpen` - only with `waitUntilClosed`: the window was still open when it ran out
+  - `unknown` - any other failure, such as the close button press failing
 
 **Throws:**
-- `PlatformException` with specific error codes:
-  - `CLOSE_WINDOW_ERROR` - General window closing error
-  - `WINDOW_NOT_FOUND` - Window with specified ID was not found
-  - `INSUFFICIENT_WINDOW_INFO` - Not enough window information to close
+- `ArgumentError` when `waitUntilClosed` is zero or negative
+- `PlatformException` only for system errors such as `INVALID_ARGUMENTS`
 
 **Example:**
 ```dart
 final toolkit = MacosWindowToolkit();
 
-// Close specific window
-try {
-  final success = await toolkit.closeWindow(12345);
-  if (success) {
-    print('Window closed successfully');
-  } else {
-    print('Failed to close window (may require user interaction)');
-  }
-} on PlatformException catch (e) {
-  switch (e.code) {
-    case 'WINDOW_NOT_FOUND':
-      print('Window no longer exists');
-      break;
-    default:
-      print('Error closing window: ${e.code} - ${e.message}');
-  }
-}
-
-// Close all untitled documents
-final untitledWindows = await toolkit.getWindowsByName('Untitled');
-for (final window in untitledWindows) {
-  try {
-    final closed = await toolkit.closeWindow(window.windowId);
-    if (closed) {
-      print('Closed "${window.name}" in ${window.ownerName}');
-    }
-  } catch (e) {
-    print('Failed to close "${window.name}": $e');
-  }
+// Ask the window to close and wait up to 5 seconds for it to go
+final result = await toolkit.closeWindow(
+  12345,
+  waitUntilClosed: const Duration(seconds: 5),
+);
+switch (result) {
+  case OperationSuccess():
+    print('Window closed');
+  case OperationFailure(reason: WindowOperationFailureReason.windowStillOpen):
+    print('Still open - the app may be asking to save changes');
+  case OperationFailure(:final reason, :final message):
+    print('Could not close the window: $reason $message');
 }
 ```
 
 **Important Notes:**
-- Uses AppleScript to interact with application UI
-- May require accessibility permissions on some systems
-- Success depends on application's AppleScript support and window structure
-- Some applications may show confirmation dialogs before closing
+- Requires Accessibility permission
+- Without `waitUntilClosed`, success means only that the close was requested
+- Do not judge "closed" from the window list: an app can keep a closed window in it, off screen, for up to a minute
 - Not all windows can be closed (e.g., system windows, modal dialogs)
 
 **Limitations:**
