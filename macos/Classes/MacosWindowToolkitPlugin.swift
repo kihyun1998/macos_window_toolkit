@@ -14,6 +14,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    let result = onMain(result)
     switch call.method {
     case "getAllWindows":
       getAllWindows(call: call, result: result)
@@ -112,6 +113,19 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       result(value)
     case .failure(let error):
       error.reply(to: result)
+    }
+  }
+
+  /// `result`, delivered on the main thread whichever thread calls it. `handle` wraps
+  /// every call's result in it, so a handler that replies after it returns (from a `Task`
+  /// or a scheduled wait) replies on the main thread too.
+  private func onMain(_ result: @escaping FlutterResult) -> FlutterResult {
+    return { value in
+      if Thread.isMainThread {
+        result(value)
+      } else {
+        DispatchQueue.main.async { result(value) }
+      }
     }
   }
 
@@ -304,7 +318,9 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     guard
       let windowId: Int = required("windowId", of: call, result, "WindowId parameter is required")
     else { return }
-    reply(windowHandler.closeWindow(windowId), result)
+    windowHandler.closeWindow(windowId) { [weak self] closeResult in
+      self?.reply(closeResult, result)
+    }
   }
 
   /// Focuses a window by its window ID using Accessibility API

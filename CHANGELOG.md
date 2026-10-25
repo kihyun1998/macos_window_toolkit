@@ -12,6 +12,8 @@
 - **FIX**: `terminateApplicationByPID()` on a live process the caller may not signal (for example one owned by another user) now returns `OperationFailure(reason: unknown)` instead of `processNotFound`
 
 ### Changed
+- **CHANGED**: `closeWindow()` on a window in another Space no longer holds the main thread while it waits up to one second for the window after switching Space; the wait is scheduled, and the reply comes when it ends. Two closes that both need a Space switch run one after the other (a close whose window is already visible because of the other's switch closes at once), and the original Space is restored on every outcome. Results and failure reasons are unchanged
+- **CHANGED**: replies to `captureWindow()`, `getCapturableWindows()`, `isWindowFullScreen()` and `closeWindow()` are delivered on the main thread, as Flutter's platform-channel rules ask
 - **BREAKING (source)**: `WindowOperationFailureReason` gains `windowNotAccessible`. An exhaustive `switch` over it needs a new case
 - **CHANGED**: `isWindowFullScreen()` now throws a state failure under its native code, matching `PlatformErrorCode`: e.g. `SCREEN_RECORDING_PERMISSION_DENIED` instead of `PERMISSION_DENIED`, `INVALID_WINDOW_ID` instead of `WINDOW_NOT_FOUND`, `UNSUPPORTED_MACOS_VERSION` instead of `UNSUPPORTED_VERSION`
 - **CHANGED**: a `PlatformException` from the plugin now always carries a details map with `code`, `message`, `details`, `errorCode` and `errorDomain`; window and process operations previously sent a plain string
