@@ -318,7 +318,8 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     guard
       let windowId: Int = required("windowId", of: call, result, "WindowId parameter is required")
     else { return }
-    windowHandler.closeWindow(windowId) { [weak self] closeResult in
+    let waitUntilClosed = (arguments(call)["waitUntilClosedMs"] as? Int).map { TimeInterval($0) / 1000 }
+    windowHandler.closeWindow(windowId, waitUntilClosed: waitUntilClosed) { [weak self] closeResult in
       self?.reply(closeResult, result)
     }
   }

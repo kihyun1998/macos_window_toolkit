@@ -741,7 +741,7 @@ class WindowHandler {
     /// Attempts to close a window using Accessibility API with multiple fallback strategies
     /// This combines all the helper methods above into a comprehensive close window function
     private func closeWindowWithAccessibilityAPI(processId: Int, windowName: String) -> Result<
-        Bool, WindowError
+        AXUIElement, WindowError
     > {
 
         // Step 1: Find the window element
@@ -768,7 +768,7 @@ class WindowHandler {
         let clickSuccess = clickCloseButton(closeButton)
 
         if clickSuccess {
-            return .success(true)
+            return .success(window)
         } else {
             return .failure(.closeActionFailed)
         }
@@ -776,29 +776,71 @@ class WindowHandler {
 
     /// Closes a window by its window ID using Accessibility API
     /// This method uses modern Accessibility API instead of AppleScript for better reliability
-    /// Calls `completion` with the result: at once, or on the main queue after a Space switch
-    func closeWindow(_ windowId: Int, completion: @escaping (Result<Bool, WindowError>) -> Void) {
+    /// Calls `completion` with the result: at once, or on the main queue after a Space switch.
+    /// Without `waitUntilClosed` it succeeds once the close button is pressed. With it, it
+    /// succeeds once the pressed window is destroyed, and fails with `windowStillOpen` when
+    /// the window is still open after `waitUntilClosed` seconds.
+    func closeWindow(
+        _ windowId: Int, waitUntilClosed: TimeInterval? = nil,
+        completion: @escaping (Result<Bool, WindowError>) -> Void
+    ) {
+        let finish: (Result<AXUIElement, WindowError>) -> Void = { pressed in
+            switch pressed {
+            case .failure(let error):
+                completion(.failure(error))
+            case .success(let window):
+                guard let wait = waitUntilClosed else {
+                    completion(.success(true))
+                    return
+                }
+                AXUIElementSetMessagingTimeout(window, 0.1)
+                WindowHandler.pollOnMain(every: 0.05, for: wait, attempt: {
+                    WindowHandler.isDestroyed(window) ? true : nil
+                }) { closed in
+                    completion(closed == nil ? .failure(.windowStillOpen) : .success(true))
+                }
+            }
+        }
         let immediate = closeWindowOnCurrentSpace(windowId) { processId, windowName in
             // Window exists but is on a different Space — switch to it and retry
             self.spaceSwitchGate.run { done in
                 self.closeWindowViaSpaceSwitch(
                     processId: processId, windowId: windowId, windowName: windowName
-                ) { result in
-                    completion(result)
-                    done()
+                ) { pressed in
+                    if waitUntilClosed == nil {
+                        finish(pressed)
+                        done()
+                    } else {
+                        done()
+                        finish(pressed)
+                    }
                 }
             }
         }
         if let immediate = immediate {
-            completion(immediate)
+            finish(immediate)
         }
+    }
+
+    /// Whether `element` no longer refers to a live window: it reads as an invalid element,
+    /// or its process has exited. A window on another Space stays live, and so does a
+    /// window whose app does not answer in time.
+    static func isDestroyed(_ element: AXUIElement) -> Bool {
+        var role: CFTypeRef?
+        let read = AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &role)
+        if read == .invalidUIElement { return true }
+        var pid: pid_t = 0
+        guard read != .success, AXUIElementGetPid(element, &pid) == .success, pid > 0 else {
+            return false
+        }
+        return kill(pid, 0) == -1 && errno == ESRCH
     }
 
     /// Closes the window if the Accessibility API can reach it from the current Space.
     /// Returns nil when it hands the window to `onOtherSpace` instead.
     private func closeWindowOnCurrentSpace(
         _ windowId: Int, onOtherSpace: (_ processId: Int, _ windowName: String) -> Void
-    ) -> Result<Bool, WindowError>? {
+    ) -> Result<AXUIElement, WindowError>? {
 
         // Step 1: Check accessibility permissions
         let permissionHandler = PermissionHandler()
@@ -829,12 +871,8 @@ class WindowHandler {
             )
 
             switch accessibilityResult {
-            case .success(let success):
-                if success {
-                    return .success(true)
-                } else {
-                    return .failure(.closeActionFailed)
-                }
+            case .success(let pressedWindow):
+                return .success(pressedWindow)
 
             case .failure(.windowNotAccessible):
                 // Step 4: Window exists but is on a different Space
@@ -1503,7 +1541,7 @@ class WindowHandler {
     /// is restored, on every exit after the switch.
     private func closeWindowViaSpaceSwitch(
         processId: Int, windowId: Int, windowName: String,
-        completion: @escaping (Result<Bool, WindowError>) -> Void
+        completion: @escaping (Result<AXUIElement, WindowError>) -> Void
     ) {
         // 0. Verify required private CGS symbols exist at runtime
         let requiredSymbols = [
@@ -1540,11 +1578,11 @@ class WindowHandler {
             self.findWindowElementFlexible(processId: processId, windowName: windowName)
                 ?? self.findWindowElement(processId: processId, windowName: windowName)
         }) { windowElement in
-            let result: Result<Bool, WindowError>
+            let result: Result<AXUIElement, WindowError>
             if let element = windowElement {
                 if let closeButton = self.findCloseButton(for: element) {
                     result = self.clickCloseButton(closeButton)
-                        ? .success(true)
+                        ? .success(element)
                         : .failure(.closeActionFailed)
                 } else {
                     result = .failure(.closeButtonNotFound)
@@ -1577,6 +1615,7 @@ enum WindowError: PluginError {
     case failedToGetProcessList
     case windowNotAccessible
     case spaceSwitchAPIUnavailable
+    case windowStillOpen
 
     var code: String {
         switch self {
@@ -1593,6 +1632,7 @@ enum WindowError: PluginError {
         case .failedToGetProcessList: return "FAILED_TO_GET_PROCESS_LIST"
         case .windowNotAccessible: return "WINDOW_NOT_ACCESSIBLE"
         case .spaceSwitchAPIUnavailable: return "SPACE_SWITCH_API_UNAVAILABLE"
+        case .windowStillOpen: return "WINDOW_STILL_OPEN"
         }
     }
 
@@ -1604,6 +1644,7 @@ enum WindowError: PluginError {
         case .focusActionFailed: return "focus_action_failed"
         case .processNotFound, .invalidProcessId: return "process_not_found"
         case .windowNotAccessible: return "window_not_accessible"
+        case .windowStillOpen: return "window_still_open"
         case .failedToRetrieveWindowList, .insufficientWindowInfo, .closeActionFailed,
             .terminationFailed, .failedToGetProcessList, .spaceSwitchAPIUnavailable:
             return nil
@@ -1625,6 +1666,7 @@ enum WindowError: PluginError {
         case .failedToGetProcessList: return "Failed to retrieve process list"
         case .windowNotAccessible: return "Window is not accessible via Accessibility API"
         case .spaceSwitchAPIUnavailable: return "Private CGS Space APIs are not available"
+        case .windowStillOpen: return "Window is still open"
         }
     }
 
@@ -1656,6 +1698,8 @@ enum WindowError: PluginError {
             return "The window exists but cannot be accessed. It may be on a different Space, or the application does not support the Accessibility API."
         case .spaceSwitchAPIUnavailable:
             return "The window is on a different Space but the required private APIs are unavailable on this macOS version."
+        case .windowStillOpen:
+            return "The close button was pressed, but the window did not close within the requested time. The app may be asking whether to save changes."
         }
     }
 }

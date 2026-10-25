@@ -214,6 +214,28 @@ void main() {
       });
     }
 
+    test(
+        'closeWindow sends waitUntilClosedMs only when waitUntilClosed is given',
+        () async {
+      reply({'success': true});
+      await toolkit.closeWindow(7);
+      expectCall('closeWindow', {'windowId': 7});
+
+      calls.clear();
+      await toolkit.closeWindow(7,
+          waitUntilClosed: const Duration(seconds: 2, milliseconds: 500));
+      expectCall('closeWindow', {'windowId': 7, 'waitUntilClosedMs': 2500});
+    });
+
+    test('closeWindow rejects a waitUntilClosed that is not positive', () {
+      reply({'success': true});
+      for (final wait in [Duration.zero, const Duration(milliseconds: -1)]) {
+        expect(() => toolkit.closeWindow(7, waitUntilClosed: wait),
+            throwsArgumentError);
+      }
+      expect(calls, isEmpty);
+    });
+
     test('isWindowFullScreen sends the window id and returns the bool',
         () async {
       reply(true);

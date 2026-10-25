@@ -337,7 +337,11 @@ try {
 
 ### Close Window Error Handling
 ```dart
-final result = await toolkit.closeWindow(windowId);
+// waitUntilClosed: reply once the window has really closed
+final result = await toolkit.closeWindow(
+  windowId,
+  waitUntilClosed: const Duration(seconds: 5),
+);
 switch (result) {
   case OperationSuccess():
     print('Window closed');
@@ -353,6 +357,10 @@ switch (result) {
         await toolkit.openAccessibilitySettings();
       case WindowOperationFailureReason.closeButtonNotFound:
         print('No close button: $message');
+      case WindowOperationFailureReason.windowStillOpen:
+        // The close was pressed, but the window is still open: the app may
+        // be asking whether to save changes
+        print('Still open: $message');
       default:
         // Includes a Space switch that could not run because the
         // private CGS APIs are unavailable (message says so)

@@ -250,6 +250,7 @@ void main() {
       'CLOSE_BUTTON_NOT_FOUND',
       'CLOSE_ACTION_FAILED',
       'FOCUS_ACTION_FAILED',
+      'WINDOW_STILL_OPEN',
       'PROCESS_NOT_FOUND',
       'INVALID_PROCESS_ID',
       'TERMINATION_FAILED',
@@ -320,6 +321,8 @@ void main() {
           WindowOperationFailureReason.accessibilityPermissionDenied,
       ('close_button_not_found', 'CLOSE_BUTTON_NOT_FOUND'):
           WindowOperationFailureReason.closeButtonNotFound,
+      ('window_still_open', 'WINDOW_STILL_OPEN'):
+          WindowOperationFailureReason.windowStillOpen,
       ('focus_action_failed', 'FOCUS_ACTION_FAILED'):
           WindowOperationFailureReason.focusActionFailed,
       ('process_not_found', 'PROCESS_NOT_FOUND'):

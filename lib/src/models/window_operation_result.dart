@@ -36,6 +36,8 @@ class OperationFailure extends WindowOperationResult {
         return 'Unable to find close button for this window';
       case WindowOperationFailureReason.focusActionFailed:
         return 'Unable to bring window to front';
+      case WindowOperationFailureReason.windowStillOpen:
+        return 'The window is still open';
       case WindowOperationFailureReason.unknown:
         return message ?? 'Operation failed';
     }
@@ -51,6 +53,7 @@ class OperationFailure extends WindowOperationResult {
       case WindowOperationFailureReason.processNotFound:
       case WindowOperationFailureReason.closeButtonNotFound:
       case WindowOperationFailureReason.focusActionFailed:
+      case WindowOperationFailureReason.windowStillOpen:
       case WindowOperationFailureReason.unknown:
         return false;
     }
@@ -66,6 +69,8 @@ class OperationFailure extends WindowOperationResult {
       case WindowOperationFailureReason.windowNotFound:
       case WindowOperationFailureReason.processNotFound:
       case WindowOperationFailureReason.closeButtonNotFound:
+      case WindowOperationFailureReason.windowStillOpen:
+        return 'The app may be asking whether to save changes; check the window';
       case WindowOperationFailureReason.focusActionFailed:
       case WindowOperationFailureReason.unknown:
         return null;
@@ -93,6 +98,10 @@ enum WindowOperationFailureReason {
 
   /// Focus action failed (for focusWindow operation)
   focusActionFailed,
+
+  /// The close button was pressed, but the window was still open when
+  /// `closeWindow`'s `waitUntilClosed` ran out.
+  windowStillOpen,
 
   /// Unknown operation state (not a system error)
   unknown,
