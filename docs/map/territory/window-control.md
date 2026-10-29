@@ -27,6 +27,7 @@ From reading the source:
     - The CoreGraphics window list kept a closed TextEdit window, off screen and still assigned to its Space, for more than 45 s. So the window list cannot tell closed from open.
     - When the window's process exits (a Tk window whose close quits the app), the element does not read as `.invalidUIElement`. So `isDestroyed` also checks the element's pid with `kill(pid, 0)` and `ESRCH` (`close_wait_test.dart`, mutation run on 2026-10-25).
 - **Focus.** Sets `kAXMainAttribute = true`, activates the app with `.activateIgnoringOtherApps`, then sends `kAXRaiseAction`. It succeeds if either AX call succeeds. Focus does **no** Space switch, and when no element is found it returns `windowNotFound` (close and scroll say `windowNotAccessible`).
+  - **Activation needs an active caller (macOS 14+).** The SDK header (`NSRunningApplication.h`, Xcode SDK read 2026-10-29) marks `.activateIgnoringOtherApps` *"deprecated in macOS 14 and will have no effect"*, and `NSApplication.h` describes cooperative activation: the active app yields or requests, the target activates. Measured on macOS 26.6.2 (2026-10-29), with `lsappinfo front` sampled every 100 ms: from an active bundled app, the plugin's call brought a Tk app to the front 4/4, no call 0/4, `yieldActivation(to:)` then `activate(options: [])` 3/4. From a process in the background (a CLI, or the integration-test host behind another app), no option of `activate` and not `kAXFrontmostAttribute` brought it forward (`.activateAllWindows` once, not reproduced). In both cases `activate` returned `true` and `focusWindow` returned success. The raise was not judged: the CG window order varied from run to run.
 - **Results.** Results return as `WindowOperationResult`. An inaccessible window is `windowNotAccessible` (#7). Which codes arrive typed is [failure-code-vocabulary](../invariant/failure-code-vocabulary.md).
 
 ## Code
@@ -48,7 +49,7 @@ From reading the source:
   Each path was seen red under a mutation of its own branch. A fixture app that stops running its event loop reads as hung, not closed. It runs in the `flutter test -d macos` host because the XCTest host is not trusted for Accessibility (`AXIsProcessTrusted()` false, 2026-10-25).
 - `example/macos/RunnerTests/RunnerTests.swift — SpaceSwitchWaitTests` pins `pollOnMain` (returns to its caller before retrying, gives up at the deadline) and `SerialGate` ordering (#13).
 - `RunnerTests.swift — SpaceSwitchCloseTests` drives `SpaceSwitcher` with a fake `SpaceControl` (#12): it switches back on every exit after the switch (pressed, press failed, never reachable), does not switch for a window on the current Space, fails without switching when the CGS calls or the window's Space are missing, and holds the next close until the first has switched back, or until before its completion when it releases first. Each of the four was seen red under a mutation (no `done`, no switch-back, never releasing first, no gate; 2026-10-29). Whether `AXWindowActions.closeWindow` asks to release first exactly when it waits (`waitUntilClosed`) is not tested, and the real CGS calls are checked by hand in the example app's window detail sheet.
-- The private CGS calls have no published reference. `.activateIgnoringOtherApps` is believed deprecated since macOS 14, which needs confirming against Apple's docs (a summarized source).
+- The private CGS calls have no published reference.
 
 ## Cross-cutting invariants
 - [ax-window-identity-by-title](../invariant/ax-window-identity-by-title.md)
@@ -62,6 +63,7 @@ From reading the source:
 - [user-docs](user-docs.md): `documentations/api/error_handling.md` and the README's close example list close failure reasons by hand, so a new reason needs adding there.
 
 ## Known holes / open
+- `focusWindow` reports success when macOS refuses the activation because the calling app is in the background; `activate` returns `true` either way. It still passes the deprecated `.activateIgnoringOtherApps`.
 - `waitUntilClosed` on the Space-switch path (wait after the restore, gate released first) is covered by the measurement above, not by an automated test: the tests cannot place a window on another Space.
 - Private CGS symbols: the `dlsym` check guards a missing symbol, not a changed signature.
 - After the Space switch every exit switches back, but a crash during the wait leaves the user on the other Space.
