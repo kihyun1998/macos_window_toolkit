@@ -9,7 +9,9 @@ The documentation consumers read: `README.md` and the `documentations/` tree (gu
 ## Design model
 From reading the docs against the code:
 - **Hand-written copies.** The docs restate the public API by hand: method tables, return types, error codes, searched directories. Nothing generates them or checks them against `lib/`.
-- **Stale since 1.5.0.** Several pages still describe legacy capture, which CHANGELOG 1.5.0 removed: the README features line, `documentations/api_reference.md` ("Legacy Capture (CGWindowListCreateImage)"), `documentations/sandbox_configuration.md` and `documentations/api/error_handling.md` (legacy fallback advice). Found with `grep -n 'CGWindowListCreateImage\|legacy' README.md documentations/*.md documentations/api/*.md`.
+- **Stale since 1.5.0.** Several pages still describe legacy capture, which CHANGELOG 1.5.0 removed: the README features line, `documentations/api_reference.md` ("Legacy Capture (CGWindowListCreateImage)"), `documentations/sandbox_configuration.md`, `documentations/api/error_handling.md` (legacy fallback advice) and `documentations/api/window_capture.md`, whose quick-reference tables list `captureWindowAuto`, `captureWindowLegacy`, `getCapturableWindowsAuto` and `getCapturableWindowsLegacy`, none of which `lib/` has (2026-10-29). Found with `grep -n 'CGWindowListCreateImage\|legacy' README.md documentations/*.md documentations/api/*.md`.
+
+- **Requirements have one home.** The minimum macOS, Flutter and Dart versions are stated in the README's `## Requirements`, which matches `pubspec.yaml`, the podspec and `Package.swift`. `getting_started.md`, `api_reference.md`, `troubleshooting.md` and `api/application_discovery.md` repeat the values and link to it; `contributing.md`'s prerequisites give what building the example needs instead (#27). A floor change edits the README and those four pages.
 
 ## Code
 - `README.md`
