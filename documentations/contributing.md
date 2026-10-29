@@ -91,10 +91,9 @@ Feature requests are welcome! Please provide:
 
 ### Prerequisites
 
-- macOS 10.11 or later
-- Xcode with Swift 5.0 support
-- Flutter 3.3.0 or later
-- Dart 3.8.1 or later
+- macOS 12.0 or later, the example app's deployment target
+- Xcode 15 or later, which Swift Package Manager needs (the example builds the plugin as a Swift package)
+- Flutter and Dart within the package's constraints (`flutter >=3.10.0`, `sdk >=3.0.0` in `pubspec.yaml`); the example is set up with Flutter's Swift Package Manager integration
 - Git
 
 ### Setting up the Development Environment
@@ -148,11 +147,13 @@ Understanding the project structure is essential for effective contributions:
 ```
 macos_window_toolkit/
 ├── lib/                                    # Flutter Dart code
-│   ├── macos_window_toolkit.dart          # Main export file
+│   ├── macos_window_toolkit.dart          # Library exports
 │   └── src/
-│       ├── macos_window_toolkit.dart      # Main API class
-│       ├── macos_window_toolkit_platform_interface.dart
-│       └── macos_window_toolkit_method_channel.dart
+│       ├── macos_window_toolkit.dart      # MacosWindowToolkit, the public API
+│       ├── permission_watcher.dart        # PermissionWatcher
+│       ├── platform_interface/            # MacosWindowToolkitPlatform and its per-area interfaces
+│       ├── method_channel/                # Method-channel implementation, call helpers, failure codes
+│       └── models/                        # Result and info types
 ├── macos/                                  # macOS native implementation
 │   ├── macos_window_toolkit/               # Swift package (Package.swift)
 │   │   └── Sources/macos_window_toolkit/
@@ -165,8 +166,11 @@ macos_window_toolkit/
 │   └── macos_window_toolkit.podspec       # CocoaPods spec over the same sources
 ├── example/                               # Example Flutter app
 ├── test/                                  # Unit tests
-├── docs/                                  # Documentation
-└── CONTRIBUTING.md                        # This file
+├── documentations/                        # User documentation, including this guide
+├── docs/                                  # Agent docs and the territory map (not published)
+├── README.md
+├── CHANGELOG.md                           # Unreleased entries go at the top
+└── pubspec.yaml
 ```
 
 ### Key Files

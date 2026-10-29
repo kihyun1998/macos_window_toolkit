@@ -6,10 +6,12 @@ This guide will help you get up and running with macOS Window Toolkit in your Fl
 
 Before you begin, ensure you have:
 
-- **macOS 10.11** or later
-- **Flutter 3.3.0** or later
-- **Dart 3.8.1** or later
+- **macOS 10.15** or later (**14.0** for window capture)
+- **Flutter 3.10.0** or later
+- **Dart 3.0.0** or later
 - A macOS development environment
+
+The versions are the README's [Requirements](../README.md#requirements).
 
 ## Installation
 

@@ -89,7 +89,7 @@ Handle macOS permissions with real-time monitoring capabilities.
 Capture window screenshots using modern ScreenCaptureKit and legacy methods.
 
 **Modern Capture (ScreenCaptureKit):**
-- `captureWindow()` - High-quality capture (macOS 12.3+)
+- `captureWindow()` - High-quality capture (macOS 14.0+)
 - `getCapturableWindows()` - List capturable windows
 
 **Legacy Capture (CGWindowListCreateImage):**
@@ -222,9 +222,11 @@ toolkit.permissionStream.listen((status) {
 
 ## Platform Requirements
 
-- **macOS**: 10.11 or later
-- **Flutter**: 3.3.0 or later
-- **Dart**: 3.8.1 or later
+- **macOS**: 10.15 or later (14.0 for window capture)
+- **Flutter**: 3.10.0 or later
+- **Dart**: 3.0.0 or later
+
+These are the README's [Requirements](../README.md#requirements).
 
 ## Thread Safety
 
