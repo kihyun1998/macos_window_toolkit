@@ -210,6 +210,28 @@ void main() {
     });
   });
 
+  test('a start right after dispose keeps polling for a listener that stays',
+      () async {
+    final oldSub = watcher.permissionStream.listen((_) {});
+    watcher.startWatching(interval: tick);
+    await pumpTicks();
+
+    watcher.dispose();
+    final events = <PermissionStatus>[];
+    final sub = watcher.permissionStream.listen(events.add);
+    watcher.startWatching(interval: tick, emitOnlyChanges: false);
+    await pumpTicks();
+
+    expect(watcher.isWatching, isTrue,
+        reason: 'the closed stream cancelling its listener stops nothing');
+    final callsBefore = platform.permissionCalls;
+    await pumpTicks();
+    expect(platform.permissionCalls, greaterThan(callsBefore));
+    expect(events.length, greaterThan(1));
+    await oldSub.cancel();
+    await sub.cancel();
+  });
+
   test('dispose resets the watcher and it can be reused', () async {
     final doneEvents = <String>[];
     final sub = watcher.permissionStream
