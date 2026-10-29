@@ -1,100 +1,119 @@
 # Window Capture API
 
-Complete reference for window screenshot capture using modern ScreenCaptureKit and legacy methods.
+Complete reference for window screenshot capture using ScreenCaptureKit.
 
 ## Overview
 
-The Window Capture API provides comprehensive functionality for capturing window screenshots on macOS. It supports both modern ScreenCaptureKit (macOS 12.3+) and legacy CGWindowListCreateImage methods, with automatic method selection for optimal compatibility and quality.
+The Window Capture API captures window screenshots on macOS with ScreenCaptureKit. It can remove the titlebar, crop a region of the window and resize the result, and it lists the windows ScreenCaptureKit can capture.
+
+ScreenCaptureKit is the only capture method. Capturing a window needs macOS 14.0 or later; listing capturable windows needs macOS 12.3 or later. Both need Screen Recording permission. On an older macOS, capture is unavailable and there is no other method to fall back to.
 
 ## Quick Reference
 
 ### Capture Methods
 | Method | Description | Requirements | Returns |
 |--------|-------------|--------------|---------|
-| [`captureWindowAuto()`](#capturewindowauto) | **Recommended** - Auto-selects best method | macOS 10.11+ | `Future<CaptureResult>` |
-| [`captureWindow()`](#capturewindow) | High-quality ScreenCaptureKit capture | macOS 12.3+ | `Future<CaptureResult>` |
-| [`captureWindowLegacy()`](#capturewindowlegacy) | Legacy CGWindowListCreateImage | macOS 10.5+ | `Future<CaptureResult>` |
+| [`captureWindow()`](#capturewindow) | Captures a window as PNG data | macOS 14.0+, Screen Recording | `Future<CaptureResult>` |
+| [`isWindowFullScreen()`](#iswindowfullscreen) | Checks whether a window is fullscreen | macOS 14.0+, Screen Recording | `Future<bool>` |
 
 ### Window Discovery
 | Method | Description | Requirements | Returns |
 |--------|-------------|--------------|---------|
-| [`getCapturableWindowsAuto()`](#getcapturablewindowsauto) | **Recommended** - Auto-selects best method | macOS 10.11+ | `Future<List<CapturableWindowInfo>>` |
-| [`getCapturableWindows()`](#getcapturablewindows) | ScreenCaptureKit window listing | macOS 12.3+ | `Future<List<CapturableWindowInfo>>` |
-| [`getCapturableWindowsLegacy()`](#getcapturablewindowslegacy) | Legacy window listing | macOS 10.5+ | `Future<List<CapturableWindowInfo>>` |
+| [`getCapturableWindows()`](#getcapturablewindows) | Lists the windows ScreenCaptureKit can capture | macOS 12.3+, Screen Recording | `Future<List<CapturableWindowInfo>>` |
 
-### System Information
+### Availability Check
 | Method | Description | Returns |
 |--------|-------------|---------|
-| [`getCaptureMethodInfo()`](#getcapturemethodinfo) | Get current capture capabilities | `Future<Map<String, dynamic>>` |
+| [`getMacOSVersionInfo()`](#checking-availability) | macOS version, to check whether capture is available | `Future<MacosVersionInfo>` |
 
-## Auto-Selection Methods (Recommended)
+## ScreenCaptureKit Methods
 
-### `captureWindowAuto()`
+### `captureWindow()`
 
-Captures a window using the best available method with automatic selection.
+Captures a window using ScreenCaptureKit.
 
 **Signature:**
 ```dart
-Future<CaptureResult> captureWindowAuto(
+Future<CaptureResult> captureWindow(
   int windowId, {
   bool excludeTitlebar = false,
   double? customTitlebarHeight,
   int? targetWidth,
   int? targetHeight,
   bool preserveAspectRatio = false,
+  int? cropContentWidth,
+  int? cropContentHeight,
+  int? cropX,
+  int? cropY,
+  int? cropWidth,
+  int? cropHeight,
+  bool resizeCroppedToWindowSize = true,
 })
 ```
 
+**Requirements:**
+- macOS 14.0 or later
+- Screen recording permission
+
 **Parameters:**
-- `windowId` - Unique window identifier from window listing methods
-- `excludeTitlebar` (optional) - If `true`, removes titlebar from capture. Defaults to `false`.
-- `customTitlebarHeight` (optional) - Custom titlebar height in points. Uses 28pt default if null.
-- `targetWidth` (optional) - Target width for output image. If specified, image will be resized.
-- `targetHeight` (optional) - Target height for output image. If specified, image will be resized.
-- `preserveAspectRatio` (optional) - If `true`, maintains aspect ratio with letterboxing. If `false`, resizes to exact dimensions. Defaults to `false`.
+- `windowId` - Unique window identifier, from `getCapturableWindows()`, `getAllWindows()` or `getWindowById()`
+- `excludeTitlebar` (optional) - If `true`, removes the titlebar from the capture. Defaults to `false`. No titlebar is removed from a fullscreen window.
+- `customTitlebarHeight` (optional) - Titlebar height to remove, in points. Uses the 28pt default if null. Clamped to between 0 and the window height.
+- `targetWidth` (optional) - Width of the output image. If specified with `targetHeight`, the image is resized.
+- `targetHeight` (optional) - Height of the output image. If specified with `targetWidth`, the image is resized.
+- `preserveAspectRatio` (optional) - If `true`, keeps the aspect ratio and fills the remaining area with black. If `false`, resizes to the exact dimensions. Defaults to `false`.
+- `cropContentWidth`, `cropContentHeight` (optional) - Crop a region of this size from the center of the image. Takes precedence over the rectangle crop.
+- `cropX`, `cropY`, `cropWidth`, `cropHeight` (optional) - Crop this rectangle from the image.
+- `resizeCroppedToWindowSize` (optional) - Transparent borders are always cropped from the capture. If `true`, the image is resized back to the window size afterwards. Defaults to `true`.
+
+Crop values are clamped to the image, and a crop that still yields no image leaves the image uncropped. `targetWidth` and `targetHeight` are not validated: zero or negative values make the capture fail.
+
+**Output:**
+- PNG image data
+- The image size is the window frame in points; no display scale factor is applied
+- Processing order: titlebar removal, transparent border crop, custom crop, resize
 
 **Returns:**
-- `Future<CaptureResult>` - Success with image data or failure with detailed reason
+- `Future<CaptureResult>` - Success with image data, or failure with a reason
 
-**Method Selection Logic:**
-- Uses **ScreenCaptureKit** on macOS 14.0+ for optimal quality
-- Falls back to **CGWindowListCreateImage** on older versions or if ScreenCaptureKit fails
-- Automatically handles compatibility without version checks
+**Throws:**
+- `PlatformException` only for system errors (invalid arguments, system failures)
 
 **Example:**
 ```dart
 final toolkit = MacosWindowToolkit();
 
-// Get capturable windows (recommended way)
-final windows = await toolkit.getCapturableWindowsAuto();
+final windows = await toolkit.getCapturableWindows();
 if (windows.isEmpty) {
   print('No capturable windows found');
   return;
 }
 
-// Capture first window
 final window = windows.first;
-final result = await toolkit.captureWindowAuto(window.windowId);
+final result = await toolkit.captureWindow(window.windowId);
 
 switch (result) {
   case CaptureSuccess(:final imageData):
     print('Captured ${imageData.length} bytes');
-    
+
     // Save to file
     final file = File('captured_window.png');
     await file.writeAsBytes(imageData);
     print('Saved to ${file.path}');
-    
+
     // Display in Flutter
     final image = Image.memory(imageData);
     // Use image in widget tree
-    
+
   case CaptureFailure(:final reason, :final message):
     print('Capture failed: ${reason.name}');
     if (message != null) print('Details: $message');
-    
+
     // Handle specific failures
     switch (reason) {
+      case CaptureFailureReason.unsupportedVersion:
+        print('Window capture requires macOS 14.0 or later');
+        break;
       case CaptureFailureReason.windowMinimized:
         print('Please restore the window from dock');
         break;
@@ -111,33 +130,33 @@ switch (result) {
 }
 ```
 
-**Advanced Usage with Titlebar Removal:**
+**Titlebar Removal:**
 ```dart
 // Capture without titlebar (standard height)
-final result = await toolkit.captureWindowAuto(
+final result = await toolkit.captureWindow(
   windowId,
   excludeTitlebar: true,
 );
 
 // Capture with custom titlebar height
-final result = await toolkit.captureWindowAuto(
+final result = await toolkit.captureWindow(
   windowId,
   excludeTitlebar: true,
   customTitlebarHeight: 32.0, // Larger titlebar
 );
 ```
 
-**Resize Functionality (New in 1.4.0):**
+**Resizing:**
 ```dart
 // Resize to specific dimensions (may distort)
-final result = await toolkit.captureWindowAuto(
+final result = await toolkit.captureWindow(
   windowId,
   targetWidth: 1920,
   targetHeight: 1080,
 );
 
 // Resize maintaining aspect ratio with letterboxing
-final result = await toolkit.captureWindowAuto(
+final result = await toolkit.captureWindow(
   windowId,
   targetWidth: 1920,
   targetHeight: 1080,
@@ -145,7 +164,7 @@ final result = await toolkit.captureWindowAuto(
 );
 
 // Create thumbnail
-final thumbnail = await toolkit.captureWindowAuto(
+final thumbnail = await toolkit.captureWindow(
   windowId,
   targetWidth: 200,
   targetHeight: 150,
@@ -153,7 +172,7 @@ final thumbnail = await toolkit.captureWindowAuto(
 );
 
 // Combine with titlebar removal
-final resized = await toolkit.captureWindowAuto(
+final resized = await toolkit.captureWindow(
   windowId,
   excludeTitlebar: true,
   targetWidth: 800,
@@ -162,62 +181,99 @@ final resized = await toolkit.captureWindowAuto(
 );
 ```
 
-**Performance:**
-- ScreenCaptureKit: ~50-200ms depending on window size
-- Legacy method: ~100-500ms depending on window size
-- Automatically uses fastest available method
+**Cropping:**
+```dart
+// Crop a 600 × 400 region from the center
+final centered = await toolkit.captureWindow(
+  windowId,
+  cropContentWidth: 600,
+  cropContentHeight: 400,
+);
+
+// Crop a rectangle starting at (100, 50)
+final region = await toolkit.captureWindow(
+  windowId,
+  cropX: 100,
+  cropY: 50,
+  cropWidth: 400,
+  cropHeight: 300,
+);
+
+// Keep the size left after cropping transparent borders
+final trimmed = await toolkit.captureWindow(
+  windowId,
+  resizeCroppedToWindowSize: false,
+);
+```
 
 ---
 
-### `getCapturableWindowsAuto()`
+### `getCapturableWindows()`
 
-Gets list of capturable windows using the best available method.
+Gets the list of windows that ScreenCaptureKit can capture.
 
 **Signature:**
 ```dart
-Future<List<CapturableWindowInfo>> getCapturableWindowsAuto()
+Future<List<CapturableWindowInfo>> getCapturableWindows()
 ```
 
-**Returns:**
-- `Future<List<CapturableWindowInfo>>` - List of windows optimized for capture
+**Requirements:**
+- macOS 12.3 or later
+- Screen recording permission
 
-**Method Selection Logic:**
-- Uses **ScreenCaptureKit** on macOS 12.3+ for better window information
-- Falls back to **CGWindowListCopyWindowInfo** on older versions
+**Returns:**
+- `Future<List<CapturableWindowInfo>>` - List with window information including bundle identifiers. Windows with an empty title are left out.
+
+**Throws:**
+- `PlatformException` with error codes:
+  - `UNSUPPORTED_MACOS_VERSION` - macOS version doesn't support ScreenCaptureKit
+  - `SCREEN_RECORDING_PERMISSION_DENIED` - Screen recording permission is not granted
+  - `CAPTURE_FAILED` - Failed to retrieve windows
 
 **Example:**
 ```dart
 final toolkit = MacosWindowToolkit();
 
 try {
-  final windows = await toolkit.getCapturableWindowsAuto();
-  
+  final windows = await toolkit.getCapturableWindows();
+
   print('Found ${windows.length} capturable windows:');
   for (final window in windows) {
     print('');
     print('Title: "${window.title}"');
     print('App: ${window.ownerName}');
-    print('Bundle: ${window.bundleIdentifier}'); // May be empty on legacy method
+    print('Bundle: ${window.bundleIdentifier}');
     print('Size: ${window.frame.width} × ${window.frame.height}');
     print('Position: (${window.frame.x}, ${window.frame.y})');
     print('Visible: ${window.isOnScreen}');
     print('Window ID: ${window.windowId}');
   }
-  
-  // Filter for specific applications
+
+  // Use bundle identifier for precise filtering
   final chromeWindows = windows
-      .where((w) => w.ownerName.contains('Chrome'))
+      .where((w) => w.bundleIdentifier == 'com.google.Chrome')
       .toList();
   print('\nFound ${chromeWindows.length} Chrome windows');
-  
-} catch (e) {
-  print('Failed to get capturable windows: $e');
+
+} on PlatformException catch (e) {
+  switch (e.code) {
+    case 'UNSUPPORTED_MACOS_VERSION':
+      print('Listing capturable windows requires macOS 12.3+');
+      break;
+
+    case 'SCREEN_RECORDING_PERMISSION_DENIED':
+      print('Screen recording permission required');
+      break;
+
+    default:
+      print('Error: ${e.message}');
+  }
 }
 ```
 
 **Filtering Examples:**
 ```dart
-final windows = await toolkit.getCapturableWindowsAuto();
+final windows = await toolkit.getCapturableWindows();
 
 // Only visible windows
 final visibleWindows = windows
@@ -244,289 +300,67 @@ windows.sort((a, b) {
 
 ---
 
-## ScreenCaptureKit Methods (Modern)
+### `isWindowFullScreen()`
 
-### `captureWindow()`
-
-Captures a window using ScreenCaptureKit for high-quality results.
+Checks whether a window is in fullscreen mode, using the window's current frame from ScreenCaptureKit. This also works for windows on other Spaces.
 
 **Signature:**
 ```dart
-Future<CaptureResult> captureWindow(
-  int windowId, {
-  bool excludeTitlebar = false,
-  double? customTitlebarHeight,
-  int? targetWidth,
-  int? targetHeight,
-  bool preserveAspectRatio = false,
-})
+Future<bool> isWindowFullScreen(int windowId)
 ```
 
 **Requirements:**
-- macOS 12.3 or later
+- macOS 14.0 or later
 - Screen recording permission
 
 **Returns:**
-- `Future<CaptureResult>` - Success with high-quality image data or detailed failure
-
-**Example:**
-```dart
-final toolkit = MacosWindowToolkit();
-
-// Check if ScreenCaptureKit is available
-final versionInfo = await toolkit.getMacOSVersionInfo();
-if (!versionInfo.isScreenCaptureKitAvailable) {
-  print('ScreenCaptureKit not available, use captureWindowLegacy() instead');
-  return;
-}
-
-// Get ScreenCaptureKit windows
-final windows = await toolkit.getCapturableWindows();
-if (windows.isEmpty) {
-  print('No ScreenCaptureKit windows available');
-  return;
-}
-
-final result = await toolkit.captureWindow(windows.first.windowId);
-switch (result) {
-  case CaptureSuccess(:final imageData):
-    print('High-quality capture: ${imageData.length} bytes');
-    
-  case CaptureFailure(:final reason):
-    print('ScreenCaptureKit capture failed: ${reason.name}');
-    
-    // Fallback to legacy method
-    print('Falling back to legacy capture...');
-    final legacyResult = await toolkit.captureWindowLegacy(windows.first.windowId);
-    // Handle legacy result...
-}
-```
-
-**Quality Benefits:**
-- Better color accuracy
-- Improved performance for large windows
-- More accurate window bounds
-- Better handling of transparency
-
----
-
-### `getCapturableWindows()`
-
-Gets list of capturable windows using ScreenCaptureKit.
-
-**Signature:**
-```dart
-Future<List<CapturableWindowInfo>> getCapturableWindows()
-```
-
-**Requirements:**
-- macOS 12.3 or later
-
-**Returns:**
-- `Future<List<CapturableWindowInfo>>` - List with complete window information including bundle identifiers
+- `Future<bool>` - `true` if the window is fullscreen, `false` otherwise
 
 **Throws:**
 - `PlatformException` with error codes:
-  - `UNSUPPORTED_MACOS_VERSION` - macOS version doesn't support ScreenCaptureKit
-  - `CAPTURE_FAILED` - Failed to retrieve windows
+  - `SCREEN_RECORDING_PERMISSION_DENIED` - Screen recording permission is not granted
+  - `INVALID_WINDOW_ID` - No window with this ID
+  - `UNSUPPORTED_MACOS_VERSION` / `REQUIRES_MACOS_14` - macOS version is too old
+  - `FULLSCREEN_CHECK_FAILED` - Any other failure
 
 **Example:**
 ```dart
 final toolkit = MacosWindowToolkit();
 
 try {
-  final windows = await toolkit.getCapturableWindows();
-  
-  // ScreenCaptureKit provides bundle identifiers
-  for (final window in windows) {
-    print('App: ${window.ownerName} (${window.bundleIdentifier})');
-    print('Window: "${window.title}"');
-    
-    // Use bundle identifier for precise filtering
-    if (window.bundleIdentifier == 'com.google.Chrome') {
-      print('This is definitely Chrome');
-    }
+  final isFullScreen = await toolkit.isWindowFullScreen(windowId);
+  if (isFullScreen) {
+    print('Window is in fullscreen mode');
   }
-  
 } on PlatformException catch (e) {
-  switch (e.code) {
-    case 'UNSUPPORTED_MACOS_VERSION':
-      print('ScreenCaptureKit requires macOS 12.3+');
-      // Use legacy method instead
-      final legacyWindows = await toolkit.getCapturableWindowsLegacy();
-      break;
-      
-    default:
-      print('Error: ${e.message}');
-  }
+  print('Fullscreen check failed: ${e.code}');
 }
 ```
 
 ---
 
-## Legacy Methods (Compatible)
+## Checking Availability
 
-### `captureWindowLegacy()`
-
-Captures a window using CGWindowListCreateImage for maximum compatibility.
-
-**Signature:**
-```dart
-Future<CaptureResult> captureWindowLegacy(
-  int windowId, {
-  bool excludeTitlebar = false,
-  double? customTitlebarHeight,
-  int? targetWidth,
-  int? targetHeight,
-  bool preserveAspectRatio = false,
-})
-```
-
-**Requirements:**
-- macOS 10.5 or later (virtually all systems)
-- Screen recording permission (on macOS 10.15+)
-
-**Returns:**
-- `Future<CaptureResult>` - Success with compatible image data or failure reason
+Use `getMacOSVersionInfo()` to decide whether to offer capture at all. `isScreenCaptureKitAvailable` is `true` on macOS 12.3+, which is enough for `getCapturableWindows()`; `captureWindow()` needs macOS 14.0. You can also call `captureWindow()` directly and handle `CaptureFailureReason.unsupportedVersion`.
 
 **Example:**
 ```dart
 final toolkit = MacosWindowToolkit();
+final versionInfo = await toolkit.getMacOSVersionInfo();
 
-// Legacy method works on all macOS versions
-final windows = await toolkit.getCapturableWindowsLegacy();
-if (windows.isEmpty) {
-  print('No windows available for capture');
-  return;
-}
+print('macOS version: ${versionInfo.versionString}');
+print('ScreenCaptureKit available: ${versionInfo.isScreenCaptureKitAvailable}');
 
-final result = await toolkit.captureWindowLegacy(windows.first.windowId);
-switch (result) {
-  case CaptureSuccess(:final imageData):
-    print('Legacy capture successful: ${imageData.length} bytes');
-    
-    // Image format is always PNG
-    final file = File('legacy_capture.png');
-    await file.writeAsBytes(imageData);
-    
-  case CaptureFailure(:final reason):
-    print('Legacy capture failed: ${reason.name}');
-    print('User message: ${result.userMessage}');
-    
-    if (result.canRetry) {
-      print('Suggested action: ${result.suggestedAction}');
-    }
-}
-```
+final canCapture = versionInfo.majorVersion >= 14;
 
-**Performance Characteristics:**
-- Slower than ScreenCaptureKit but more compatible
-- Works well for smaller windows
-- May have performance issues with very large windows
-- Always produces PNG format
-
----
-
-### `getCapturableWindowsLegacy()`
-
-Gets list of capturable windows using CGWindowListCopyWindowInfo.
-
-**Signature:**
-```dart
-Future<List<CapturableWindowInfo>> getCapturableWindowsLegacy()
-```
-
-**Requirements:**
-- macOS 10.5 or later
-
-**Returns:**
-- `Future<List<CapturableWindowInfo>>` - List with basic window information
-
-**Notes:**
-- `bundleIdentifier` field will be empty (not available in legacy API)
-- Broader compatibility but less detailed information
-
-**Example:**
-```dart
-final toolkit = MacosWindowToolkit();
-
-// Legacy method always succeeds (doesn't throw exceptions)
-final windows = await toolkit.getCapturableWindowsLegacy();
-
-print('Legacy method found ${windows.length} windows:');
-for (final window in windows) {
-  print('Title: "${window.title}"');
-  print('App: ${window.ownerName}');
-  print('Bundle: ${window.bundleIdentifier}'); // Will be empty string
-  print('Size: ${window.frame.width} × ${window.frame.height}');
-}
-
-// Use application name for filtering (instead of bundle ID)
-final finderWindows = windows
-    .where((w) => w.ownerName == 'Finder')
-    .toList();
-```
-
----
-
-## System Information
-
-### `getCaptureMethodInfo()`
-
-Gets information about capture capabilities and methods on the current system.
-
-**Signature:**
-```dart
-Future<Map<String, dynamic>> getCaptureMethodInfo()
-```
-
-**Returns:**
-- `Future<Map<String, dynamic>>` - Detailed capability information
-
-**Returned Information:**
-- `captureMethod` - Method used by auto-selection ("ScreenCaptureKit" or "CGWindowListCreateImage")
-- `windowListMethod` - Window listing method ("ScreenCaptureKit" or "CGWindowListCopyWindowInfo")
-- `macOSVersion` - Current macOS version string
-- `isScreenCaptureKitAvailable` - Whether ScreenCaptureKit is available (bool)
-- `supportsModernCapture` - Whether modern capture is supported (bool)
-- `supportsModernWindowList` - Whether modern window listing is supported (bool)
-
-**Example:**
-```dart
-final toolkit = MacosWindowToolkit();
-final info = await toolkit.getCaptureMethodInfo();
-
-print('=== Capture Method Information ===');
-print('Capture method: ${info['captureMethod']}');
-print('Window list method: ${info['windowListMethod']}');
-print('macOS version: ${info['macOSVersion']}');
-print('ScreenCaptureKit available: ${info['isScreenCaptureKitAvailable']}');
-print('Modern capture supported: ${info['supportsModernCapture']}');
-print('Modern window list supported: ${info['supportsModernWindowList']}');
-
-// Show user-friendly information
-if (info['supportsModernCapture'] == true) {
-  print('✅ Using high-quality ScreenCaptureKit capture');
-} else {
-  print('⚠️ Using compatible CGWindowListCreateImage capture');
-  print('Consider updating to macOS 12.3+ for better quality');
-}
-
-// Use for feature detection
-if (info['isScreenCaptureKitAvailable'] == true) {
-  // Enable ScreenCaptureKit-specific features
-  enableAdvancedCaptureFeatures();
+if (canCapture) {
+  // Enable capture features
+  enableCaptureFeatures();
 } else {
   // Hide unsupported features
-  hideModernCaptureOptions();
+  hideCaptureOptions();
 }
 ```
-
-**Use Cases:**
-- Debugging capture issues
-- User feedback about system capabilities
-- Feature detection for UI
-- Performance optimization decisions
 
 ---
 
@@ -567,8 +401,10 @@ switch (result) {
 - `reason` (`CaptureFailureReason`) - Specific failure reason
 - `message` (`String?`) - Optional detailed message
 - `details` (`String?`) - Optional technical details
+- `errorCode` (`int?`) - Native `NSError` code, when there is one
+- `errorDomain` (`String?`) - Native `NSError` domain, when there is one
 
-**Methods:**
+**Getters:**
 - `userMessage` (`String`) - User-friendly failure message
 - `canRetry` (`bool`) - Whether failure can be retried after user action
 - `suggestedAction` (`String?`) - Suggested action to resolve failure
@@ -605,6 +441,9 @@ switch (result) {
     
     // Handle specific reasons
     switch (reason) {
+      case CaptureFailureReason.unsupportedVersion:
+        // Capture requires macOS 14.0+; hide capture features
+        break;
       case CaptureFailureReason.windowMinimized:
         // Guide user to restore window
         break;
@@ -627,12 +466,14 @@ Specific reasons for capture failure (not system errors).
 | Value | Description | Can Retry | Suggested Action |
 |-------|-------------|-----------|------------------|
 | `windowMinimized` | Window is minimized | ✅ | Restore window from dock |
-| `windowNotFound` | Window no longer exists | ❌ | - |
-| `unsupportedVersion` | macOS version not supported | ❌ | - |
+| `windowNotFound` | Window no longer exists, or ScreenCaptureKit does not list it | ❌ | - |
+| `unsupportedVersion` | macOS is older than 14.0 | ❌ | - |
 | `permissionDenied` | Screen recording permission denied | ✅ | Grant permission in settings |
-| `captureInProgress` | Another capture in progress | ✅ | Wait for completion |
-| `windowNotCapturable` | Window cannot be captured | ❌ | - |
+| `captureInProgress` | Another capture in progress (not currently produced) | ✅ | Wait for completion |
+| `windowNotCapturable` | Window cannot be captured (not currently produced) | ❌ | - |
 | `unknown` | Unknown capture state | ❌ | - |
+
+`captureInProgress` and `windowNotCapturable` exist in the enum, but the native side does not return them at present.
 
 ### CapturableWindowInfo
 
@@ -644,7 +485,7 @@ Window information optimized for capture operations.
 | `windowId` | `int` | Unique window identifier for capture |
 | `title` | `String` | Window title/name |
 | `ownerName` | `String` | Application name |
-| `bundleIdentifier` | `String` | App bundle ID (empty in legacy method) |
+| `bundleIdentifier` | `String` | App bundle ID |
 | `frame` | `CapturableWindowFrame` | Position and size information |
 | `isOnScreen` | `bool` | Whether window is visible |
 
@@ -678,13 +519,13 @@ final window = windows.first;
 final frame = window.frame;
 
 print('Window bounds: (${frame.x}, ${frame.y}, ${frame.width}, ${frame.height})');
-print('Window area: ${frame.width * frame.height} square pixels');
+print('Window area: ${frame.width * frame.height} square points');
 print('Aspect ratio: ${(frame.width / frame.height).toStringAsFixed(2)}');
 
 // Check if window is large enough for capture
 if (frame.width >= 100 && frame.height >= 100) {
   // Proceed with capture
-  final result = await toolkit.captureWindowAuto(window.windowId);
+  final result = await toolkit.captureWindow(window.windowId);
 } else {
   print('Window too small for meaningful capture');
 }
@@ -726,8 +567,8 @@ class _WindowCaptureAppState extends State<WindowCaptureApp> {
         }
       }
       
-      // Load capturable windows (recommended method)
-      final loadedWindows = await toolkit.getCapturableWindowsAuto();
+      // Load capturable windows
+      final loadedWindows = await toolkit.getCapturableWindows();
       
       setState(() {
         windows = loadedWindows
@@ -747,8 +588,7 @@ class _WindowCaptureAppState extends State<WindowCaptureApp> {
     setState(() => isLoading = true);
     
     try {
-      // Use recommended auto-selection method
-      final result = await toolkit.captureWindowAuto(
+      final result = await toolkit.captureWindow(
         window.windowId,
         excludeTitlebar: true, // Remove titlebar for cleaner capture
       );
@@ -765,13 +605,15 @@ class _WindowCaptureAppState extends State<WindowCaptureApp> {
           _showSuccess('Captured window: "${window.title}"');
           
         case CaptureFailure(:final reason):
-          _showError('Capture failed: ${result.userMessage}');
-          
           // Handle specific failures
-          if (reason == CaptureFailureReason.windowMinimized) {
+          if (reason == CaptureFailureReason.unsupportedVersion) {
+            _showError('Window capture requires macOS 14.0 or later');
+          } else if (reason == CaptureFailureReason.windowMinimized) {
             _showRetryDialog(window, 'Please restore the window and try again');
           } else if (reason == CaptureFailureReason.permissionDenied) {
             _showPermissionDialog();
+          } else {
+            _showError('Capture failed: ${result.userMessage}');
           }
       }
       
@@ -975,7 +817,7 @@ class BatchCaptureService {
     final captures = <String, Uint8List>{};
     
     // Get windows to capture
-    final windows = await toolkit.getCapturableWindowsAuto();
+    final windows = await toolkit.getCapturableWindows();
     var filteredWindows = windows;
     
     if (visibleOnly) {
@@ -992,7 +834,7 @@ class BatchCaptureService {
     
     for (final window in filteredWindows) {
       try {
-        final result = await toolkit.captureWindowAuto(
+        final result = await toolkit.captureWindow(
           window.windowId,
           excludeTitlebar: excludeTitlebar,
         );
@@ -1003,6 +845,14 @@ class BatchCaptureService {
             captures[key] = imageData;
             print('✅ Captured: ${window.title} (${imageData.length} bytes)');
             
+          case CaptureFailure(reason: CaptureFailureReason.unsupportedVersion):
+            print('❌ Window capture requires macOS 14.0 or later');
+            return captures;
+
+          case CaptureFailure(reason: CaptureFailureReason.permissionDenied):
+            print('❌ Screen recording permission required');
+            return captures;
+
           case CaptureFailure(:final reason):
             print('❌ Failed to capture "${window.title}": ${reason.name}');
         }
@@ -1055,22 +905,6 @@ await batchCapture.saveCapturesBatch(
 
 ## Best Practices
 
-### Method Selection
-
-```dart
-// ✅ Recommended: Use auto-selection methods
-final windows = await toolkit.getCapturableWindowsAuto();
-final result = await toolkit.captureWindowAuto(windowId);
-
-// ❌ Not recommended: Manual version checking
-final versionInfo = await toolkit.getMacOSVersionInfo();
-if (versionInfo.isScreenCaptureKitAvailable) {
-  final windows = await toolkit.getCapturableWindows();
-} else {
-  final windows = await toolkit.getCapturableWindowsLegacy();
-}
-```
-
 ### Error Handling
 
 ```dart
@@ -1083,20 +917,24 @@ Future<Uint8List?> safeCaptureWindow(int windowId) async {
       return null;
     }
     
-    final result = await toolkit.captureWindowAuto(windowId);
+    final result = await toolkit.captureWindow(windowId);
     switch (result) {
       case CaptureSuccess(:final imageData):
         return imageData;
         
+      case CaptureFailure(reason: CaptureFailureReason.unsupportedVersion):
+        // No other capture method exists below macOS 14.0
+        print('Window capture requires macOS 14.0 or later');
+        return null;
+
       case CaptureFailure(:final reason):
         print('Capture failed: ${reason.name}');
-        
-        // Retry for certain failures
-        if (result.canRetry && reason == CaptureFailureReason.captureInProgress) {
-          await Future.delayed(Duration(seconds: 1));
-          return safeCaptureWindow(windowId); // Recursive retry
+
+        // Failures the user can resolve
+        if (result.canRetry && result.suggestedAction != null) {
+          print('Suggested action: ${result.suggestedAction}');
         }
-        
+
         return null;
     }
   } catch (e) {
@@ -1123,7 +961,7 @@ class CaptureCache {
     }
     
     // Capture new image
-    final result = await toolkit.captureWindowAuto(windowId);
+    final result = await toolkit.captureWindow(windowId);
     switch (result) {
       case CaptureSuccess(:final imageData):
         _cache[windowId] = CachedCapture(imageData, DateTime.now());
@@ -1146,21 +984,6 @@ class CachedCapture {
 
 ## Performance Notes
 
-### Capture Method Performance
-
-| Method | macOS Version | Performance | Quality |
-|--------|---------------|-------------|---------|
-| ScreenCaptureKit | 12.3+ | ⚡ Fast | 🎯 High |
-| CGWindowListCreateImage | 10.5+ | ⏳ Slower | ✅ Good |
-
-### Window Size Impact
-
-| Window Size | ScreenCaptureKit | Legacy Method |
-|-------------|------------------|---------------|
-| Small (< 500×300) | ~50ms | ~100ms |
-| Medium (500×300 - 1920×1080) | ~100ms | ~300ms |
-| Large (> 1920×1080) | ~200ms | ~500ms |
-
 ### Memory Usage
 
 - PNG image data: ~3-4 bytes per pixel
@@ -1175,7 +998,7 @@ All window capture methods are thread-safe and can be called from any isolate.
 
 - **[Window Management](window_management.md)** - Find windows to capture
 - **[Permission Management](permission_management.md)** - Handle screen recording permissions
-- **[System Information](system_info.md)** - Check capture method availability
+- **[System Information](system_info.md)** - Check the macOS version for capture availability
 - **[Error Handling](error_handling.md)** - Handle capture errors
 
 ---

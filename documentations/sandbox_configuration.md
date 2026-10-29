@@ -36,8 +36,8 @@ The plugin uses several macOS APIs that are incompatible with sandboxed environm
 - **Restriction**: Process control requires unrestricted system access
 - **Usage**: Application termination features
 
-#### 4. Screen Capture (Legacy Support)
-- **API**: `CGWindowListCreateImage()`
+#### 4. Screen Capture
+- **API**: ScreenCaptureKit (`SCShareableContent`, `SCScreenshotManager`)
 - **Purpose**: Captures screenshots of other application windows
 - **Restriction**: Requires access to other applications' visual content
 - **Usage**: Window screenshot functionality

@@ -8,7 +8,7 @@ A Flutter plugin for macOS window management, screen capture, and application di
 ## Features
 
 - 🪟 **Window Management** - Get, search, filter, close, and focus windows
-- 📸 **Screen Capture** - Capture windows with ScreenCaptureKit or legacy methods
+- 📸 **Screen Capture** - Capture windows with ScreenCaptureKit
 - 📱 **App Discovery** - Find and manage installed applications
 - 🔐 **Permission Management** - Handle screen recording and accessibility permissions
 - 🎯 **Process Control** - Terminate applications and manage process trees
