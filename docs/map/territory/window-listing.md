@@ -32,6 +32,7 @@ From reading the source:
 ## Reference behaviour
 - `example/integration_test/ax_parity_probe_test.dart` measured latency and a role/subrole histogram before and after #3. Per CHANGELOG 1.9.0 the returned `role`/`subrole` values were unchanged (commit 9f24f0a, 2026-06-12).
 - `example/integration_test/native_parity_test.dart` records the raw reply of every listing call, filter variant, the AX lookups' error paths, scroll info and the capture and process error paths, and compares two builds (#12). Its own Tk and AppKit windows pin every field and must be listed in both runs or in neither; other windows are compared, where both runs list them, on the fields that stay put while the desktop is left alone (`role`/`subrole` only when titled). It found no difference between 8763238 and the split (2026-10-29), and each of five mutations (a dropped key, a flipped case default, a dropped scroll bar, a filter dropping one fixture window, focus failing with scroll's reason) reddened it. Focus and scroll are called on a window that has no AX element, where both fail before acting; close and focus are never called on a window that exists.
+- `ax_parity_probe_test.dart` after the split (2026-10-29, ~95 windows, alternating runs): average `getAllWindows()` latency 26.9 and 20.0 ms at 8763238, 26.6 and 25.4 ms after. The spread between two runs of one build is as large as the gap, so no change is measured either way.
 
 ## Cross-cutting invariants
 - [ax-window-identity-by-title](../invariant/ax-window-identity-by-title.md)
