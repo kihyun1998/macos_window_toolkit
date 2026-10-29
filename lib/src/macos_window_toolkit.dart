@@ -541,7 +541,7 @@ class MacosWindowToolkit {
   ///
   /// [customTitlebarHeight] specifies a custom titlebar height to remove (in points).
   /// If null and excludeTitlebar is true, uses the default 28pt titlebar height.
-  /// Must be non-negative and not larger than the window height.
+  /// It is clamped to between 0 and the window height.
   ///
   /// This method uses ScreenCaptureKit's `SCScreenshotManager`, so it needs
   /// macOS 14.0 or later; on an earlier version it returns

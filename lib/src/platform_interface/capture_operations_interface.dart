@@ -11,7 +11,7 @@ mixin CaptureOperationsInterface {
   /// [excludeTitlebar] if true, removes the titlebar from the captured image.
   /// [customTitlebarHeight] specifies a custom titlebar height to remove (in points).
   /// If null and excludeTitlebar is true, uses the default 28pt titlebar height.
-  /// Must be non-negative and not larger than the window height.
+  /// It is clamped to between 0 and the window height.
   /// [targetWidth] if specified, resizes the captured image to this width.
   /// [targetHeight] if specified, resizes the captured image to this height.
   /// Both targetWidth and targetHeight must be provided together or both null.

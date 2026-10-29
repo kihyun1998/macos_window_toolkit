@@ -26,7 +26,7 @@ From reading the source:
 - **Error classification.** `CaptureHandler.classify`, used by `captureWindow` and `getCapturableWindows`: NSError codes -3801/-3803 count as a permission denial; so does an error from a ScreenCaptureKit, Cocoa or OSStatus domain whose description says "permission", "not permitted" or "denied". Everything else is `captureFailed`. `isWindowFullScreen` classifies nothing: a ScreenCaptureKit error reaches the dispatcher as `FULLSCREEN_CHECK_FAILED`.
 - **Error values.** Every `CaptureError` case carries one `NativeFailure` (message, and the `NSError` code and domain when there is one).
 - **Capturable windows.** `getCapturableWindows` drops windows with an empty title.
-- **Input bounds.** `targetWidth/Height` and the crop values are not validated. Zero or negative values make `CGContext` return nil (→ `captureFailed`), and a huge value allocates that size.
+- **Input bounds.** `targetWidth/Height` and the crop values are not validated. A zero or negative target size makes `CGContext` return nil (→ `captureFailed`), and a huge one allocates that size. A crop that `CGImage.cropping(to:)` cannot make is skipped: the image stays uncropped (`CaptureHandler.captureWindow`). `customTitlebarHeight` is clamped to between 0 and the window height.
 
 ## Code
 - `macos/macos_window_toolkit/Sources/macos_window_toolkit/CaptureHandler.swift — CaptureHandler.captureWindow`, `getCapturableWindows`, `isWindowFullScreen`, `requireScreenRecording`, `window(_:in:)`, `isMinimized`, `classify`, `isFullscreenWindow`, `cropTransparentBorders`, `resizeImageToExactSize`, `resizeImagePreservingAspectRatio`, `convertCGImageToPNG`, `NativeFailure`, `CaptureError` (top-level, so the pre-12.3 dispatcher branches can use it)

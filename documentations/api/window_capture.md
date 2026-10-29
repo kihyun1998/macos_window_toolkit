@@ -58,7 +58,7 @@ Future<CaptureResult> captureWindow(
 **Parameters:**
 - `windowId` - Unique window identifier, from `getCapturableWindows()`, `getAllWindows()` or `getWindowById()`
 - `excludeTitlebar` (optional) - If `true`, removes the titlebar from the capture. Defaults to `false`. No titlebar is removed from a fullscreen window.
-- `customTitlebarHeight` (optional) - Titlebar height to remove, in points. Uses the 28pt default if null. Must be non-negative and not larger than the window height.
+- `customTitlebarHeight` (optional) - Titlebar height to remove, in points. Uses the 28pt default if null. Clamped to between 0 and the window height.
 - `targetWidth` (optional) - Width of the output image. If specified with `targetHeight`, the image is resized.
 - `targetHeight` (optional) - Height of the output image. If specified with `targetWidth`, the image is resized.
 - `preserveAspectRatio` (optional) - If `true`, keeps the aspect ratio and fills the remaining area with black. If `false`, resizes to the exact dimensions. Defaults to `false`.
@@ -66,7 +66,7 @@ Future<CaptureResult> captureWindow(
 - `cropX`, `cropY`, `cropWidth`, `cropHeight` (optional) - Crop this rectangle from the image.
 - `resizeCroppedToWindowSize` (optional) - Transparent borders are always cropped from the capture. If `true`, the image is resized back to the window size afterwards. Defaults to `true`.
 
-Crop values are clamped to the image. Size and crop values are not validated: zero or negative values make the capture fail.
+Crop values are clamped to the image, and a crop that still yields no image leaves the image uncropped. `targetWidth` and `targetHeight` are not validated: zero or negative values make the capture fail.
 
 **Output:**
 - PNG image data
