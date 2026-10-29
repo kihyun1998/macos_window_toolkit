@@ -86,20 +86,11 @@ Handle macOS permissions with real-time monitoring capabilities.
 ---
 
 ### 📸 [Window Capture](api/window_capture.md)
-Capture window screenshots using modern ScreenCaptureKit and legacy methods.
+Capture window screenshots with ScreenCaptureKit, the only capture path.
 
-**Modern Capture (ScreenCaptureKit):**
-- `captureWindow()` - High-quality capture (macOS 14.0+)
-- `getCapturableWindows()` - List capturable windows
-
-**Legacy Capture (CGWindowListCreateImage):**
-- `captureWindowLegacy()` - Compatible capture (all macOS versions)
-- `getCapturableWindowsLegacy()` - Legacy window listing
-
-**Auto-Selection:**
-- `captureWindowAuto()` - **Recommended** - Automatically selects best method
-- `getCapturableWindowsAuto()` - **Recommended** - Auto window listing
-- `getCaptureMethodInfo()` - Get current capture method info
+- `captureWindow()` - Capture a window as PNG (macOS 14.0+)
+- `getCapturableWindows()` - List the windows ScreenCaptureKit can capture (macOS 12.3+)
+- `isWindowFullScreen()` - Whether a window fills a screen (macOS 14.0+)
 
 **Data Models:**
 - `CaptureResult` - Capture success/failure with detailed reasons
@@ -125,7 +116,6 @@ Get macOS version and capability information.
 
 **Version Information:**
 - `getMacOSVersionInfo()` - Complete macOS version details
-- `getCaptureMethodInfo()` - Current capture method capabilities
 
 **Data Models:**
 - `MacosVersionInfo` - macOS version with feature availability
@@ -189,9 +179,9 @@ void main() async {
     await toolkit.requestScreenRecordingPermission();
   }
   
-  // Capture a window (recommended method)
+  // Capture a window
   if (windows.isNotEmpty) {
-    final result = await toolkit.captureWindowAuto(windows.first.windowId);
+    final result = await toolkit.captureWindow(windows.first.windowId);
     switch (result) {
       case CaptureSuccess(:final imageData):
         print('Captured ${imageData.length} bytes');
@@ -237,7 +227,6 @@ All methods are thread-safe and can be called from any isolate.
 - Window enumeration: ~10-50ms for 20-100 windows
 - Permission checks: ~1-5ms per check
 - ScreenCaptureKit capture: ~50-200ms depending on window size
-- Legacy capture: ~100-500ms depending on window size
 
 ---
 

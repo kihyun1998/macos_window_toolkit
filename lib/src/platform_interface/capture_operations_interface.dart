@@ -34,7 +34,7 @@ mixin CaptureOperationsInterface {
   ///     // Show "restore window" button
   ///     break;
   ///   case CaptureFailure(reason: CaptureFailureReason.unsupportedVersion):
-  ///     // Fall back to legacy method
+  ///     // Capture needs macOS 14.0 or later; there is no other capture path
   ///     break;
   /// }
   /// ```

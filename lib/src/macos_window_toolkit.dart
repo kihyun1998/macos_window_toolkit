@@ -543,32 +543,27 @@ class MacosWindowToolkit {
   /// If null and excludeTitlebar is true, uses the default 28pt titlebar height.
   /// Must be non-negative and not larger than the window height.
   ///
-  /// This method uses ScreenCaptureKit (macOS 12.3+) which provides high-quality
-  /// window captures with better performance and more accurate color reproduction
-  /// compared to the legacy CGWindowListCreateImage method.
+  /// This method uses ScreenCaptureKit's `SCScreenshotManager`, so it needs
+  /// macOS 14.0 or later; on an earlier version it returns
+  /// [CaptureFailure] with [CaptureFailureReason.unsupportedVersion].
   ///
   /// Example usage:
   /// ```dart
   /// final toolkit = MacosWindowToolkit();
   ///
-  /// // First check if ScreenCaptureKit is available
-  /// final versionInfo = await toolkit.getMacOSVersionInfo();
-  /// if (versionInfo.isScreenCaptureKitAvailable) {
-  ///   final result = await toolkit.captureWindow(12345);
-  ///   switch (result) {
-  ///     case CaptureSuccess(imageData: final data):
-  ///       // Convert bytes to image and display
-  ///       final image = Image.memory(data);
-  ///       break;
-  ///     case CaptureFailure(reason: CaptureFailureReason.windowMinimized):
-  ///       print('Window is minimized');
-  ///       break;
-  ///     case CaptureFailure(reason: CaptureFailureReason.permissionDenied):
-  ///       print('Permission denied');
-  ///       break;
-  ///   }
-  /// } else {
-  ///   // Fall back to CGWindowListCreateImage method
+  /// final result = await toolkit.captureWindow(12345);
+  /// switch (result) {
+  ///   case CaptureSuccess(imageData: final data):
+  ///     // Convert bytes to image and display
+  ///     final image = Image.memory(data);
+  ///   case CaptureFailure(reason: CaptureFailureReason.windowMinimized):
+  ///     print('Window is minimized');
+  ///   case CaptureFailure(reason: CaptureFailureReason.permissionDenied):
+  ///     print('Permission denied');
+  ///   case CaptureFailure(reason: CaptureFailureReason.unsupportedVersion):
+  ///     print('Window capture needs macOS 14.0 or later');
+  ///   case CaptureFailure():
+  ///     print('Capture failed');
   /// }
   /// ```
   ///
