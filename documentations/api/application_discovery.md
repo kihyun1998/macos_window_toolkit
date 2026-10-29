@@ -346,9 +346,11 @@ class ApplicationSearchDelegate extends SearchDelegate<MacosApplicationInfo?> {
 
 ## Version Compatibility
 
-- **macOS**: 10.11+ (all supported macOS versions)
-- **Flutter**: 3.3.0+
-- **Dart**: 3.8.1+
+- **macOS**: 10.15+
+- **Flutter**: 3.10.0+
+- **Dart**: 3.0.0+
+
+These are the README's [Requirements](../../README.md#requirements).
 
 ## Migration from Raw Maps
 

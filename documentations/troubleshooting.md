@@ -38,10 +38,7 @@ Common issues and solutions when using macOS Window Toolkit.
 
 **Solutions:**
 
-1. **Check minimum requirements:**
-   - macOS 10.11 or later
-   - Xcode with Swift 5.0 support
-   - Flutter 3.3.0 or later
+1. **Check the minimum requirements** in the README's [Requirements](../README.md#requirements): macOS 10.15 or later (14.0 for window capture), Flutter 3.10.0 or later, Dart 3.0.0 or later. Building the plugin with Swift Package Manager needs Xcode 15 or later.
 
 2. **Clean Xcode build folder:**
    ```bash
@@ -55,7 +52,7 @@ Common issues and solutions when using macOS Window Toolkit.
    pod install --repo-update
    ```
 
-4. **Update macOS deployment target** in `macos/Runner.xcodeproj` to 10.11 or later
+4. **Set the macOS deployment target** in `macos/Runner.xcodeproj` to 10.15 or later, the plugin's minimum
 
 ## Runtime Issues
 
