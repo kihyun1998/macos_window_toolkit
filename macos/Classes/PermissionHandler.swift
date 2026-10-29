@@ -2,8 +2,16 @@ import ApplicationServices  // Import for Accessibility API
 import Cocoa
 import Foundation
 
-/// Handler class responsible for permission-related operations
-class PermissionHandler {
+/// The permission checks a handler makes before it acts
+protocol PermissionChecking {
+    /// Whether Screen Recording permission is granted
+    func hasScreenRecordingPermission() -> Bool
+    /// Whether Accessibility permission is granted
+    func hasAccessibilityPermission() -> Bool
+}
+
+/// Checks, requests and opens the settings for Screen Recording and Accessibility
+class PermissionHandler: PermissionChecking {
 
     /// Checks if the app has screen recording permission (cached value)
     /// Returns true if permission is granted, false otherwise

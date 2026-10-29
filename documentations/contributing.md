@@ -155,8 +155,12 @@ macos_window_toolkit/
 │       └── macos_window_toolkit_method_channel.dart
 ├── macos/                                  # macOS native implementation
 │   ├── Classes/
-│   │   ├── MacosWindowToolkitPlugin.swift
-│   │   └── WindowHandler.swift
+│   │   ├── MacosWindowToolkitPlugin.swift   # Channel dispatch
+│   │   ├── WindowQuery.swift              # Window listing and filters
+│   │   ├── AXWindowActions.swift          # Close, focus, scroll info
+│   │   ├── SpaceSwitcher.swift            # Closing on another Space
+│   │   ├── ProcessTerminator.swift        # Process termination
+│   │   └── …                              # One file per job
 │   └── macos_window_toolkit.podspec
 ├── example/                               # Example Flutter app
 ├── test/                                  # Unit tests
@@ -167,7 +171,7 @@ macos_window_toolkit/
 ### Key Files
 
 - **`lib/src/macos_window_toolkit.dart`**: Main API implementation
-- **`macos/Classes/WindowHandler.swift`**: Core window management logic
+- **`macos/Classes/WindowQuery.swift`** and **`AXWindowActions.swift`**: window listing and window actions
 - **`macos/Classes/MacosWindowToolkitPlugin.swift`**: Flutter plugin integration
 - **`example/lib/main.dart`**: Example application
 - **`test/macos_window_toolkit_test.dart`**: Unit tests

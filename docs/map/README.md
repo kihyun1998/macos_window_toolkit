@@ -38,7 +38,6 @@ This map answers two questions before a change:
 
 ## Cross-cutting invariants
 
-- [window-dictionary-shape](invariant/window-dictionary-shape.md)
 - [failure-code-vocabulary](invariant/failure-code-vocabulary.md)
 - [ax-window-identity-by-title](invariant/ax-window-identity-by-title.md)
 

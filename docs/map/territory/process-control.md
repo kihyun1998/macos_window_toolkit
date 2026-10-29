@@ -1,14 +1,14 @@
 # Process control
 
 ## What it is
-Terminates an application by PID, gracefully or forcibly, terminates it together with every descendant process, and lists the direct child PIDs. The Swift code lives in `WindowHandler`. On the Dart side it sits in `ApplicationOperationsChannel`.
+Terminates an application by PID, gracefully or forcibly, terminates it together with every descendant process, and lists the direct child PIDs. The Swift code lives in `ProcessTerminator`. On the Dart side it sits in `ApplicationOperationsChannel`.
 
 ## Governing decisions
 **None.** The caller rule below is the maintainer's call (2026-10-23), recorded here and in #8's PR, not in a decision record.
 
 ## Design model
 From reading the source:
-- **Signal target.** Every terminate call first passes the Dart `int` through `WindowHandler.signalTarget`, which accepts only a value that fits `pid_t` (`Int32(exactly:)`) and is greater than 1. Anything else is `invalidProcessId` and nothing is signalled (#17). PID 0 and negative values would address process groups (`-1`: every process the user may signal), PID 1 is launchd, and `Int32(_:)` traps on an out-of-range value. `invalidProcessId` travels as code `INVALID_PROCESS_ID` with state reason `process_not_found`, so Dart sees `processNotFound` with its own message. That reporting is the maintainer's call (2026-10-24, #17), chosen over reusing `processNotFound` and over a new Dart reason.
+- **Signal target.** Every terminate call first passes the Dart `int` through `ProcessTerminator.signalTarget`, which accepts only a value that fits `pid_t` (`Int32(exactly:)`) and is greater than 1. Anything else is `invalidProcessId` and nothing is signalled (#17). PID 0 and negative values would address process groups (`-1`: every process the user may signal), PID 1 is launchd, and `Int32(_:)` traps on an out-of-range value. `invalidProcessId` travels as code `INVALID_PROCESS_ID` with state reason `process_not_found`, so Dart sees `processNotFound` with its own message. That reporting is the maintainer's call (2026-10-24, #17), chosen over reusing `processNotFound` and over a new Dart reason.
 - **Existence check.** `terminateApplicationByPID` then checks `processExists` (`kill(pid, 0) == 0 || errno == EPERM`), shared with tree termination. A live process the caller may not signal therefore passes, fails at `kill` and is `terminationFailed` (→ `unknown` in Dart), not `processNotFound` (#17).
 - **Graceful path first.** It prefers `NSRunningApplication.terminate()` / `forceTerminate()` and returns their `Bool` as success. A `false` arrives in Dart as `OperationFailure(unknown, "Operation returned false")`.
 - **Signal fallback.** For PIDs that are not running applications, it falls back to `SIGTERM`/`SIGKILL`.
@@ -17,7 +17,7 @@ From reading the source:
 - **The caller is never killed by its own call.** `pathFromCaller` collects the calling process and its ancestors up to the target. When that path is non-empty (the target is an ancestor of the caller), those processes and the target are skipped and the result is `false` (→ `unknown`); when the target is the caller itself, it terminates last and no reply arrives (maintainer, 2026-10-23). A process spawned after the snapshot is not covered.
 
 ## Code
-- `macos/Classes/WindowHandler.swift — WindowHandler.terminateApplicationByPID`, `terminateApplicationTree`, `getChildProcesses`, `signalTarget`, `processTable`, `descendants`, `pathFromCaller`, `processExists`, `terminateTreeMember`
+- `macos/Classes/ProcessTerminator.swift — ProcessTerminator.terminateApplicationByPID`, `terminateApplicationTree`, `getChildProcesses`, `signalTarget`, `processTable`, `descendants`, `pathFromCaller`, `processExists`, `terminateTreeMember`
 - `macos/Classes/MacosWindowToolkitPlugin.swift — terminateApplicationByPID`, `terminateApplicationTree`, `getChildProcesses`
 - `lib/src/method_channel/application_operations_channel.dart — ApplicationOperationsChannel.terminateApplicationByPID`, `terminateApplicationTree`, `getChildProcesses`
 - `lib/src/macos_window_toolkit.dart — MacosWindowToolkit.terminateApplicationByPID`, `terminateApplicationTree`, `getChildProcesses`
