@@ -62,6 +62,10 @@ class PermissionWatcher {
   /// polling auto-resumes when a listener subscribes after an auto-stop.
   bool _watchRequested = false;
 
+  /// Advanced by [dispose]; a check started under an earlier value neither
+  /// emits nor updates [_previousState]
+  int _generation = 0;
+
   /// Whether the watcher is currently monitoring permissions
   ///
   /// Note: this can become false without an explicit [stopWatching] call —
@@ -77,11 +81,19 @@ class PermissionWatcher {
   /// - timestamp: DateTime - When the check was performed
   Stream<PermissionStatus> get permissionStream => _ensureController().stream;
 
+  /// The current stream controller, created when there is none. A controller
+  /// [dispose] has closed no longer stops polling when its last listener goes.
   StreamController<PermissionStatus> _ensureController() {
-    return _controller ??= StreamController<PermissionStatus>.broadcast(
+    final existing = _controller;
+    if (existing != null) return existing;
+    late final StreamController<PermissionStatus> controller;
+    controller = StreamController<PermissionStatus>.broadcast(
       onListen: _handleFirstListener,
-      onCancel: _handleLastListenerCancelled,
+      onCancel: () {
+        if (identical(controller, _controller)) _handleLastListenerCancelled();
+      },
     );
+    return _controller = controller;
   }
 
   void _handleFirstListener() {
@@ -153,7 +165,8 @@ class PermissionWatcher {
   /// Resets the watcher to its initial state
   ///
   /// Stops monitoring, closes the current stream (existing listeners receive
-  /// a done event), and clears all cached state. The watcher can be reused
+  /// a done event), and clears all cached state. A permission check still
+  /// running is discarded: it emits nothing and leaves no state behind. The watcher can be reused
   /// afterwards: accessing [permissionStream] creates a fresh stream, and
   /// monitoring must be started again with [startWatching].
   void dispose() {
@@ -163,17 +176,20 @@ class PermissionWatcher {
     _controller?.close();
     _controller = null;
     _previousState = null;
+    _generation++;
   }
 
   /// Checks current permission status and emits changes if detected
   ///
   /// [forceEmit] If true, always emits the current state regardless of changes
   Future<void> _checkPermissions({bool forceEmit = false}) async {
+    final generation = _generation;
     try {
       final screenRecording = await MacosWindowToolkitPlatform.instance
           .hasScreenRecordingPermission();
       final accessibility = await MacosWindowToolkitPlatform.instance
           .hasAccessibilityPermission();
+      if (generation != _generation) return;
 
       // Check for changes
       final previous = _previousState;
@@ -199,6 +215,7 @@ class PermissionWatcher {
       // Update previous state for next comparison
       _previousState = permissionStatus;
     } catch (e) {
+      if (generation != _generation) return;
       // Emit error state
       final errorStatus = PermissionStatus(
         screenRecording: null,

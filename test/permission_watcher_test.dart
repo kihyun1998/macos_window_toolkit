@@ -1,16 +1,26 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:macos_window_toolkit/macos_window_toolkit.dart';
 
 /// Fake platform that counts permission checks. Any other platform method
-/// throws via [noSuchMethod].
+/// throws via [noSuchMethod]. While [holding] is set, each Screen Recording
+/// check waits for its entry in [held] to complete.
 class _FakePlatform extends MacosWindowToolkitPlatform {
   int permissionCalls = 0;
   bool screenRecording = true;
   bool accessibility = true;
+  bool holding = false;
+  final held = <Completer<bool>>[];
 
   @override
   Future<bool> hasScreenRecordingPermission() async {
     permissionCalls++;
+    if (holding) {
+      final reply = Completer<bool>();
+      held.add(reply);
+      return reply.future;
+    }
     return screenRecording;
   }
 
@@ -138,6 +148,87 @@ void main() {
     expect(events, hasLength(3));
     expect(events.last.screenRecording, isFalse);
 
+    await sub.cancel();
+  });
+
+  group('a check still in flight when dispose runs', () {
+    test('does not carry its state into the next start', () async {
+      platform.holding = true;
+      watcher.startWatching(interval: tick);
+      watcher.dispose();
+      platform.holding = false;
+      platform.held.single.complete(true);
+      await pumpTicks();
+
+      final events = <PermissionStatus>[];
+      final sub = watcher.permissionStream.listen(events.add);
+      watcher.startWatching(interval: tick);
+      await pumpTicks();
+
+      expect(events, hasLength(1));
+      expect(events.single.hasChanges, isTrue,
+          reason: 'the first status after dispose compares with nothing');
+      await sub.cancel();
+    });
+
+    test('does not emit into the stream opened after it', () async {
+      platform.holding = true;
+      watcher.startWatching(interval: tick);
+      watcher.dispose();
+      platform.holding = false;
+
+      final events = <PermissionStatus>[];
+      final sub = watcher.permissionStream.listen(events.add);
+      watcher.startWatching(interval: tick);
+      await pumpTicks();
+      expect(events, hasLength(1), reason: 'the new start emits its own state');
+
+      platform.held.single.complete(false);
+      await pumpTicks();
+      expect(events, hasLength(1),
+          reason: 'the check from before dispose emits nothing');
+      expect(events.single.screenRecording, isTrue);
+      await sub.cancel();
+    });
+
+    test('does not emit its failure into the stream opened after it', () async {
+      platform.holding = true;
+      watcher.startWatching(interval: tick);
+      watcher.dispose();
+      platform.holding = false;
+
+      final events = <PermissionStatus>[];
+      final sub = watcher.permissionStream.listen(events.add);
+      watcher.startWatching(interval: tick);
+      await pumpTicks();
+
+      platform.held.single.completeError(StateError('platform failed'));
+      await pumpTicks();
+      expect(events, hasLength(1));
+      expect(events.single.screenRecording, isTrue);
+      await sub.cancel();
+    });
+  });
+
+  test('a start right after dispose keeps polling for a listener that stays',
+      () async {
+    final oldSub = watcher.permissionStream.listen((_) {});
+    watcher.startWatching(interval: tick);
+    await pumpTicks();
+
+    watcher.dispose();
+    final events = <PermissionStatus>[];
+    final sub = watcher.permissionStream.listen(events.add);
+    watcher.startWatching(interval: tick, emitOnlyChanges: false);
+    await pumpTicks();
+
+    expect(watcher.isWatching, isTrue,
+        reason: 'the closed stream cancelling its listener stops nothing');
+    final callsBefore = platform.permissionCalls;
+    await pumpTicks();
+    expect(platform.permissionCalls, greaterThan(callsBefore));
+    expect(events.length, greaterThan(1));
+    await oldSub.cancel();
     await sub.cancel();
   });
 

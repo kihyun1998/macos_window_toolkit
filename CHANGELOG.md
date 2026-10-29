@@ -14,6 +14,8 @@
 - **FIX**: `terminateApplicationByPID()` no longer signals PID 0, negative PIDs or PID 1. PID 0 and negative values addressed whole process groups, and `-1` signalled every process the user may signal, the calling app included. Such a PID, or one outside `Int32`, now returns `OperationFailure(reason: processNotFound)` with the code `INVALID_PROCESS_ID` and a message saying why, and nothing is signalled. `terminateApplicationTree()` refuses the same PIDs the same way
 - **FIX**: a PID outside `Int32` no longer crashes the host app in `terminateApplicationByPID()`, `terminateApplicationTree()` or `getChildProcesses()`; `getChildProcesses()` returns an empty list for it
 - **FIX**: `terminateApplicationByPID()` on a live process the caller may not signal (for example one owned by another user) now returns `OperationFailure(reason: unknown)` instead of `processNotFound`
+- **FIX**: `PermissionWatcher.dispose()` now also discards a permission check still in flight. Such a check previously finished after the reset: the next `startWatching()` could emit its first status with `hasChanges: false`, and the old check's status or failure could reach a stream opened after `dispose()`
+- **FIX**: `PermissionWatcher.startWatching()` right after `dispose()` no longer stops polling by itself when a listener of the disposed stream is still subscribed
 - **FIX**: an app whose window reports a close button or scroll bar that is not an Accessibility element no longer crashes the host app. `closeWindow()` then searches the window's children for the close button, and `getScrollInfo()` reports the bar without its position
 
 ### Changed
