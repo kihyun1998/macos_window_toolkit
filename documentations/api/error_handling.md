@@ -1032,9 +1032,9 @@ void showError(PlatformException e) {
 }
 ```
 
-## Thread Safety
+## Isolates
 
-All error handling mechanisms are thread-safe and work across isolates.
+Every call goes over the plugin's platform channel; see [Isolates](../api_reference.md#isolates) for which isolate may make it.
 
 ## Related APIs
 
