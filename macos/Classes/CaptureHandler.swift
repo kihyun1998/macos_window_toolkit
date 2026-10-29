@@ -5,92 +5,31 @@ import ScreenCaptureKit
 @available(macOS 12.3, *)
 class CaptureHandler {
 
+    /// Captures the window as PNG data: optionally without its titlebar, cropped and
+    /// resized, always with transparent borders cropped
     static func captureWindow(
         windowId: Int, excludeTitlebar: Bool = false, customTitlebarHeight: CGFloat? = nil,
         targetWidth: Int? = nil, targetHeight: Int? = nil, preserveAspectRatio: Bool = false,
         cropContentWidth: Int? = nil, cropContentHeight: Int? = nil,
         cropX: Int? = nil, cropY: Int? = nil, cropWidth: Int? = nil, cropHeight: Int? = nil,
-        resizeCroppedToWindowSize: Bool = true
+        resizeCroppedToWindowSize: Bool = true, permissions: PermissionChecking = PermissionHandler()
     ) async throws -> Data {
-        // Check Screen Recording permission
-        let permissionHandler = PermissionHandler()
-        guard permissionHandler.hasScreenRecordingPermission() else {
-            throw CaptureError.screenRecordingPermissionDenied(
-                code: nil,
-                domain: nil,
-                message: "Screen recording permission is required for window capture"
-            )
-        }
+        try requireScreenRecording(
+            permissions, "Screen recording permission is required for window capture")
 
-        // Check macOS version - SCScreenshotManager is only available on macOS 14.0+
         guard #available(macOS 14.0, *) else {
             throw CaptureError.requiresMacOS14(
-                code: nil,
-                domain: nil,
-                message: "Window capture requires macOS 14.0 or later"
-            )
-        }
-
-        guard VersionUtil.isScreenCaptureKitAvailable() else {
-            throw CaptureError.unsupportedMacOSVersion(
-                code: nil,
-                domain: nil,
-                message: "macOS version does not support ScreenCaptureKit"
-            )
+                NativeFailure(message: "Window capture requires macOS 14.0 or later"))
         }
 
         do {
-            // Get capturable content
-            let availableContent = try await SCShareableContent.current
+            let targetWindow = try window(windowId, in: try await SCShareableContent.current)
 
-            // Find specific window ID
-            guard
-                let targetWindow = availableContent.windows.first(where: { window in
-                    window.windowID == CGWindowID(windowId)
-                })
-            else {
-                throw CaptureError.invalidWindowId(
-                    code: nil,
-                    domain: nil,
-                    message: "Window with the specified ID was not found"
-                )
-            }
-
-            // Check if window is minimized using Accessibility API
-            // (isOnScreen is false for both minimized and other-Space windows,
-            // but kAXMinimizedAttribute is only true for actually minimized windows)
-            if let pid = targetWindow.owningApplication?.processID {
-                let appElement = AXUIElementCreateApplication(pid)
-                var windowsRef: CFTypeRef?
-                if AXUIElementCopyAttributeValue(
-                    appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success,
-                    let axWindows = windowsRef as? [AXUIElement]
-                {
-                    for axWindow in axWindows {
-                        var minimizedRef: CFTypeRef?
-                        if AXUIElementCopyAttributeValue(
-                            axWindow, kAXMinimizedAttribute as CFString, &minimizedRef) == .success,
-                            let isMinimized = minimizedRef as? Bool,
-                            isMinimized
-                        {
-                            // Verify this is the same window by comparing titles
-                            var titleRef: CFTypeRef?
-                            let hasTitle =
-                                AXUIElementCopyAttributeValue(
-                                    axWindow, kAXTitleAttribute as CFString, &titleRef) == .success
-                            let axTitle = hasTitle ? (titleRef as? String ?? "") : ""
-                            let scTitle = targetWindow.title ?? ""
-
-                            if axTitle == scTitle || scTitle.isEmpty {
-                                throw CaptureError.windowMinimized(
-                                    code: nil,
-                                    domain: nil,
-                                    message: "Window is minimized and cannot be captured"
-                                )
-                            }
-                        }
-                    }
-                }
+            if let pid = targetWindow.owningApplication?.processID,
+                isMinimized(title: targetWindow.title ?? "", processId: pid)
+            {
+                throw CaptureError.windowMinimized(
+                    NativeFailure(message: "Window is minimized and cannot be captured"))
             }
 
             // Capture configuration
@@ -101,7 +40,7 @@ class CaptureHandler {
             configuration.height = Int(targetWindow.frame.height)
             configuration.scalesToFit = false
 
-            configuration.capturesAudio = false  // No issue on macOS 14.0+
+            configuration.capturesAudio = false
             configuration.showsCursor = false
             configuration.minimumFrameInterval = CMTime(value: 1, timescale: 60)
 
@@ -114,11 +53,7 @@ class CaptureHandler {
                 configuration: configuration
             )
 
-            // The synchronous conversion below runs inside an autoreleasepool:
-            // Task threads have no run loop draining pools, so per-capture
-            // temporaries (crops, resized bitmaps, PNG reps) would otherwise
-            // outlive the call and inflate the transient memory peak.
-            // The returned Data is retained by ARC across the pool boundary.
+            // The conversion drains its temporaries in its own pool
             return try autoreleasepool { () throws -> Data in
                 // Crop image if titlebar exclusion is requested
                 let finalImage: CGImage
@@ -141,11 +76,7 @@ class CaptureHandler {
                     )
 
                     guard let croppedImage = screenshot.cropping(to: cropRect) else {
-                        throw CaptureError.captureFailed(
-                            code: nil,
-                            domain: nil,
-                            message: "Failed to crop titlebar from image"
-                        )
+                        throw CaptureError.captureFailed(NativeFailure(message: "Failed to crop titlebar from image"))
                     }
                     finalImage = croppedImage
                 } else {
@@ -225,11 +156,7 @@ class CaptureHandler {
                     }
 
                     guard let finalResized = resized else {
-                        throw CaptureError.captureFailed(
-                            code: nil,
-                            domain: nil,
-                            message: "Failed to resize image"
-                        )
+                        throw CaptureError.captureFailed(NativeFailure(message: "Failed to resize image"))
                     }
                     imageToConvert = finalResized
                 } else {
@@ -238,11 +165,7 @@ class CaptureHandler {
 
                 // Convert the CGImage to PNG data
                 guard let pngData = convertCGImageToPNG(imageToConvert) else {
-                    throw CaptureError.captureFailed(
-                        code: nil,
-                        domain: nil,
-                        message: "Failed to convert image to PNG"
-                    )
+                    throw CaptureError.captureFailed(NativeFailure(message: "Failed to convert image to PNG"))
                 }
 
                 return pngData
@@ -251,63 +174,11 @@ class CaptureHandler {
         } catch let error as CaptureError {
             throw error
         } catch {
-            // Analyze NSError to provide more specific error information
-            let nsError = error as NSError
-
-            // Check known permission error codes first (regardless of domain)
-            if nsError.code == -3801 || nsError.code == -3803 {
-                throw CaptureError.screenRecordingPermissionDenied(
-                    code: nsError.code,
-                    domain: nsError.domain,
-                    message: error.localizedDescription
-                )
-            }
-
-            // Check for ScreenCaptureKit specific errors (domain contains screencapturekit)
-            if nsError.domain.lowercased().contains("screencapturekit") {
-                // Also check error description for permission-related keywords
-                let errorMessage = error.localizedDescription.lowercased()
-                if errorMessage.contains("permission") || errorMessage.contains("not permitted")
-                    || errorMessage.contains("denied")
-                {
-                    throw CaptureError.screenRecordingPermissionDenied(
-                        code: nsError.code,
-                        domain: nsError.domain,
-                        message: error.localizedDescription
-                    )
-                }
-
-                // Other ScreenCaptureKit errors
-                throw CaptureError.captureFailed(
-                    code: nsError.code,
-                    domain: nsError.domain,
-                    message: error.localizedDescription
-                )
-            }
-
-            // Check for CoreGraphics/System errors that might indicate permission issues
-            if nsError.domain == NSCocoaErrorDomain || nsError.domain == NSOSStatusErrorDomain {
-                let errorMessage = error.localizedDescription.lowercased()
-                if errorMessage.contains("permission") || errorMessage.contains("not permitted")
-                    || errorMessage.contains("denied")
-                {
-                    throw CaptureError.screenRecordingPermissionDenied(
-                        code: nsError.code,
-                        domain: nsError.domain,
-                        message: error.localizedDescription
-                    )
-                }
-            }
-
-            throw CaptureError.captureFailed(
-                code: nsError.code,
-                domain: nsError.domain,
-                message: error.localizedDescription
-            )
+            throw classify(error)
         }
     }
 
-    // Resize CGImage to exact target size (ignoring aspect ratio)
+    /// The image drawn at exactly the target size, ignoring its aspect ratio
     private static func resizeImageToExactSize(
         _ image: CGImage,
         targetWidth: Int,
@@ -341,7 +212,7 @@ class CaptureHandler {
         return context.makeImage()
     }
 
-    // Resize CGImage while preserving aspect ratio (fills extra space with black)
+    /// The image scaled to fit the target size and centred on black
     private static func resizeImagePreservingAspectRatio(
         _ image: CGImage,
         targetWidth: Int,
@@ -402,49 +273,80 @@ class CaptureHandler {
         return bitmapRep.representation(using: .png, properties: [:])
     }
 
-    /// Checks if a window is fullscreen using SCShareableContent for accurate detection across Spaces
-    static func isWindowFullScreen(windowId: Int) async throws -> Bool {
-        // Check Screen Recording permission
-        let permissionHandler = PermissionHandler()
-        guard permissionHandler.hasScreenRecordingPermission() else {
-            throw CaptureError.screenRecordingPermissionDenied(
-                code: nil,
-                domain: nil,
-                message: "Screen recording permission is required for fullscreen detection"
-            )
-        }
+    /// Whether the window fills a screen, read from ScreenCaptureKit so that a window on
+    /// another Space is seen
+    static func isWindowFullScreen(
+        windowId: Int, permissions: PermissionChecking = PermissionHandler()
+    ) async throws -> Bool {
+        try requireScreenRecording(
+            permissions, "Screen recording permission is required for fullscreen detection")
 
         guard #available(macOS 14.0, *) else {
             throw CaptureError.requiresMacOS14(
-                code: nil,
-                domain: nil,
-                message: "Fullscreen detection requires macOS 14.0 or later"
-            )
+                NativeFailure(message: "Fullscreen detection requires macOS 14.0 or later"))
         }
 
-        guard VersionUtil.isScreenCaptureKitAvailable() else {
-            throw CaptureError.unsupportedMacOSVersion(
-                code: nil,
-                domain: nil,
-                message: "macOS version does not support ScreenCaptureKit"
-            )
+        let targetWindow = try window(windowId, in: try await SCShareableContent.current)
+        return isFullscreenWindow(targetWindow.frame)
+    }
+
+    /// Throws `screenRecordingPermissionDenied` with `message` unless permission is granted
+    private static func requireScreenRecording(
+        _ permissions: PermissionChecking, _ message: String
+    ) throws {
+        guard permissions.hasScreenRecordingPermission() else {
+            throw CaptureError.screenRecordingPermissionDenied(NativeFailure(message: message))
         }
+    }
 
-        let availableContent = try await SCShareableContent.current
-
-        guard
-            let targetWindow = availableContent.windows.first(where: { window in
-                window.windowID == CGWindowID(windowId)
-            })
+    /// The window with this ID in `content`, or `invalidWindowId`
+    private static func window(_ windowId: Int, in content: SCShareableContent) throws -> SCWindow {
+        guard let window = content.windows.first(where: { $0.windowID == CGWindowID(windowId) })
         else {
             throw CaptureError.invalidWindowId(
-                code: nil,
-                domain: nil,
-                message: "Window with the specified ID was not found"
-            )
+                NativeFailure(message: "Window with the specified ID was not found"))
+        }
+        return window
+    }
+
+    /// Whether the app with this PID has a minimized AX window titled `title`, or any
+    /// minimized window when `title` is empty
+    private static func isMinimized(title: String, processId: pid_t) -> Bool {
+        for axWindow in AXUIElement.windows(ofProcess: processId) ?? [] {
+            let minimized: Bool? = axWindow.attribute(kAXMinimizedAttribute)
+            guard minimized == true else { continue }
+            let axTitle: String = axWindow.attribute(kAXTitleAttribute) ?? ""
+            if axTitle == title || title.isEmpty {
+                return true
+            }
+        }
+        return false
+    }
+
+    /// The `CaptureError` for an error ScreenCaptureKit raised: a permission denial when
+    /// its code or its description says so, otherwise `captureFailed`
+    private static func classify(_ error: Error) -> CaptureError {
+        let nsError = error as NSError
+        let failure = NativeFailure(
+            message: error.localizedDescription, code: nsError.code, domain: nsError.domain)
+
+        if nsError.code == -3801 || nsError.code == -3803 {
+            return .screenRecordingPermissionDenied(failure)
         }
 
-        return isFullscreenWindow(targetWindow.frame)
+        let description = error.localizedDescription.lowercased()
+        let mentionsPermission =
+            description.contains("permission") || description.contains("not permitted")
+            || description.contains("denied")
+        let permissionDomains = [NSCocoaErrorDomain, NSOSStatusErrorDomain]
+        if mentionsPermission
+            && (nsError.domain.lowercased().contains("screencapturekit")
+                || permissionDomains.contains(nsError.domain))
+        {
+            return .screenRecordingPermissionDenied(failure)
+        }
+
+        return .captureFailed(failure)
     }
 
     /// Crops transparent border pixels from a CGImage
@@ -506,69 +408,23 @@ class CaptureHandler {
         return image.cropping(to: cropRect)
     }
 
-    /// Checks whether the window is fullscreen
+    /// Whether the frame equals the frame of one of the screens
     private static func isFullscreenWindow(_ windowFrame: CGRect) -> Bool {
-        // Compare against the main screen
-        if let mainScreen = NSScreen.main {
-            let screenFrame = mainScreen.frame
-            if windowFrame.size.width == screenFrame.size.width
-                && windowFrame.size.height == screenFrame.size.height
-                && windowFrame.origin.x == screenFrame.origin.x
-                && windowFrame.origin.y == screenFrame.origin.y
-            {
-                return true
-            }
-        }
-
-        // Compare against the other screens on multi-display setups
-        for screen in NSScreen.screens {
+        return NSScreen.screens.contains { screen in
             let screenFrame = screen.frame
-            if windowFrame.size.width == screenFrame.size.width
+            return windowFrame.size.width == screenFrame.size.width
                 && windowFrame.size.height == screenFrame.size.height
                 && windowFrame.origin.x == screenFrame.origin.x
                 && windowFrame.origin.y == screenFrame.origin.y
-            {
-                return true
-            }
-        }
-
-        return false
-    }
-
-    // Helper that looks up a window's info
-    private static func getWindowInfo(windowId: Int) -> [String: Any]? {
-        guard
-            let windowList = CGWindowListCopyWindowInfo(.optionAll, kCGNullWindowID)
-                as? [[String: Any]]
-        else {
-            return nil
-        }
-
-        return windowList.first { window in
-            guard let wid = window[kCGWindowNumber as String] as? Int else { return false }
-            return wid == windowId
         }
     }
 
-    // Return list of capturable windows
-    static func getCapturableWindows() async throws -> [[String: Any]] {
-        // Check Screen Recording permission
-        let permissionHandler = PermissionHandler()
-        guard permissionHandler.hasScreenRecordingPermission() else {
-            throw CaptureError.screenRecordingPermissionDenied(
-                code: nil,
-                domain: nil,
-                message: "Screen recording permission is required for window capture"
-            )
-        }
-
-        guard VersionUtil.isScreenCaptureKitAvailable() else {
-            throw CaptureError.unsupportedMacOSVersion(
-                code: nil,
-                domain: nil,
-                message: "macOS version does not support ScreenCaptureKit"
-            )
-        }
+    /// The titled windows ScreenCaptureKit can capture
+    static func getCapturableWindows(
+        permissions: PermissionChecking = PermissionHandler()
+    ) async throws -> [[String: Any]] {
+        try requireScreenRecording(
+            permissions, "Screen recording permission is required for window capture")
 
         do {
             let availableContent = try await SCShareableContent.current
@@ -591,71 +447,36 @@ class CaptureHandler {
                 ]
             }
         } catch {
-            // Analyze NSError to provide more specific error information
-            let nsError = error as NSError
-
-            // Check known permission error codes first (regardless of domain)
-            if nsError.code == -3801 || nsError.code == -3803 {
-                throw CaptureError.screenRecordingPermissionDenied(
-                    code: nsError.code,
-                    domain: nsError.domain,
-                    message: error.localizedDescription
-                )
-            }
-
-            // Check for ScreenCaptureKit specific errors (domain contains screencapturekit)
-            if nsError.domain.lowercased().contains("screencapturekit") {
-                // Also check error description for permission-related keywords
-                let errorMessage = error.localizedDescription.lowercased()
-                if errorMessage.contains("permission") || errorMessage.contains("not permitted")
-                    || errorMessage.contains("denied")
-                {
-                    throw CaptureError.screenRecordingPermissionDenied(
-                        code: nsError.code,
-                        domain: nsError.domain,
-                        message: error.localizedDescription
-                    )
-                }
-
-                // Other ScreenCaptureKit errors
-                throw CaptureError.captureFailed(
-                    code: nsError.code,
-                    domain: nsError.domain,
-                    message: error.localizedDescription
-                )
-            }
-
-            // Check for CoreGraphics/System errors that might indicate permission issues
-            if nsError.domain == NSCocoaErrorDomain || nsError.domain == NSOSStatusErrorDomain {
-                let errorMessage = error.localizedDescription.lowercased()
-                if errorMessage.contains("permission") || errorMessage.contains("not permitted")
-                    || errorMessage.contains("denied")
-                {
-                    throw CaptureError.screenRecordingPermissionDenied(
-                        code: nsError.code,
-                        domain: nsError.domain,
-                        message: error.localizedDescription
-                    )
-                }
-            }
-
-            throw CaptureError.captureFailed(
-                code: nsError.code,
-                domain: nsError.domain,
-                message: error.localizedDescription
-            )
+            throw classify(error)
         }
     }
 }
 
+/// The message of a failure, and the `NSError` code and domain behind it when there is one
+struct NativeFailure {
+    let message: String
+    var code: Int? = nil
+    var domain: String? = nil
+}
+
 /// Screen capture errors
 enum CaptureError: PluginError {
-    case invalidWindowId(code: Int?, domain: String?, message: String)
-    case windowMinimized(code: Int?, domain: String?, message: String)
-    case captureFailed(code: Int?, domain: String?, message: String)
-    case unsupportedMacOSVersion(code: Int?, domain: String?, message: String)
-    case requiresMacOS14(code: Int?, domain: String?, message: String)
-    case screenRecordingPermissionDenied(code: Int?, domain: String?, message: String)
+    case invalidWindowId(NativeFailure)
+    case windowMinimized(NativeFailure)
+    case captureFailed(NativeFailure)
+    case unsupportedMacOSVersion(NativeFailure)
+    case requiresMacOS14(NativeFailure)
+    case screenRecordingPermissionDenied(NativeFailure)
+
+    /// The failure every case carries
+    var failure: NativeFailure {
+        switch self {
+        case .invalidWindowId(let failure), .windowMinimized(let failure),
+            .captureFailed(let failure), .unsupportedMacOSVersion(let failure),
+            .requiresMacOS14(let failure), .screenRecordingPermissionDenied(let failure):
+            return failure
+        }
+    }
 
     var code: String {
         switch self {
@@ -678,14 +499,7 @@ enum CaptureError: PluginError {
         }
     }
 
-    var message: String {
-        switch self {
-        case .invalidWindowId(_, _, let message), .windowMinimized(_, _, let message),
-            .captureFailed(_, _, let message), .unsupportedMacOSVersion(_, _, let message),
-            .requiresMacOS14(_, _, let message), .screenRecordingPermissionDenied(_, _, let message):
-            return message
-        }
-    }
+    var message: String { failure.message }
 
     var details: String? {
         switch self {
@@ -693,8 +507,8 @@ enum CaptureError: PluginError {
             return nil
         case .windowMinimized:
             return "The window is currently minimized. Please restore the window to capture it."
-        case .captureFailed(_, _, let message):
-            return message
+        case .captureFailed(let failure):
+            return failure.message
         case .unsupportedMacOSVersion:
             return "Current version: \(VersionUtil.getMacOSVersion()), Required: 12.3+"
         case .requiresMacOS14:
@@ -704,21 +518,6 @@ enum CaptureError: PluginError {
         }
     }
 
-    var nativeErrorCode: Int? {
-        switch self {
-        case .invalidWindowId(let code, _, _), .windowMinimized(let code, _, _),
-            .captureFailed(let code, _, _), .unsupportedMacOSVersion(let code, _, _),
-            .requiresMacOS14(let code, _, _), .screenRecordingPermissionDenied(let code, _, _):
-            return code
-        }
-    }
-
-    var nativeErrorDomain: String? {
-        switch self {
-        case .invalidWindowId(_, let domain, _), .windowMinimized(_, let domain, _),
-            .captureFailed(_, let domain, _), .unsupportedMacOSVersion(_, let domain, _),
-            .requiresMacOS14(_, let domain, _), .screenRecordingPermissionDenied(_, let domain, _):
-            return domain
-        }
-    }
+    var nativeErrorCode: Int? { failure.code }
+    var nativeErrorDomain: String? { failure.domain }
 }

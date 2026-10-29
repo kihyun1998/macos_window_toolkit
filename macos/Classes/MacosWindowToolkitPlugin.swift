@@ -1,11 +1,17 @@
 import Cocoa
 import FlutterMacOS
 
+/// The plugin's method channel: dispatches each call to the type that does its job
+/// and replies on the main thread
 public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
-  private let windowHandler = WindowHandler()
   private let permissionHandler = PermissionHandler()
+  private let windowQuery = WindowQuery()
+  private lazy var windowActions = AXWindowActions(
+    permissions: permissionHandler, query: windowQuery)
+  private let processTerminator = ProcessTerminator()
   private let applicationHandler = ApplicationHandler()
 
+  /// Registers the plugin on the `macos_window_toolkit` channel
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(
       name: "macos_window_toolkit", binaryMessenger: registrar.messenger)
@@ -13,6 +19,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     registrar.addMethodCallDelegate(instance, channel: channel)
   }
 
+  /// Runs the call named by `call.method`, or replies `FlutterMethodNotImplemented`
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     let result = onMain(result)
     switch call.method {
@@ -139,7 +146,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   /// Retrieves information about all windows with optional parameters
   private func getAllWindows(call: FlutterMethodCall, result: @escaping FlutterResult) {
     let excludeEmptyNames = arguments(call)["excludeEmptyNames"] as? Bool ?? false
-    replyWindows(windowHandler.getAllWindows(excludeEmptyNames: excludeEmptyNames), result)
+    replyWindows(windowQuery.getAllWindows(excludeEmptyNames: excludeEmptyNames), result)
   }
 
   /// Checks if the app has screen recording permission
@@ -176,7 +183,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   private func getWindowsByName(call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let name: String = required("name", of: call, result, "Name parameter is required")
     else { return }
-    replyWindows(windowHandler.getWindowsByName(name), result)
+    replyWindows(windowQuery.getWindowsByName(name), result)
   }
 
   /// Retrieves windows filtered by owner name (application name)
@@ -185,7 +192,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       let ownerName: String = required(
         "ownerName", of: call, result, "OwnerName parameter is required")
     else { return }
-    replyWindows(windowHandler.getWindowsByOwnerName(ownerName), result)
+    replyWindows(windowQuery.getWindowsByOwnerName(ownerName), result)
   }
 
   /// Retrieves a specific window by its window ID
@@ -193,7 +200,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     guard
       let windowId: Int = required("windowId", of: call, result, "WindowId parameter is required")
     else { return }
-    replyWindows(windowHandler.getWindowById(windowId), result)
+    replyWindows(windowQuery.getWindowById(windowId), result)
   }
 
   /// Retrieves windows filtered by process ID
@@ -202,7 +209,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       let processId: Int = required(
         "processId", of: call, result, "ProcessId parameter is required")
     else { return }
-    replyWindows(windowHandler.getWindowsByProcessId(processId), result)
+    replyWindows(windowQuery.getWindowsByProcessId(processId), result)
   }
 
   /// Retrieves windows with advanced filtering options
@@ -210,7 +217,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   private func getWindowsAdvanced(call: FlutterMethodCall, result: @escaping FlutterResult) {
     let arguments = arguments(call)
     replyWindows(
-      windowHandler.getWindowsAdvanced(
+      windowQuery.getWindowsAdvanced(
         windowId: arguments["windowId"] as? Int,
         name: arguments["name"] as? String,
         nameExactMatch: arguments["nameExactMatch"] as? Bool,
@@ -238,7 +245,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
   /// The error for a ScreenCaptureKit call on macOS before 12.3
   private var screenCaptureKitUnavailable: CaptureError {
     return .unsupportedMacOSVersion(
-      code: nil, domain: nil, message: "macOS version does not support ScreenCaptureKit")
+      NativeFailure(message: "macOS version does not support ScreenCaptureKit"))
   }
 
   /// Captures a window using ScreenCaptureKit
@@ -274,7 +281,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
           preserveAspectRatio: preserveAspectRatio,
           cropContentWidth: cropContentWidth, cropContentHeight: cropContentHeight,
           cropX: cropX, cropY: cropY, cropWidth: cropWidth, cropHeight: cropHeight,
-          resizeCroppedToWindowSize: resizeCroppedToWindowSize)
+          resizeCroppedToWindowSize: resizeCroppedToWindowSize, permissions: permissionHandler)
         result([
           "success": true,
           "imageData": FlutterStandardTypedData(bytes: imageData),
@@ -295,7 +302,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     }
     Task {
       do {
-        result(try await CaptureHandler.getCapturableWindows())
+        result(try await CaptureHandler.getCapturableWindows(permissions: permissionHandler))
       } catch let error as CaptureError {
         error.reply(to: result, allowState: false)
       } catch {
@@ -310,7 +317,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       let windowId: Int = required("windowId", of: call, result, "WindowId parameter is required")
     else { return }
     let expectedName = arguments(call)["expectedName"] as? String
-    result(windowHandler.isWindowAlive(windowId, expectedName: expectedName))
+    result(windowQuery.isWindowAlive(windowId, expectedName: expectedName))
   }
 
   /// Closes a window by its window ID using Accessibility API
@@ -319,7 +326,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       let windowId: Int = required("windowId", of: call, result, "WindowId parameter is required")
     else { return }
     let waitUntilClosed = (arguments(call)["waitUntilClosedMs"] as? Int).map { TimeInterval($0) / 1000 }
-    windowHandler.closeWindow(windowId, waitUntilClosed: waitUntilClosed) { [weak self] closeResult in
+    windowActions.closeWindow(windowId, waitUntilClosed: waitUntilClosed) { [weak self] closeResult in
       self?.reply(closeResult, result)
     }
   }
@@ -329,7 +336,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     guard
       let windowId: Int = required("windowId", of: call, result, "WindowId parameter is required")
     else { return }
-    reply(windowHandler.focusWindow(windowId), result)
+    reply(windowActions.focusWindow(windowId), result)
   }
 
   /// Terminates an application by its process ID
@@ -337,7 +344,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     guard let processId: Int = required("processId", of: call, result, "processId is required")
     else { return }
     let force = arguments(call)["force"] as? Bool ?? false
-    reply(windowHandler.terminateApplicationByPID(processId, force: force), result)
+    reply(processTerminator.terminateApplicationByPID(processId, force: force), result)
   }
 
   /// Terminates an application and all its descendant processes
@@ -345,7 +352,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     guard let processId: Int = required("processId", of: call, result, "processId is required")
     else { return }
     let force = arguments(call)["force"] as? Bool ?? false
-    reply(windowHandler.terminateApplicationTree(processId, force: force), result)
+    reply(processTerminator.terminateApplicationTree(processId, force: force), result)
   }
 
   /// Gets all child process IDs for a given parent process ID
@@ -357,7 +364,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
       result([Int]())
       return
     }
-    switch windowHandler.getChildProcesses(of: parent) {
+    switch processTerminator.getChildProcesses(of: parent) {
     case .success(let childPIDs):
       result(childPIDs.map { Int($0) })
     case .failure(let error):
@@ -403,34 +410,12 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
 
   /// Gets the screen scale factor (backingScaleFactor) of the main screen
   private func getScreenScaleFactor(result: @escaping FlutterResult) {
-    result(NSScreen.main?.backingScaleFactor ?? 1.0)
+    result(ScreenInfo.mainScaleFactor())
   }
 
   /// Gets information about all connected screens
   private func getAllScreensInfo(result: @escaping FlutterResult) {
-    let screens = NSScreen.screens.enumerated().map { (index, screen) -> [String: Any] in
-      let isMain = (screen == NSScreen.main)
-      return [
-        "index": index,
-        "isMain": isMain,
-        "scaleFactor": screen.backingScaleFactor,
-        "frame": [
-          "x": screen.frame.origin.x,
-          "y": screen.frame.origin.y,
-          "width": screen.frame.width,
-          "height": screen.frame.height,
-        ],
-        "visibleFrame": [
-          "x": screen.visibleFrame.origin.x,
-          "y": screen.visibleFrame.origin.y,
-          "width": screen.visibleFrame.width,
-          "height": screen.visibleFrame.height,
-        ],
-        "pixelWidth": Int(screen.frame.width * screen.backingScaleFactor),
-        "pixelHeight": Int(screen.frame.height * screen.backingScaleFactor),
-      ]
-    }
-    result(screens)
+    result(ScreenInfo.allScreens())
   }
 
   /// Checks if a window is fullscreen using SCShareableContent
@@ -444,7 +429,9 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     }
     Task {
       do {
-        result(try await CaptureHandler.isWindowFullScreen(windowId: windowId))
+        result(
+          try await CaptureHandler.isWindowFullScreen(
+            windowId: windowId, permissions: permissionHandler))
       } catch let error as CaptureError {
         error.reply(to: result)
       } catch {
@@ -458,7 +445,7 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     guard
       let windowId: Int = required("windowId", of: call, result, "WindowId parameter is required")
     else { return }
-    switch windowHandler.getScrollInfo(windowId) {
+    switch windowActions.getScrollInfo(windowId) {
     case .success(let scrollInfo):
       result(["success": true, "scrollInfo": scrollInfo])
     case .failure(let error):
