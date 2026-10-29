@@ -986,13 +986,13 @@ class CachedCapture {
 
 ### Memory Usage
 
-- PNG image data: ~3-4 bytes per pixel
-- 1920×1080 window: ~8MB memory
-- Consider processing images in chunks for large batches
+- The PNG is compressed, so its size depends on the window's content. Unless you resize or crop it, it has one pixel per point of the window frame, since no scale factor is applied.
+- Decoding it, for example with `Image.memory`, takes about 4 bytes per pixel: about 8.3 MB for a 1920×1080 window.
+- For large batches, decode or keep only the images you need at once.
 
-## Thread Safety
+## Isolates
 
-All window capture methods are thread-safe and can be called from any isolate.
+Every call goes over the plugin's platform channel; see [Isolates](../api_reference.md#isolates) for which isolate may make it.
 
 ## Related APIs
 

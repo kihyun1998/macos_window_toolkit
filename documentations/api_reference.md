@@ -148,16 +148,16 @@ final toolkit = MacosWindowToolkit();
 
 ### Method Summary
 
-| Category | Methods | Description |
-|----------|---------|-------------|
-| **Window Management** | 6 methods | Finding and managing windows |
-| **Application Discovery** | 3 methods | Discovering and searching installed applications |
-| **Permission Management** | 10 methods/properties | Permission handling and monitoring |
-| **Window Capture** | 6 methods | Screenshot capture functionality |
-| **Process Management** | 3 methods | Process control and information |
-| **System Information** | 2 methods | macOS version and capabilities |
+| Category | Description |
+|----------|-------------|
+| **Window Management** | Finding and managing windows |
+| **Application Discovery** | Discovering and searching installed applications |
+| **Permission Management** | Permission handling and monitoring |
+| **Window Capture** | Screenshot capture functionality |
+| **Process Management** | Process control and information |
+| **System Information** | macOS version and capabilities |
 
-**Total: 30 public methods and properties**
+The full list of methods is the [`MacosWindowToolkit` API documentation](https://pub.dev/documentation/macos_window_toolkit/latest/macos_window_toolkit/MacosWindowToolkit-class.html).
 
 ## Getting Started
 
@@ -218,9 +218,9 @@ toolkit.permissionStream.listen((status) {
 
 These are the README's [Requirements](../README.md#requirements).
 
-## Thread Safety
+## Isolates
 
-All methods are thread-safe and can be called from any isolate.
+Call the plugin's methods from the root isolate. They go over a platform channel, and on any other isolate Flutter's platform channels need `BackgroundIsolateBinaryMessenger.ensureInitialized(rootIsolateToken)` to have run first; without it the call throws a `StateError`. This plugin has not been checked on a background isolate.
 
 ## Performance Notes
 

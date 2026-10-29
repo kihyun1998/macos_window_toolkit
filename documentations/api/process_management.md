@@ -1111,9 +1111,9 @@ class ProcessManager {
 }
 ```
 
-## Thread Safety
+## Isolates
 
-All process management methods are thread-safe and can be called from any isolate.
+Every call goes over the plugin's platform channel; see [Isolates](../api_reference.md#isolates) for which isolate may make it.
 
 ## Security Considerations
 
