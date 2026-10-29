@@ -17,8 +17,8 @@ From reading the source:
 - **Facade wrapping.** The facade turns a thrown error into `ApplicationFailure(systemError)` and an empty list into `ApplicationFailure(notFound)`. Swift always returns `.success` for the listings; `ApplicationError` has one case, `invalidURL`, for the App Store search.
 
 ## Code
-- `macos/Classes/ApplicationHandler.swift — ApplicationHandler.getAllInstalledApplications`, `getApplicationByName`, `openAppStoreSearch`, `ApplicationError`
-- `macos/Classes/MacosWindowToolkitPlugin.swift — getAllInstalledApplications`, `getApplicationByName`, `openAppStoreSearch`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/ApplicationHandler.swift — ApplicationHandler.getAllInstalledApplications`, `getApplicationByName`, `openAppStoreSearch`, `ApplicationError`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/MacosWindowToolkitPlugin.swift — getAllInstalledApplications`, `getApplicationByName`, `openAppStoreSearch`
 - `lib/src/method_channel/application_operations_channel.dart — getAllInstalledApplications`, `getApplicationByName`, `openAppStoreSearch`
 - `lib/src/macos_window_toolkit.dart — MacosWindowToolkit.getAllInstalledApplications`, `getApplicationByName`
 - `lib/src/models/macos_application_info.dart — MacosApplicationInfo`, `ApplicationResult`, `ApplicationFailureReason`

@@ -17,8 +17,8 @@ From reading the source:
 - **The caller is never killed by its own call.** `pathFromCaller` collects the calling process and its ancestors up to the target. When that path is non-empty (the target is an ancestor of the caller), those processes and the target are skipped and the result is `false` (→ `unknown`); when the target is the caller itself, it terminates last and no reply arrives (maintainer, 2026-10-23). A process spawned after the snapshot is not covered.
 
 ## Code
-- `macos/Classes/ProcessTerminator.swift — ProcessTerminator.terminateApplicationByPID`, `terminateApplicationTree`, `getChildProcesses`, `signalTarget`, `processTable`, `descendants`, `pathFromCaller`, `processExists`, `terminateTreeMember`
-- `macos/Classes/MacosWindowToolkitPlugin.swift — terminateApplicationByPID`, `terminateApplicationTree`, `getChildProcesses`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/ProcessTerminator.swift — ProcessTerminator.terminateApplicationByPID`, `terminateApplicationTree`, `getChildProcesses`, `signalTarget`, `processTable`, `descendants`, `pathFromCaller`, `processExists`, `terminateTreeMember`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/MacosWindowToolkitPlugin.swift — terminateApplicationByPID`, `terminateApplicationTree`, `getChildProcesses`
 - `lib/src/method_channel/application_operations_channel.dart — ApplicationOperationsChannel.terminateApplicationByPID`, `terminateApplicationTree`, `getChildProcesses`
 - `lib/src/macos_window_toolkit.dart — MacosWindowToolkit.terminateApplicationByPID`, `terminateApplicationTree`, `getChildProcesses`
 

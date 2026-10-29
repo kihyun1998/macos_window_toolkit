@@ -154,14 +154,15 @@ macos_window_toolkit/
 │       ├── macos_window_toolkit_platform_interface.dart
 │       └── macos_window_toolkit_method_channel.dart
 ├── macos/                                  # macOS native implementation
-│   ├── Classes/
-│   │   ├── MacosWindowToolkitPlugin.swift   # Channel dispatch
-│   │   ├── WindowQuery.swift              # Window listing and filters
-│   │   ├── AXWindowActions.swift          # Close, focus, scroll info
-│   │   ├── SpaceSwitcher.swift            # Closing on another Space
-│   │   ├── ProcessTerminator.swift        # Process termination
-│   │   └── …                              # One file per job
-│   └── macos_window_toolkit.podspec
+│   ├── macos_window_toolkit/               # Swift package (Package.swift)
+│   │   └── Sources/macos_window_toolkit/
+│   │       ├── MacosWindowToolkitPlugin.swift   # Channel dispatch
+│   │       ├── WindowQuery.swift              # Window listing and filters
+│   │       ├── AXWindowActions.swift          # Close, focus, scroll info
+│   │       ├── SpaceSwitcher.swift            # Closing on another Space
+│   │       ├── ProcessTerminator.swift        # Process termination
+│   │       └── …                              # One file per job
+│   └── macos_window_toolkit.podspec       # CocoaPods spec over the same sources
 ├── example/                               # Example Flutter app
 ├── test/                                  # Unit tests
 ├── docs/                                  # Documentation
@@ -171,8 +172,8 @@ macos_window_toolkit/
 ### Key Files
 
 - **`lib/src/macos_window_toolkit.dart`**: Main API implementation
-- **`macos/Classes/WindowQuery.swift`** and **`AXWindowActions.swift`**: window listing and window actions
-- **`macos/Classes/MacosWindowToolkitPlugin.swift`**: Flutter plugin integration
+- **`macos/macos_window_toolkit/Sources/macos_window_toolkit/WindowQuery.swift`** and **`AXWindowActions.swift`**: window listing and window actions
+- **`macos/macos_window_toolkit/Sources/macos_window_toolkit/MacosWindowToolkitPlugin.swift`**: Flutter plugin integration
 - **`example/lib/main.dart`**: Example application
 - **`test/macos_window_toolkit_test.dart`**: Unit tests
 

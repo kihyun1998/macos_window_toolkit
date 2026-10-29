@@ -31,12 +31,12 @@ From reading the source:
 - **Results.** Results return as `WindowOperationResult`. An inaccessible window is `windowNotAccessible` (#7). Which codes arrive typed is [failure-code-vocabulary](../invariant/failure-code-vocabulary.md).
 
 ## Code
-- `macos/Classes/AXWindowActions.swift — AXWindowActions.closeWindow`, `isDestroyed`, `pressClose`, `findCloseButton`, `searchForCloseButton`, `focusWindow`
-- `macos/Classes/AXWindowLookup.swift — AXWindowLookup.target`, `element(for:missing:)` (focus, scroll), `element(processId:windowName:)` (close and its Space-switch retry), `flexibleMatch`, `exactMatch`
-- `macos/Classes/AXAttributes.swift — AXUIElement.attribute`, `elementAttribute`, `windows(ofProcess:)`
-- `macos/Classes/SpaceSwitcher.swift — SpaceSwitcher.close`, `SpaceControl`, `CGSSpaces`, and the `_cgs*` `@_silgen_name` declarations at the top of the file
-- `macos/Classes/MainQueue.swift — pollOnMain`, `SerialGate`
-- `macos/Classes/MacosWindowToolkitPlugin.swift — closeWindow`, `focusWindow`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/AXWindowActions.swift — AXWindowActions.closeWindow`, `isDestroyed`, `pressClose`, `findCloseButton`, `searchForCloseButton`, `focusWindow`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/AXWindowLookup.swift — AXWindowLookup.target`, `element(for:missing:)` (focus, scroll), `element(processId:windowName:)` (close and its Space-switch retry), `flexibleMatch`, `exactMatch`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/AXAttributes.swift — AXUIElement.attribute`, `elementAttribute`, `windows(ofProcess:)`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/SpaceSwitcher.swift — SpaceSwitcher.close`, `SpaceControl`, `CGSSpaces`, and the `_cgs*` `@_silgen_name` declarations at the top of the file
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/MainQueue.swift — pollOnMain`, `SerialGate`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/MacosWindowToolkitPlugin.swift — closeWindow`, `focusWindow`
 - `lib/src/method_channel/window_operations_channel.dart — WindowOperationsChannel.closeWindow`, `focusWindow`
 - `lib/src/models/window_operation_result.dart — WindowOperationResult`, `OperationFailure`, `WindowOperationFailureReason`
 

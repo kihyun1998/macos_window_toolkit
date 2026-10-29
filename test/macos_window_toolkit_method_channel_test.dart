@@ -240,7 +240,7 @@ void main() {
   });
 
   test('every code the native side sends is a PlatformErrorCode', () {
-    // The codes macos/Classes can put on the wire: WindowError, CaptureError,
+    // The codes macos/macos_window_toolkit/Sources/macos_window_toolkit can put on the wire: WindowError, CaptureError,
     // ApplicationError, the per-call codes and the dispatcher's own.
     const nativeCodes = [
       'FAILED_TO_RETRIEVE_WINDOW_LIST',
@@ -309,7 +309,7 @@ void main() {
     );
   });
 
-  // Every state macos/Classes declares (PluginError.stateReason), per method
+  // Every state the Swift sources declare (PluginError.stateReason), per method
   // that can raise it, with the native code it travels under.
   group('every native state reaches its typed reason, both shapes', () {
     const windowStates = {

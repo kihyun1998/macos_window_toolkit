@@ -29,8 +29,8 @@ From reading the source:
 - **Input bounds.** `targetWidth/Height` and the crop values are not validated. Zero or negative values make `CGContext` return nil (→ `captureFailed`), and a huge value allocates that size.
 
 ## Code
-- `macos/Classes/CaptureHandler.swift — CaptureHandler.captureWindow`, `getCapturableWindows`, `isWindowFullScreen`, `requireScreenRecording`, `window(_:in:)`, `isMinimized`, `classify`, `isFullscreenWindow`, `cropTransparentBorders`, `resizeImageToExactSize`, `resizeImagePreservingAspectRatio`, `convertCGImageToPNG`, `NativeFailure`, `CaptureError` (top-level, so the pre-12.3 dispatcher branches can use it)
-- `macos/Classes/MacosWindowToolkitPlugin.swift — captureWindow`, `getCapturableWindows`, `isWindowFullScreen`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/CaptureHandler.swift — CaptureHandler.captureWindow`, `getCapturableWindows`, `isWindowFullScreen`, `requireScreenRecording`, `window(_:in:)`, `isMinimized`, `classify`, `isFullscreenWindow`, `cropTransparentBorders`, `resizeImageToExactSize`, `resizeImagePreservingAspectRatio`, `convertCGImageToPNG`, `NativeFailure`, `CaptureError` (top-level, so the pre-12.3 dispatcher branches can use it)
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/MacosWindowToolkitPlugin.swift — captureWindow`, `getCapturableWindows`, `isWindowFullScreen`
 - `lib/src/method_channel/capture_operations_channel.dart — CaptureOperationsChannel`
 - `lib/src/method_channel/window_operations_channel.dart — WindowOperationsChannel.isWindowFullScreen`
 - `lib/src/models/capture_result.dart — CaptureResult`, `CaptureFailure`, `CaptureFailureReason`
