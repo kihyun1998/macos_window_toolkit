@@ -412,9 +412,8 @@ void main() {
 const _volatileKeys = {'memoryUsage'};
 
 /// Keys that change between two runs on a window the test does not own, as
-/// its app and the person at the desk move, show and hide it. An untitled one
-/// also takes the role of its app's first titled Accessibility window, which
-/// changes as the app opens and closes windows. The fixtures pin these keys.
+/// its app and the person at the desk move, show and hide it. The fixtures pin
+/// these keys.
 const _foreignVolatileKeys = {
   'x',
   'y',
@@ -423,15 +422,26 @@ const _foreignVolatileKeys = {
   'frame',
   'isOnScreen',
   'alpha',
-  'role',
-  'subrole',
 };
+
+/// Keys that also change on an untitled window the test does not own: it takes
+/// the role of its app's first titled Accessibility window, which changes as
+/// the app opens and closes windows.
+const _untitledForeignVolatileKeys = {'role', 'subrole'};
 
 /// Adds to `differences` every place where `a` and `b` differ. A list of
 /// windows is compared by `windowId`, over the windows both runs saw.
 void _compare(String path, Object? a, Object? b, List<String> differences) {
   if (a is List && b is List && _isWindowList(a) && _isWindowList(b)) {
     final byId = {for (final w in b.cast<Map>()) w['windowId']: w};
+    final idsA = {for (final w in a.cast<Map>()) w['windowId']};
+    // A fixture window's ID is a label by now, and it is in a list in both
+    // runs or in neither.
+    for (final id in {...idsA, ...byId.keys}.whereType<String>()) {
+      if (idsA.contains(id) != byId.containsKey(id)) {
+        differences.add('$path#$id: listed in one run only');
+      }
+    }
     var shared = 0;
     for (final w in a.cast<Map>()) {
       final other = byId[w['windowId']];
@@ -447,9 +457,13 @@ void _compare(String path, Object? a, Object? b, List<String> differences) {
   if (a is Map && b is Map) {
     // A fixture window's ID is a label by now; any other is still a number.
     final foreign = a['windowId'] is int;
+    final untitled = a['name'] == '';
     for (final key in {...a.keys, ...b.keys}) {
       if (_volatileKeys.contains(key)) continue;
       if (foreign && _foreignVolatileKeys.contains(key)) continue;
+      if (foreign && untitled && _untitledForeignVolatileKeys.contains(key)) {
+        continue;
+      }
       if (a.containsKey(key) != b.containsKey(key)) {
         differences.add('$path.$key: present in one run only');
         continue;
