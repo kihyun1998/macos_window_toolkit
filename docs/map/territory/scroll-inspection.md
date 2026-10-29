@@ -8,7 +8,7 @@ Reports whether a window has vertical or horizontal scroll bars and where they s
 
 ## Design model
 From reading the source:
-- **Lookup.** Same precheck and element lookup as [window-control](window-control.md): `AXWindowLookup.target`, then `AXWindowLookup.element`. A missing element returns `windowNotAccessible`.
+- **Lookup.** Same precheck and element lookup as [window-control](window-control.md): `AXWindowLookup.element(for:missing:)`, which fails with `windowNotAccessible` when no AX element matches.
 - **`AXWindowActions.scrollInfo(of:)` tries three strategies in order** and stops at the first that finds a bar:
   1. an `AXScrollArea` among the window's direct children;
   2. scroll-bar attributes on the window itself;

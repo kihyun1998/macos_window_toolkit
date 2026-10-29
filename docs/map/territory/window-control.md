@@ -31,7 +31,7 @@ From reading the source:
 
 ## Code
 - `macos/Classes/AXWindowActions.swift — AXWindowActions.closeWindow`, `isDestroyed`, `pressClose`, `findCloseButton`, `searchForCloseButton`, `focusWindow`
-- `macos/Classes/AXWindowLookup.swift — AXWindowLookup.target`, `element`, `flexibleMatch`, `exactMatch`
+- `macos/Classes/AXWindowLookup.swift — AXWindowLookup.target`, `element(for:missing:)` (focus, scroll), `element(processId:windowName:)` (close and its Space-switch retry), `flexibleMatch`, `exactMatch`
 - `macos/Classes/AXAttributes.swift — AXUIElement.attribute`, `elementAttribute`, `windows(ofProcess:)`
 - `macos/Classes/SpaceSwitcher.swift — SpaceSwitcher.close`, `SpaceControl`, `CGSSpaces`, and the `_cgs*` `@_silgen_name` declarations at the top of the file
 - `macos/Classes/MainQueue.swift — pollOnMain`, `SerialGate`

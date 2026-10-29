@@ -234,6 +234,12 @@ void main() {
       if (fixtureIds.containsKey(id)) {
         await record('scroll[$label]', 'getScrollInfo', {'windowId': id});
       }
+      // A window with no Accessibility element: focus and scroll fail before
+      // acting, each with its own reason.
+      if (w['role'] == null && !fixtureIds.containsKey(id)) {
+        await record('scroll[$label]', 'getScrollInfo', {'windowId': id});
+        await record('focus[$label]', 'focusWindow', {'windowId': id});
+      }
       await record('fullscreen[$label]', 'isWindowFullScreen', {
         'windowId': id,
       });

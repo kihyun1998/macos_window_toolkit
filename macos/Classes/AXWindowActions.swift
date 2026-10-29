@@ -139,17 +139,13 @@ final class AXWindowActions {
     /// Makes the window its app's main window, activates the app and raises the window.
     /// It succeeds when either Accessibility call does.
     func focusWindow(_ windowId: Int) -> Result<Bool, WindowError> {
+        let element: AXUIElement
         let processId: Int
-        let windowName: String
-        switch lookup.target(windowId) {
+        switch lookup.element(for: windowId, missing: .windowNotFound) {
         case .failure(let error):
             return .failure(error)
-        case .success(let target):
-            (processId, windowName) = target
-        }
-
-        guard let element = lookup.element(processId: processId, windowName: windowName) else {
-            return .failure(.windowNotFound)
+        case .success(let found):
+            (element, processId) = found
         }
 
         let setMainResult = AXUIElementSetAttributeValue(
@@ -191,19 +187,9 @@ final class AXWindowActions {
 
     /// The window's scroll bars, read from the first scroll area that has one
     func getScrollInfo(_ windowId: Int) -> Result<[String: Any], WindowError> {
-        let processId: Int
-        let windowName: String
-        switch lookup.target(windowId) {
-        case .failure(let error):
-            return .failure(error)
-        case .success(let target):
-            (processId, windowName) = target
+        return lookup.element(for: windowId, missing: .windowNotAccessible).map {
+            scrollInfo(of: $0.element).dictionary
         }
-
-        guard let element = lookup.element(processId: processId, windowName: windowName) else {
-            return .failure(.windowNotAccessible)
-        }
-        return .success(scrollInfo(of: element).dictionary)
     }
 
     /// Tries, in order, a scroll area among the window's children, the window itself and

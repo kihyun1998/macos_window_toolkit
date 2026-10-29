@@ -26,6 +26,20 @@ struct AXWindowLookup {
         }
     }
 
+    /// The AX window of the window with this ID, or `missing` when the process has none
+    /// that matches its title
+    func element(for windowId: Int, missing: WindowError) -> Result<
+        (element: AXUIElement, processId: Int), WindowError
+    > {
+        return target(windowId).flatMap { target in
+            guard let found = element(processId: target.processId, windowName: target.name)
+            else {
+                return .failure(missing)
+            }
+            return .success((found, target.processId))
+        }
+    }
+
     /// The process's AX window for `windowName`: by `flexibleMatch`, else by `exactMatch`
     func element(processId: Int, windowName: String) -> AXUIElement? {
         return flexibleMatch(processId: processId, windowName: windowName)
