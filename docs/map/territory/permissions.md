@@ -11,13 +11,13 @@ From reading the source:
 - **Screen Recording.** The check is `CGPreflightScreenCaptureAccess`. A source comment says it is "a cached value from app launch", which is not verified here. The request is `CGRequestScreenCaptureAccess`, hopped onto the main queue when called off it.
 - **Accessibility.** The check is `AXIsProcessTrusted`. The request is `AXIsProcessTrustedWithOptions` with the prompt option, which returns the *current* state rather than the user's answer.
 - **Settings.** Each "open settings" call tries the specific Privacy pane URL, then Privacy & Security, then System Settings.
-- **Pre-10.15 branches** return `true`. The podspec floor is `osx 10.15`, so those branches never run.
+- **Pre-10.15 branches** return `true`. The podspec and `Package.swift` floors are both macOS 10.15, so those branches never run.
 - **Prechecks.** Capture, close, focus and scroll check through `PermissionChecking`, the protocol `PermissionHandler` conforms to. The dispatcher passes its own `PermissionHandler` to `AXWindowActions` and to each `CaptureHandler` call; a test can pass a fake. Each check calls the system again: nothing caches the state.
 - **Who gets the grant.** When the host is launched from a terminal, TCC attributes both permissions to the terminal app, the responsible process (issue #1 comment, 2026-06-12).
 
 ## Code
-- `macos/Classes/PermissionHandler.swift — PermissionChecking`, `PermissionHandler` (all six methods)
-- `macos/Classes/MacosWindowToolkitPlugin.swift — hasScreenRecordingPermission`, `requestScreenRecordingPermission`, `openScreenRecordingSettings`, `hasAccessibilityPermission`, `requestAccessibilityPermission`, `openAccessibilitySettings`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/PermissionHandler.swift — PermissionChecking`, `PermissionHandler` (all six methods)
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/MacosWindowToolkitPlugin.swift — hasScreenRecordingPermission`, `requestScreenRecordingPermission`, `openScreenRecordingSettings`, `hasAccessibilityPermission`, `requestAccessibilityPermission`, `openAccessibilitySettings`
 - `lib/src/method_channel/permission_operations_channel.dart — PermissionOperationsChannel`
 - `lib/src/platform_interface/permission_operations_interface.dart — PermissionOperationsInterface`
 

@@ -49,9 +49,9 @@ Common issues and solutions when using macOS Window Toolkit.
    xcodebuild clean
    ```
 
-3. **Verify CocoaPods:**
+3. **Reinstall the pods, if your app uses CocoaPods** (an app with Swift Package Manager enabled builds the plugin as a Swift package and has nothing to install):
    ```bash
-   cd example/ios  # or macos
+   cd macos
    pod install --repo-update
    ```
 

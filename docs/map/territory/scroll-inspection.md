@@ -17,8 +17,8 @@ From reading the source:
 - **Result.** Success is `{"success": true, "scrollInfo": {...}}`, parsed by `ScrollInfo.fromMap` into `ScrollSuccess`.
 
 ## Code
-- `macos/Classes/AXWindowActions.swift — AXWindowActions.getScrollInfo`, `scrollInfo(of:)`, `findScrollArea`, `findScrollAreaRecursively`, `readScrollBars`, `position(of:)`, `ScrollInfo`
-- `macos/Classes/MacosWindowToolkitPlugin.swift — getScrollInfo`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/AXWindowActions.swift — AXWindowActions.getScrollInfo`, `scrollInfo(of:)`, `findScrollArea`, `findScrollAreaRecursively`, `readScrollBars`, `position(of:)`, `ScrollInfo`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/MacosWindowToolkitPlugin.swift — getScrollInfo`
 - `lib/src/method_channel/window_operations_channel.dart — WindowOperationsChannel.getScrollInfo`, `_parseScrollResult`
 - `lib/src/models/scroll_info.dart — ScrollInfo`, `ScrollOperationResult`, `ScrollFailureReason`
 

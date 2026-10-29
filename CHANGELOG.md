@@ -1,6 +1,7 @@
 ## Unreleased
 
 ### Added
+- **FEAT**: the plugin supports Swift Package Manager on macOS (`macos/macos_window_toolkit/Package.swift`, macOS 10.15). An app with Swift Package Manager enabled builds it as a package, and Flutter no longer warns that the plugin requires CocoaPods. Apps that use CocoaPods are unaffected
 - **FEAT**: `closeWindow()` takes an optional `waitUntilClosed` duration. With it, the call replies once the window has really closed, or fails with the new `WindowOperationFailureReason.windowStillOpen` when the window is still open after the duration (an app asking whether to save changes, or ignoring the close button). Without it, nothing changes
   - "Closed" is read from the window's Accessibility element, not from the window list: an app can keep a closed window in the window list, off screen, for up to a minute
 

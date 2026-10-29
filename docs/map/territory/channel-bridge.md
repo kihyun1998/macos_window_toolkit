@@ -22,8 +22,8 @@ From reading the source:
 - **Swappable platform.** `MacosWindowToolkitPlatform` extends `PlatformInterface` with a private token, and composes the five `*Interface` mixins `with`, not `implements`. So a subclass inherits each method's `UnimplementedError` default, and a method added later does not break it. Tests replace `instance` with a fake that overrides only what it uses (`test/permission_watcher_test.dart — _FakePlatform`).
 
 ## Code
-- `macos/Classes/MacosWindowToolkitPlugin.swift — MacosWindowToolkitPlugin.register`, `handle`, `required`, `replyWindows`, `reply`, `replyUnexpected`, `onMain`
-- `macos/Classes/PluginError.swift — PluginError`, `PluginError.reply`, `DispatcherError`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/MacosWindowToolkitPlugin.swift — MacosWindowToolkitPlugin.register`, `handle`, `required`, `replyWindows`, `reply`, `replyUnexpected`, `onMain`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/PluginError.swift — PluginError`, `PluginError.reply`, `DispatcherError`
 - `lib/src/method_channel/channel_calls.dart — invokeResult`, `invokeOperation`, `invokeList`, `stringKeyed`
 - `lib/src/method_channel/failure_codes.dart` (failure tables, `systemErrorCodes`)
 - `lib/macos_window_toolkit.dart` (library exports)

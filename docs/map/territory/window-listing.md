@@ -21,11 +21,11 @@ From reading the source:
 - **Input bounds.** A filter pattern is caller-supplied and unbounded. The `?` matcher is O(text × pattern) per window.
 
 ## Code
-- `macos/Classes/WindowInfo.swift — WindowInfo`, `WindowInfo.dictionary`
-- `macos/Classes/WindowQuery.swift — AXRoleResolver.role`, `AXRoleResolver.fetchEntries`
-- `macos/Classes/WindowQuery.swift — WindowQuery.windowInfos`, `windowInfo`, `windows(where:)`, `getAllWindows`, `getWindowsByName`, `getWindowsByOwnerName`, `getWindowById`, `getWindowsByProcessId`, `getWindowsAdvanced`, `isWindowAlive`
-- `macos/Classes/PatternMatcher.swift — PatternMatcher.matches`, `matchWildcard`, `findPartMatch`, `findPartMatchWithQuestionMark`
-- `macos/Classes/MacosWindowToolkitPlugin.swift — getAllWindows`, `getWindowsByName`, `getWindowsByOwnerName`, `getWindowById`, `getWindowsByProcessId`, `getWindowsAdvanced`, `isWindowAlive`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/WindowInfo.swift — WindowInfo`, `WindowInfo.dictionary`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/WindowQuery.swift — AXRoleResolver.role`, `AXRoleResolver.fetchEntries`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/WindowQuery.swift — WindowQuery.windowInfos`, `windowInfo`, `windows(where:)`, `getAllWindows`, `getWindowsByName`, `getWindowsByOwnerName`, `getWindowById`, `getWindowsByProcessId`, `getWindowsAdvanced`, `isWindowAlive`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/PatternMatcher.swift — PatternMatcher.matches`, `matchWildcard`, `findPartMatch`, `findPartMatchWithQuestionMark`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/MacosWindowToolkitPlugin.swift — getAllWindows`, `getWindowsByName`, `getWindowsByOwnerName`, `getWindowById`, `getWindowsByProcessId`, `getWindowsAdvanced`, `isWindowAlive`
 - `lib/src/method_channel/window_operations_channel.dart — WindowOperationsChannel.getAllWindows` … `isWindowAlive`
 - `lib/src/models/macos_window_info.dart — MacosWindowInfo.fromMap`
 

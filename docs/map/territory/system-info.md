@@ -15,9 +15,9 @@ From reading the source:
 - **Map conversion.** `getAllScreensInfo` goes through `invokeList` and `getMacOSVersionInfo` through `stringKeyed` (both in `lib/src/method_channel/channel_calls.dart`). `MacosScreenInfo.fromMap` also copies its nested `frame` and `visibleFrame` itself; see [channel-bridge](channel-bridge.md).
 
 ## Code
-- `macos/Classes/VersionUtil.swift — VersionUtil.getMacOSVersionInfo`, `isScreenCaptureKitAvailable`, `getMacOSVersion`
-- `macos/Classes/ScreenInfo.swift — ScreenInfo.mainScaleFactor`, `allScreens`
-- `macos/Classes/MacosWindowToolkitPlugin.swift — getMacOSVersionInfo`, `getScreenScaleFactor`, `getAllScreensInfo`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/VersionUtil.swift — VersionUtil.getMacOSVersionInfo`, `isScreenCaptureKitAvailable`, `getMacOSVersion`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/ScreenInfo.swift — ScreenInfo.mainScaleFactor`, `allScreens`
+- `macos/macos_window_toolkit/Sources/macos_window_toolkit/MacosWindowToolkitPlugin.swift — getMacOSVersionInfo`, `getScreenScaleFactor`, `getAllScreensInfo`
 - `lib/src/method_channel/system_info_channel.dart — SystemInfoChannel`
 - `lib/src/models/macos_version_info.dart — MacosVersionInfo`
 - `lib/src/models/macos_screen_info.dart — MacosScreenInfo`, `ScreenRect`
