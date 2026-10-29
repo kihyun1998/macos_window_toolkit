@@ -16,6 +16,7 @@ From the source and its doc comment (`lib/src/permission_watcher.dart`):
 - **Errors.** A failed check emits a status with both values `null` and `hasChanges: true`.
 - **Platform access.** It imports the platform interface and `PermissionStatus` directly (not the library entry point, which exports it back), and calls `MacosWindowToolkitPlatform.instance`, which is what lets the unit tests swap in a fake.
 - **Change detection.** The previous check is kept as a `PermissionStatus?` and compared field by field.
+- **Generations.** `dispose` advances `_generation`. A check remembers the value it started under and, when it finishes under a later one, neither emits (state or failure) nor writes `_previousState`. So a check in flight across `dispose` cannot make the next start's first status read `hasChanges: false`, nor reach a stream opened after `dispose` (#21). `stopWatching` does not advance it: a check in flight across a stop still emits into the kept stream.
 - **Measured cost.** No memory growth from polling with no listeners at 200ms over 30s (issue #1 comment, 2026-06-12).
 
 ## Code
@@ -25,7 +26,7 @@ From the source and its doc comment (`lib/src/permission_watcher.dart`):
 - `test/permission_watcher_test.dart`
 
 ## Reference behaviour
-**None.**
+- `test/permission_watcher_test.dart — a check still in flight when dispose runs` holds a platform reply across `dispose` with a fake and pins the three outcomes: the next start's first status has `hasChanges: true`, and neither the held state nor a held failure reaches the new stream. Each was seen red without the generation check (removing the increment, the success-path check, the failure-path check, or flipping the comparison; 2026-10-29).
 
 ## Cross-cutting invariants
 **None.**
@@ -38,5 +39,4 @@ From the source and its doc comment (`lib/src/permission_watcher.dart`):
 
 ## Known holes / open
 - `_checkPermissions` is async with no in-flight guard. If an interval is shorter than one round-trip, checks overlap.
-- A check still in flight when `dispose` runs writes `_previousState` back after the reset, so the next `startWatching` emits its first status with `hasChanges: false`. Measured in `test/permission_watcher_test.dart`: an assertion on that first `hasChanges` fails in the full file and passes alone, the same before and after #11 (2026-10-24).
 - `isWatching` can go `false` with no `stopWatching` call (documented). A caller that reads it as "requested" is misled.

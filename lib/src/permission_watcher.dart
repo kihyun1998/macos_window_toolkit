@@ -62,6 +62,10 @@ class PermissionWatcher {
   /// polling auto-resumes when a listener subscribes after an auto-stop.
   bool _watchRequested = false;
 
+  /// Advanced by [dispose]; a check started under an earlier value neither
+  /// emits nor updates [_previousState]
+  int _generation = 0;
+
   /// Whether the watcher is currently monitoring permissions
   ///
   /// Note: this can become false without an explicit [stopWatching] call —
@@ -163,17 +167,20 @@ class PermissionWatcher {
     _controller?.close();
     _controller = null;
     _previousState = null;
+    _generation++;
   }
 
   /// Checks current permission status and emits changes if detected
   ///
   /// [forceEmit] If true, always emits the current state regardless of changes
   Future<void> _checkPermissions({bool forceEmit = false}) async {
+    final generation = _generation;
     try {
       final screenRecording = await MacosWindowToolkitPlatform.instance
           .hasScreenRecordingPermission();
       final accessibility = await MacosWindowToolkitPlatform.instance
           .hasAccessibilityPermission();
+      if (generation != _generation) return;
 
       // Check for changes
       final previous = _previousState;
@@ -199,6 +206,7 @@ class PermissionWatcher {
       // Update previous state for next comparison
       _previousState = permissionStatus;
     } catch (e) {
+      if (generation != _generation) return;
       // Emit error state
       final errorStatus = PermissionStatus(
         screenRecording: null,
