@@ -12,11 +12,11 @@ From reading the source:
 - **Accessibility.** The check is `AXIsProcessTrusted`. The request is `AXIsProcessTrustedWithOptions` with the prompt option, which returns the *current* state rather than the user's answer.
 - **Settings.** Each "open settings" call tries the specific Privacy pane URL, then Privacy & Security, then System Settings.
 - **Pre-10.15 branches** return `true`. The podspec floor is `osx 10.15`, so those branches never run.
-- **Prechecks.** Capture, close, focus and scroll each create a fresh `PermissionHandler()` for their precheck. Nothing caches the state.
+- **Prechecks.** Capture, close, focus and scroll check through `PermissionChecking`, the protocol `PermissionHandler` conforms to. The dispatcher passes its own `PermissionHandler` to `AXWindowActions` and to each `CaptureHandler` call; a test can pass a fake. Each check calls the system again: nothing caches the state.
 - **Who gets the grant.** When the host is launched from a terminal, TCC attributes both permissions to the terminal app, the responsible process (issue #1 comment, 2026-06-12).
 
 ## Code
-- `macos/Classes/PermissionHandler.swift — PermissionHandler` (all six methods)
+- `macos/Classes/PermissionHandler.swift — PermissionChecking`, `PermissionHandler` (all six methods)
 - `macos/Classes/MacosWindowToolkitPlugin.swift — hasScreenRecordingPermission`, `requestScreenRecordingPermission`, `openScreenRecordingSettings`, `hasAccessibilityPermission`, `requestAccessibilityPermission`, `openAccessibilitySettings`
 - `lib/src/method_channel/permission_operations_channel.dart — PermissionOperationsChannel`
 - `lib/src/platform_interface/permission_operations_interface.dart — PermissionOperationsInterface`

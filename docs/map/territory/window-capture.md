@@ -10,10 +10,10 @@ Captures one window to PNG bytes with ScreenCaptureKit, optionally cropping the 
 From reading the source:
 - **Gates, in order.**
   1. The dispatcher requires macOS 12.3. Below it, `captureWindow` returns the state `unsupported_version` and `getCapturableWindows` throws `UNSUPPORTED_MACOS_VERSION`.
-  2. `CaptureHandler.captureWindow` and `isWindowFullScreen` require Screen Recording (`CGPreflightScreenCaptureAccess`).
+  2. `CaptureHandler.captureWindow`, `isWindowFullScreen` and `getCapturableWindows` require Screen Recording (`requireScreenRecording`, through the injected `PermissionChecking`), each with its own message.
   3. They then require **macOS 14.0** for `SCScreenshotManager` (`REQUIRES_MACOS_14`, which reaches Dart as `unsupportedVersion` since #7). `getCapturableWindows` needs only 12.3.
-- **Lookup.** The window is found by `windowID` in `SCShareableContent.current`. A window missing there is `INVALID_WINDOW_ID` → `windowNotFound`.
-- **Minimized check.** The window is refused if an AX window of the owning app is minimized and its title matches. See [ax-window-identity-by-title](../invariant/ax-window-identity-by-title.md).
+- **Lookup.** The window is found by `windowID` in `SCShareableContent.current` (`CaptureHandler.window(_:in:)`, shared by capture and the fullscreen check). A window missing there is `INVALID_WINDOW_ID` → `windowNotFound`.
+- **Minimized check.** The window is refused if an AX window of the owning app is minimized and its title matches (`CaptureHandler.isMinimized`). It reads `kAXMinimizedAttribute` because `isOnScreen` is false both for a minimized window and for one on another Space, and only the first may be refused. See [ax-window-identity-by-title](../invariant/ax-window-identity-by-title.md).
 - **Output size.** `SCStreamConfiguration` width/height are the window frame's **points** (`Int(frame.width)`). No scale factor is applied, `scalesToFit = false`, and the cursor is hidden.
 - **Post-processing order**, all inside one `autoreleasepool`:
   1. Titlebar crop: 28pt default, or `customTitlebarHeight`; 0 for a fullscreen window.
@@ -23,12 +23,13 @@ From reading the source:
   5. PNG via `NSBitmapImageRep`.
 - **Memory.** The pool exists because `Task` threads don't drain autorelease pools (#4, commit e08c3bb). CHANGELOG 1.9.0 reports a ~19MB lower transient peak over a 300-capture soak (commit 1888f54, 2026-06-12).
 - **Fullscreen.** A window is fullscreen when its SC frame equals some `NSScreen.frame` exactly (`isFullscreenWindow`).
-- **Error classification.** NSError codes -3801/-3803 count as a permission denial. Otherwise the domain and the words "permission"/"not permitted"/"denied" are checked, and everything else is `captureFailed`.
+- **Error classification.** `CaptureHandler.classify`, used by `captureWindow` and `getCapturableWindows`: NSError codes -3801/-3803 count as a permission denial; so does an error from a ScreenCaptureKit, Cocoa or OSStatus domain whose description says "permission", "not permitted" or "denied". Everything else is `captureFailed`. `isWindowFullScreen` classifies nothing: a ScreenCaptureKit error reaches the dispatcher as `FULLSCREEN_CHECK_FAILED`.
+- **Error values.** Every `CaptureError` case carries one `NativeFailure` (message, and the `NSError` code and domain when there is one).
 - **Capturable windows.** `getCapturableWindows` drops windows with an empty title.
 - **Input bounds.** `targetWidth/Height` and the crop values are not validated. Zero or negative values make `CGContext` return nil (→ `captureFailed`), and a huge value allocates that size.
 
 ## Code
-- `macos/Classes/CaptureHandler.swift — CaptureHandler.captureWindow`, `getCapturableWindows`, `isWindowFullScreen`, `isFullscreenWindow`, `cropTransparentBorders`, `resizeImageToExactSize`, `resizeImagePreservingAspectRatio`, `convertCGImageToPNG`, `CaptureError` (top-level, so the pre-12.3 dispatcher branches can use it)
+- `macos/Classes/CaptureHandler.swift — CaptureHandler.captureWindow`, `getCapturableWindows`, `isWindowFullScreen`, `requireScreenRecording`, `window(_:in:)`, `isMinimized`, `classify`, `isFullscreenWindow`, `cropTransparentBorders`, `resizeImageToExactSize`, `resizeImagePreservingAspectRatio`, `convertCGImageToPNG`, `NativeFailure`, `CaptureError` (top-level, so the pre-12.3 dispatcher branches can use it)
 - `macos/Classes/MacosWindowToolkitPlugin.swift — captureWindow`, `getCapturableWindows`, `isWindowFullScreen`
 - `lib/src/method_channel/capture_operations_channel.dart — CaptureOperationsChannel`
 - `lib/src/method_channel/window_operations_channel.dart — WindowOperationsChannel.isWindowFullScreen`
@@ -53,5 +54,4 @@ From reading the source:
 ## Known holes / open
 - Output is in points, not pixels. Whether that is intended is not recorded.
 - `isFullscreenWindow` compares an `SCWindow.frame` with `NSScreen.frame`. The two may use different coordinate origins (top-left global vs. bottom-left Cocoa), which would break detection on non-primary displays. This needs confirming against Apple's docs.
-- `CaptureHandler.getWindowInfo` has no caller.
 - `captureInProgress` and `windowNotCapturable` exist in Dart, but no Swift path raises `CAPTURE_IN_PROGRESS` or `WINDOW_NOT_CAPTURABLE`.

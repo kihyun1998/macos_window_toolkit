@@ -15,7 +15,8 @@ From reading the source:
 - **Map conversion.** `getAllScreensInfo` goes through `invokeList` and `getMacOSVersionInfo` through `stringKeyed` (both in `lib/src/method_channel/channel_calls.dart`). `MacosScreenInfo.fromMap` also copies its nested `frame` and `visibleFrame` itself; see [channel-bridge](channel-bridge.md).
 
 ## Code
-- `macos/Classes/VersionUtil.swift — VersionUtil.getMacOSVersionInfo`, `isScreenCaptureKitAvailable`, `getMacOSVersion`, `isMacOSVersionSupported`
+- `macos/Classes/VersionUtil.swift — VersionUtil.getMacOSVersionInfo`, `isScreenCaptureKitAvailable`, `getMacOSVersion`
+- `macos/Classes/ScreenInfo.swift — ScreenInfo.mainScaleFactor`, `allScreens`
 - `macos/Classes/MacosWindowToolkitPlugin.swift — getMacOSVersionInfo`, `getScreenScaleFactor`, `getAllScreensInfo`
 - `lib/src/method_channel/system_info_channel.dart — SystemInfoChannel`
 - `lib/src/models/macos_version_info.dart — MacosVersionInfo`
@@ -28,9 +29,8 @@ From reading the source:
 **None.**
 
 ## Blast radius
-- [window-capture](window-capture.md): `isFullscreenWindow` compares window frames with `NSScreen` frames, the same screen description reported here. It also uses `VersionUtil.isScreenCaptureKitAvailable` and `getMacOSVersion` for its gate and its error details.
+- [window-capture](window-capture.md): `isFullscreenWindow` compares window frames with `NSScreen` frames, the same screen description reported here. It also uses `VersionUtil.getMacOSVersion` for its error details.
 - [example-app](example-app.md): `example/lib/widgets/version_info_card.dart` and the window detail sheet display these values.
 
 ## Known holes / open
-- `VersionUtil.isMacOSVersionSupported` has no caller.
 - A consumer that positions windows using `getAllScreensInfo` frames with CG window coordinates mixes two origins. Nothing in the API says which space each uses.

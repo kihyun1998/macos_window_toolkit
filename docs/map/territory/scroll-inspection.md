@@ -8,8 +8,8 @@ Reports whether a window has vertical or horizontal scroll bars and where they s
 
 ## Design model
 From reading the source:
-- **Lookup.** Same precheck and element lookup as [window-control](window-control.md): `AXIsProcessTrusted`, `getWindowById`, `findWindowElementFlexible` → `findWindowElement`. A missing element returns `windowNotAccessible`.
-- **`getScrollInfoFromElement` tries three strategies in order** and stops at the first that finds a bar:
+- **Lookup.** Same precheck and element lookup as [window-control](window-control.md): `AXWindowLookup.target`, then `AXWindowLookup.element`. A missing element returns `windowNotAccessible`.
+- **`AXWindowActions.scrollInfo(of:)` tries three strategies in order** and stops at the first that finds a bar:
   1. an `AXScrollArea` among the window's direct children;
   2. scroll-bar attributes on the window itself;
   3. a recursive search for `AXScrollArea` to depth 5.
@@ -17,7 +17,7 @@ From reading the source:
 - **Result.** Success is `{"success": true, "scrollInfo": {...}}`, parsed by `ScrollInfo.fromMap` into `ScrollSuccess`.
 
 ## Code
-- `macos/Classes/WindowHandler.swift — WindowHandler.getScrollInfo`, `getScrollInfoFromElement`, `findScrollArea`, `findScrollAreaRecursively`, `extractScrollBarInfo`
+- `macos/Classes/AXWindowActions.swift — AXWindowActions.getScrollInfo`, `scrollInfo(of:)`, `findScrollArea`, `findScrollAreaRecursively`, `readScrollBars`, `position(of:)`, `ScrollInfo`
 - `macos/Classes/MacosWindowToolkitPlugin.swift — getScrollInfo`
 - `lib/src/method_channel/window_operations_channel.dart — WindowOperationsChannel.getScrollInfo`, `_parseScrollResult`
 - `lib/src/models/scroll_info.dart — ScrollInfo`, `ScrollOperationResult`, `ScrollFailureReason`
@@ -27,7 +27,6 @@ From reading the source:
 
 ## Cross-cutting invariants
 - [ax-window-identity-by-title](../invariant/ax-window-identity-by-title.md)
-- [window-dictionary-shape](../invariant/window-dictionary-shape.md)
 - [failure-code-vocabulary](../invariant/failure-code-vocabulary.md)
 
 ## Blast radius
