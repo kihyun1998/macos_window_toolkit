@@ -38,6 +38,8 @@ class OperationFailure extends WindowOperationResult {
         return 'Unable to bring window to front';
       case WindowOperationFailureReason.windowStillOpen:
         return 'The window is still open';
+      case WindowOperationFailureReason.windowNotFocused:
+        return 'The window did not become focused';
       case WindowOperationFailureReason.unknown:
         return message ?? 'Operation failed';
     }
@@ -54,6 +56,7 @@ class OperationFailure extends WindowOperationResult {
       case WindowOperationFailureReason.closeButtonNotFound:
       case WindowOperationFailureReason.focusActionFailed:
       case WindowOperationFailureReason.windowStillOpen:
+      case WindowOperationFailureReason.windowNotFocused:
       case WindowOperationFailureReason.unknown:
         return false;
     }
@@ -71,6 +74,8 @@ class OperationFailure extends WindowOperationResult {
       case WindowOperationFailureReason.closeButtonNotFound:
       case WindowOperationFailureReason.windowStillOpen:
         return 'The app may be asking whether to save changes; check the window';
+      case WindowOperationFailureReason.windowNotFocused:
+        return 'macOS activates another app only for the frontmost app; call this while your app is frontmost';
       case WindowOperationFailureReason.focusActionFailed:
       case WindowOperationFailureReason.unknown:
         return null;
@@ -102,6 +107,10 @@ enum WindowOperationFailureReason {
   /// The close button was pressed, but the window was still open when
   /// `closeWindow`'s `waitUntilClosed` ran out.
   windowStillOpen,
+
+  /// The window was not the focused window of the frontmost app when
+  /// `focusWindow`'s `waitUntilFocused` ran out.
+  windowNotFocused,
 
   /// Unknown operation state (not a system error)
   unknown,

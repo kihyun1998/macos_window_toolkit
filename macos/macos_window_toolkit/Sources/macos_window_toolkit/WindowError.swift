@@ -16,6 +16,7 @@ enum WindowError: PluginError {
     case windowNotAccessible
     case spaceSwitchAPIUnavailable
     case windowStillOpen
+    case windowNotFocused
 
     var code: String {
         switch self {
@@ -33,6 +34,7 @@ enum WindowError: PluginError {
         case .windowNotAccessible: return "WINDOW_NOT_ACCESSIBLE"
         case .spaceSwitchAPIUnavailable: return "SPACE_SWITCH_API_UNAVAILABLE"
         case .windowStillOpen: return "WINDOW_STILL_OPEN"
+        case .windowNotFocused: return "WINDOW_NOT_FOCUSED"
         }
     }
 
@@ -45,6 +47,7 @@ enum WindowError: PluginError {
         case .processNotFound, .invalidProcessId: return "process_not_found"
         case .windowNotAccessible: return "window_not_accessible"
         case .windowStillOpen: return "window_still_open"
+        case .windowNotFocused: return "window_not_focused"
         case .failedToRetrieveWindowList, .insufficientWindowInfo, .closeActionFailed,
             .terminationFailed, .failedToGetProcessList, .spaceSwitchAPIUnavailable:
             return nil
@@ -67,6 +70,7 @@ enum WindowError: PluginError {
         case .windowNotAccessible: return "Window is not accessible via Accessibility API"
         case .spaceSwitchAPIUnavailable: return "Private CGS Space APIs are not available"
         case .windowStillOpen: return "Window is still open"
+        case .windowNotFocused: return "Window did not become focused"
         }
     }
 
@@ -100,6 +104,8 @@ enum WindowError: PluginError {
             return "The window is on a different Space but the required private APIs are unavailable on this macOS version."
         case .windowStillOpen:
             return "The close button was pressed, but the window did not close within the requested time. The app may be asking whether to save changes."
+        case .windowNotFocused:
+            return "Focus was requested, but the window was not the focused window of the frontmost app within the requested time. macOS activates another app only when the calling app is frontmost."
         }
     }
 }

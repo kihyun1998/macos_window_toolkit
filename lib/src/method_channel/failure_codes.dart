@@ -25,6 +25,7 @@ const _reasonByCode = {
   'CLOSE_BUTTON_NOT_FOUND': 'close_button_not_found',
   'FOCUS_ACTION_FAILED': 'focus_action_failed',
   'WINDOW_STILL_OPEN': 'window_still_open',
+  'WINDOW_NOT_FOCUSED': 'window_not_focused',
   'WINDOW_MINIMIZED': 'window_minimized',
   'UNSUPPORTED_MACOS_VERSION': 'unsupported_version',
   'REQUIRES_MACOS_14': 'unsupported_version',
@@ -44,6 +45,7 @@ const _windowReasons = {
   'close_button_not_found': WindowOperationFailureReason.closeButtonNotFound,
   'focus_action_failed': WindowOperationFailureReason.focusActionFailed,
   'window_still_open': WindowOperationFailureReason.windowStillOpen,
+  'window_not_focused': WindowOperationFailureReason.windowNotFocused,
 };
 
 const _captureReasons = {

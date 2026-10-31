@@ -136,9 +136,51 @@ final class AXWindowActions {
 
     // MARK: - Focus
 
-    /// Makes the window its app's main window, activates the app and raises the window.
-    /// It succeeds when either Accessibility call does.
-    func focusWindow(_ windowId: Int) -> Result<Bool, WindowError> {
+    /// Makes the window its app's main window, activates the app and raises the window,
+    /// and calls `completion` with the result. Without `waitUntilFocused` it succeeds at
+    /// once when either Accessibility call does. With it, it succeeds once the window is
+    /// focused (`isFocused`), polled on the main queue, and fails with `windowNotFocused`
+    /// when the window is not focused after `waitUntilFocused` seconds.
+    func focusWindow(
+        _ windowId: Int, waitUntilFocused: TimeInterval? = nil,
+        completion: @escaping (Result<Bool, WindowError>) -> Void
+    ) {
+        let element: AXUIElement
+        let processId: Int
+        switch requestFocus(windowId) {
+        case .failure(let error):
+            completion(.failure(error))
+            return
+        case .success(let found):
+            (element, processId) = found
+        }
+        guard let wait = waitUntilFocused else {
+            completion(.success(true))
+            return
+        }
+        pollOnMain(every: 0.05, for: wait, attempt: {
+            AXWindowActions.isFocused(element, processId: pid_t(processId)) ? true : nil
+        }) { focused in
+            completion(focused == nil ? .failure(.windowNotFocused) : .success(true))
+        }
+    }
+
+    /// Whether `element` is the focused window of its app, and that app is frontmost
+    static func isFocused(_ element: AXUIElement, processId: pid_t) -> Bool {
+        guard NSWorkspace.shared.frontmostApplication?.processIdentifier == processId,
+            let focused = AXUIElementCreateApplication(processId)
+                .elementAttribute(kAXFocusedWindowAttribute)
+        else {
+            return false
+        }
+        return CFEqual(focused, element)
+    }
+
+    /// Makes the window main, activates its app and raises the window. Returns the window's
+    /// element and process ID when either Accessibility call succeeded.
+    private func requestFocus(_ windowId: Int) -> Result<
+        (element: AXUIElement, processId: Int), WindowError
+    > {
         let element: AXUIElement
         let processId: Int
         switch lookup.element(for: windowId, missing: .windowNotFound) {
@@ -152,13 +194,13 @@ final class AXWindowActions {
             element, kAXMainAttribute as CFString, kCFBooleanTrue)
 
         if let app = NSRunningApplication(processIdentifier: pid_t(processId)) {
-            app.activate(options: [.activateIgnoringOtherApps])
+            app.activate(options: [])
         }
 
         let raiseResult = AXUIElementPerformAction(element, kAXRaiseAction as CFString)
 
         if setMainResult == .success || raiseResult == .success {
-            return .success(true)
+            return .success((element, processId))
         }
         return .failure(.focusActionFailed)
     }

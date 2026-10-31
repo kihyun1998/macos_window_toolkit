@@ -1,6 +1,7 @@
 ## Unreleased
 
 ### Added
+- **FEAT**: `focusWindow()` takes an optional `waitUntilFocused` duration. With it, the call replies once the window's app is frontmost and the window is that app's focused window, or fails with the new `WindowOperationFailureReason.windowNotFocused` when that is not seen within the duration. Without it, nothing changes, and success still means only that the window was made main or raised: since macOS 14 an app brings another app to the front only while it is frontmost itself
 - **FEAT**: the plugin supports Swift Package Manager on macOS (`macos/macos_window_toolkit/Package.swift`, macOS 10.15). An app with Swift Package Manager enabled builds it as a package, and Flutter no longer warns that the plugin requires CocoaPods. Apps that use CocoaPods are unaffected
 - **FEAT**: `closeWindow()` takes an optional `waitUntilClosed` duration. With it, the call replies once the window has really closed, or fails with the new `WindowOperationFailureReason.windowStillOpen` when the window is still open after the duration (an app asking whether to save changes, or ignoring the close button). Without it, nothing changes
   - "Closed" is read from the window's Accessibility element, not from the window list: an app can keep a closed window in the window list, off screen, for up to a minute
@@ -20,6 +21,7 @@
 - **FIX**: an app whose window reports a close button or scroll bar that is not an Accessibility element no longer crashes the host app. `closeWindow()` then searches the window's children for the close button, and `getScrollInfo()` reports the bar without its position
 
 ### Changed
+- **BREAKING (source)**: `WindowOperationFailureReason` gains `windowNotFocused`, and `PlatformErrorCode` gains `windowNotFocused` (`WINDOW_NOT_FOCUSED`). An exhaustive `switch` over either needs the new case
 - **BREAKING (source)**: `WindowOperationFailureReason` gains `windowStillOpen`, and `PlatformErrorCode` gains `windowStillOpen` (`WINDOW_STILL_OPEN`). An exhaustive `switch` over either needs the new case
 - **CHANGED**: the `closeWindow()` docs now say that, without `waitUntilClosed`, `OperationSuccess` means the close button was pressed, not that the window has closed
 - **CHANGED**: `closeWindow()` on a window in another Space no longer holds the main thread while it waits up to one second for the window after switching Space; the wait is scheduled, and the reply comes when it ends. Two closes that both need a Space switch run one after the other (a close whose window is already visible because of the other's switch closes at once), and the original Space is restored on every outcome. Results and failure reasons are unchanged

@@ -18,6 +18,7 @@ The Window Management API provides comprehensive functionality for discovering a
 | [`getWindowsAdvanced()`](#getwindowsadvanced) | Advanced filtering with multiple criteria | 14 optional parameters | `Future<List<MacosWindowInfo>>` |
 | [`isWindowAlive()`](#iswindowalive) | Check window existence | `windowId` | `Future<bool>` |
 | [`closeWindow()`](#closewindow) | Close window via Accessibility | `windowId`, `waitUntilClosed` | `Future<WindowOperationResult>` |
+| [`focusWindow()`](#focuswindow) | Bring window to front via Accessibility | `windowId`, `waitUntilFocused` | `Future<WindowOperationResult>` |
 
 ## Methods
 
@@ -498,6 +499,62 @@ switch (result) {
 - May be blocked by modal dialogs
 - Requires application to support window closing via AppleScript
 - User may need to interact with confirmation dialogs
+
+### `focusWindow()`
+
+Brings a window to the front: makes it its app's main window and raises it through the Accessibility API, and activates its app.
+
+**Signature:**
+```dart
+Future<WindowOperationResult> focusWindow(
+  int windowId, {
+  Duration? waitUntilFocused,
+})
+```
+
+**Parameters:**
+- `windowId` - Unique window identifier of the window to focus
+- `waitUntilFocused` (optional, positive) - How long to wait for the window to really be focused. Without it the call replies as soon as the requests are accepted
+
+**Returns:**
+- `OperationSuccess`:
+  - without `waitUntilFocused`: the window was made main or raised. Its app may not have come to the front: macOS activates another app only when the calling app is frontmost
+  - with `waitUntilFocused`: the window's app is frontmost and the window is that app's focused window
+- `OperationFailure` with:
+  - `windowNotFound` - no window has this ID, or its app reports no Accessibility window for it
+  - `accessibilityPermissionDenied` - Accessibility permission is not granted
+  - `focusActionFailed` - neither making the window main nor raising it was accepted
+  - `windowNotFocused` - only with `waitUntilFocused`: the window was not focused when it ran out
+  - `unknown` - any other failure
+
+**Throws:**
+- `ArgumentError` when `waitUntilFocused` is zero or negative
+- `PlatformException` only for system errors such as `INVALID_ARGUMENTS`
+
+**Example:**
+```dart
+final toolkit = MacosWindowToolkit();
+
+// Focus the window and wait up to 2 seconds to see it in front
+final result = await toolkit.focusWindow(
+  12345,
+  waitUntilFocused: const Duration(seconds: 2),
+);
+switch (result) {
+  case OperationSuccess():
+    print('Window is focused');
+  case OperationFailure(reason: WindowOperationFailureReason.windowNotFocused):
+    print('Not focused - is this app frontmost?');
+  case OperationFailure(:final reason, :final message):
+    print('Could not focus the window: $reason $message');
+}
+```
+
+**Important Notes:**
+- Requires Accessibility permission
+- Without `waitUntilFocused`, success means only that the focus was requested
+- Since macOS 14 an app can bring another app to the front only while it is frontmost itself. A call made from a timer, or after the user switched to another app, is refused by macOS; with `waitUntilFocused` that refusal arrives as `windowNotFocused`
+- Focus does not switch Spaces
 
 ---
 

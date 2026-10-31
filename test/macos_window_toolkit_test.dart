@@ -236,6 +236,28 @@ void main() {
       expect(calls, isEmpty);
     });
 
+    test(
+        'focusWindow sends waitUntilFocusedMs only when waitUntilFocused is given',
+        () async {
+      reply({'success': true});
+      await toolkit.focusWindow(7);
+      expectCall('focusWindow', {'windowId': 7});
+
+      calls.clear();
+      await toolkit.focusWindow(7,
+          waitUntilFocused: const Duration(seconds: 1, milliseconds: 250));
+      expectCall('focusWindow', {'windowId': 7, 'waitUntilFocusedMs': 1250});
+    });
+
+    test('focusWindow rejects a waitUntilFocused that is not positive', () {
+      reply({'success': true});
+      for (final wait in [Duration.zero, const Duration(milliseconds: -1)]) {
+        expect(() => toolkit.focusWindow(7, waitUntilFocused: wait),
+            throwsArgumentError);
+      }
+      expect(calls, isEmpty);
+    });
+
     test('isWindowFullScreen sends the window id and returns the bool',
         () async {
       reply(true);

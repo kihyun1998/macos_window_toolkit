@@ -49,6 +49,9 @@ enum PlatformErrorCode {
 
   /// The window was still open when `closeWindow`'s `waitUntilClosed` ran out.
   windowStillOpen('WINDOW_STILL_OPEN'),
+
+  /// The window was not focused when `focusWindow`'s `waitUntilFocused` ran out.
+  windowNotFocused('WINDOW_NOT_FOCUSED'),
   windowNotAccessible('WINDOW_NOT_ACCESSIBLE'),
   spaceSwitchAPIUnavailable('SPACE_SWITCH_API_UNAVAILABLE'),
   fullScreenCheckFailed('FULLSCREEN_CHECK_FAILED'),
@@ -126,6 +129,8 @@ enum PlatformErrorCode {
         return 'Unable to bring window to front';
       case PlatformErrorCode.windowStillOpen:
         return 'The window did not close in time';
+      case PlatformErrorCode.windowNotFocused:
+        return 'The window did not become focused in time';
       case PlatformErrorCode.windowNotAccessible:
         return 'Window is not accessible (may be on a different Space, or its app does not support Accessibility)';
       case PlatformErrorCode.spaceSwitchAPIUnavailable:

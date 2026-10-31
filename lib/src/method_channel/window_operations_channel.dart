@@ -138,9 +138,19 @@ mixin WindowOperationsChannel {
     });
   }
 
-  Future<WindowOperationResult> focusWindow(int windowId) {
-    return invokeOperation(
-        methodChannel, 'focusWindow', {'windowId': windowId});
+  Future<WindowOperationResult> focusWindow(
+    int windowId, {
+    Duration? waitUntilFocused,
+  }) {
+    if (waitUntilFocused != null && waitUntilFocused <= Duration.zero) {
+      throw ArgumentError.value(
+          waitUntilFocused, 'waitUntilFocused', 'must be positive');
+    }
+    return invokeOperation(methodChannel, 'focusWindow', {
+      'windowId': windowId,
+      if (waitUntilFocused != null)
+        'waitUntilFocusedMs': waitUntilFocused.inMilliseconds,
+    });
   }
 
   Future<bool> isWindowFullScreen(int windowId) async {
