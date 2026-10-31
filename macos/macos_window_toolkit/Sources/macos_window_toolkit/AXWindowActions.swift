@@ -165,12 +165,15 @@ final class AXWindowActions {
         }
     }
 
-    /// Whether `element` is the focused window of its app, and that app is frontmost
+    /// Whether `element` is the focused window of its app, and that app is frontmost. The
+    /// app is asked with a 0.1 s Accessibility messaging timeout.
     static func isFocused(_ element: AXUIElement, processId: pid_t) -> Bool {
-        guard NSWorkspace.shared.frontmostApplication?.processIdentifier == processId,
-            let focused = AXUIElementCreateApplication(processId)
-                .elementAttribute(kAXFocusedWindowAttribute)
-        else {
+        guard NSWorkspace.shared.frontmostApplication?.processIdentifier == processId else {
+            return false
+        }
+        let app = AXUIElementCreateApplication(processId)
+        AXUIElementSetMessagingTimeout(app, 0.1)
+        guard let focused = app.elementAttribute(kAXFocusedWindowAttribute) else {
             return false
         }
         return CFEqual(focused, element)

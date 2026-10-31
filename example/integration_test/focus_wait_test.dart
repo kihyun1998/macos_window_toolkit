@@ -33,7 +33,8 @@ Future<int?> _frontmostPid() async {
   return int.tryParse(RegExp(r'(\d+)\s*$').firstMatch(info)?.group(1) ?? '');
 }
 
-/// An applet that activates the process whose PID is in [_pidFile]. An app
+/// An applet that activates the process whose PID is in the file at
+/// `PID_FILE`, which [setUpAll] fills in. An app
 /// that `open` launches is frontmost, and a frontmost app may activate
 /// another; this test app was not launched through LaunchServices, so `open`
 /// cannot bring it forward itself.
@@ -42,24 +43,25 @@ ObjC.import('AppKit');
 ObjC.import('Foundation');
 function run() {
   var pid = parseInt($.NSString.stringWithContentsOfFileEncodingError(
-      '/tmp/macos_window_toolkit_focus_pid', $.NSUTF8StringEncoding, null).js);
+      'PID_FILE', $.NSUTF8StringEncoding, null).js);
   $.NSRunningApplication.runningApplicationWithProcessIdentifier(pid)
       .activateWithOptions(0);
 }
 ''';
-const _pidFile = '/tmp/macos_window_toolkit_focus_pid';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   final toolkit = MacosWindowToolkit();
   late File script;
   late String activatorApp;
+  late File pidFile;
 
   setUpAll(() async {
     final dir = Directory.systemTemp.createTempSync('focus_wait');
     script = File('${dir.path}/tk_window.py')..writeAsStringSync(_tkWindow);
+    pidFile = File('${dir.path}/focus_pid');
     final source = File('${dir.path}/activator.js')
-      ..writeAsStringSync(_activator);
+      ..writeAsStringSync(_activator.replaceFirst('PID_FILE', pidFile.path));
     activatorApp = '${dir.path}/Activator.app';
     final compiled = await Process.run('/usr/bin/osacompile', [
       '-l',
@@ -69,11 +71,6 @@ void main() {
       source.path,
     ]);
     expect(compiled.exitCode, 0, reason: '${compiled.stderr}');
-  });
-
-  tearDownAll(() {
-    final file = File(_pidFile);
-    if (file.existsSync()) file.deleteSync();
   });
 
   /// Opens a Tk window and returns its process and window id once listed.
@@ -113,7 +110,7 @@ void main() {
   /// Puts this test app in front, through the activator applet. Another app
   /// can take the front back meanwhile, so it tries up to three times.
   Future<void> testAppInFront() async {
-    File(_pidFile).writeAsStringSync('$pid');
+    pidFile.writeAsStringSync('$pid');
     for (var attempt = 0; attempt < 3; attempt++) {
       await Process.run('/usr/bin/open', [activatorApp]);
       final deadline = DateTime.now().add(const Duration(seconds: 5));
