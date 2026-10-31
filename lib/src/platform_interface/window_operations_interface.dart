@@ -229,19 +229,30 @@ mixin WindowOperationsInterface {
   ///
   /// [windowId] is the unique identifier of the window to focus.
   ///
-  /// This method uses the Accessibility API to bring the window to the front
-  /// of all other windows. The window will be raised to the topmost layer and
-  /// become the active window.
+  /// The window is made its app's main window and raised, and its app is
+  /// activated. Without [waitUntilFocused], success means macOS accepted those
+  /// requests, not that the window came to the front: macOS activates another
+  /// app only when the calling app is frontmost, and reports success anyway
+  /// when it refuses. With [waitUntilFocused], which must be positive, the call
+  /// succeeds once the window's app is frontmost and the window is that app's
+  /// focused window, and fails with
+  /// [WindowOperationFailureReason.windowNotFocused] when that is not seen
+  /// within the duration.
   ///
   /// **Note**: This method requires accessibility permissions.
   ///
   /// Returns:
-  /// - [OperationSuccess] if the window was successfully focused
+  /// - [OperationSuccess] without [waitUntilFocused]: the window was made main
+  ///   or raised; with [waitUntilFocused]: the window is focused
   /// - [OperationFailure] with one of the following reasons:
   ///   - [WindowOperationFailureReason.windowNotFound]: Window no longer exists
   ///   - [WindowOperationFailureReason.accessibilityPermissionDenied]: Permission not granted
-  ///   - [WindowOperationFailureReason.focusActionFailed]: Unable to focus window
+  ///   - [WindowOperationFailureReason.focusActionFailed]: Neither request was accepted
+  ///   - [WindowOperationFailureReason.windowNotFocused]: Only with [waitUntilFocused]:
+  ///     the window was not focused when the duration ran out
   ///   - [WindowOperationFailureReason.unknown]: Other failure states
+  ///
+  /// Throws [ArgumentError] when [waitUntilFocused] is zero or negative.
   ///
   /// Throws [PlatformException] only for system errors (invalid arguments, internal errors).
   ///
@@ -260,7 +271,10 @@ mixin WindowOperationsInterface {
   ///     }
   /// }
   /// ```
-  Future<WindowOperationResult> focusWindow(int windowId) {
+  Future<WindowOperationResult> focusWindow(
+    int windowId, {
+    Duration? waitUntilFocused,
+  }) {
     throw UnimplementedError('focusWindow() has not been implemented.');
   }
 

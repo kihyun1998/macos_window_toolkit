@@ -336,7 +336,10 @@ public class MacosWindowToolkitPlugin: NSObject, FlutterPlugin {
     guard
       let windowId: Int = required("windowId", of: call, result, "WindowId parameter is required")
     else { return }
-    reply(windowActions.focusWindow(windowId), result)
+    let waitUntilFocused = (arguments(call)["waitUntilFocusedMs"] as? Int).map { TimeInterval($0) / 1000 }
+    windowActions.focusWindow(windowId, waitUntilFocused: waitUntilFocused) { [weak self] focusResult in
+      self?.reply(focusResult, result)
+    }
   }
 
   /// Terminates an application by its process ID

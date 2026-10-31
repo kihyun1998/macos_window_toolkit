@@ -93,7 +93,7 @@ if (apps case ApplicationSuccess(applications: final appList)) {
 | `isWindowAlive(int id)` | Check if window exists |
 | `isWindowFullScreen(int id)` | Check fullscreen state across Spaces (requires Screen Recording) |
 | `closeWindow(int id)` | Close a window, including windows on other Spaces (requires Accessibility) |
-| `focusWindow(int id)` | Focus/bring window to front (requires Accessibility) |
+| `focusWindow(int id, {Duration? waitUntilFocused})` | Bring window to front (requires Accessibility); with `waitUntilFocused`, succeed only once it is focused |
 | `getScrollInfo(int id)` | Get scroll position (requires Accessibility) |
 
 ### Screen Capture (2 methods)
