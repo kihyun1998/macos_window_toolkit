@@ -210,6 +210,116 @@ void main() {
     });
   });
 
+  group('overlapping checks', () {
+    /// Starts watching twice while Screen Recording replies are held, so two
+    /// checks are in flight: `held[0]` is the older, `held[1]` the newer.
+    Future<List<PermissionStatus>> startTwoHeldChecks() async {
+      final events = <PermissionStatus>[];
+      final sub = watcher.permissionStream.listen(events.add);
+      addTearDown(sub.cancel);
+      platform.holding = true;
+      watcher.startWatching(interval: tick);
+      await Future<void>.delayed(Duration.zero);
+      watcher.startWatching(interval: tick);
+      await Future<void>.delayed(Duration.zero);
+      expect(platform.held, hasLength(2));
+      return events;
+    }
+
+    test('an older reading finishing last is discarded', () async {
+      final events = await startTwoHeldChecks();
+
+      platform.held[1].complete(false);
+      await Future<void>.delayed(Duration.zero);
+      platform.held[0].complete(true);
+      platform.holding = false;
+      platform.screenRecording = false;
+      final callsBefore = platform.permissionCalls;
+      await pumpTicks();
+
+      expect(platform.permissionCalls, greaterThan(callsBefore),
+          reason: 'polling ticks ran after both replies');
+      expect(events, hasLength(1),
+          reason: 'neither the older reading nor a repeat of the change');
+      expect(events.single.screenRecording, isFalse);
+      expect(events.single.hasChanges, isTrue);
+    });
+
+    test('an older failure finishing last is discarded', () async {
+      final events = await startTwoHeldChecks();
+
+      platform.held[1].complete(true);
+      await Future<void>.delayed(Duration.zero);
+      platform.held[0].completeError(StateError('platform failed'));
+      platform.holding = false;
+      await pumpTicks();
+
+      expect(events, hasLength(1));
+      expect(events.single.screenRecording, isTrue);
+    });
+
+    test('a start still emits its state when a tick finishes before it',
+        () async {
+      final events = <PermissionStatus>[];
+      final sub = watcher.permissionStream.listen(events.add);
+      addTearDown(sub.cancel);
+      watcher.startWatching(interval: tick);
+      await pumpTicks();
+      watcher.stopWatching();
+      expect(events, hasLength(1));
+
+      platform.holding = true;
+      watcher.startWatching(interval: tick);
+      await Future<void>.delayed(tick * 1.5);
+      platform.holding = false;
+      expect(platform.held.length, greaterThanOrEqualTo(2),
+          reason: 'the start check and a tick check are both in flight');
+
+      platform.held[1].complete(true);
+      await Future<void>.delayed(Duration.zero);
+      platform.held[0].complete(true);
+      await pumpTicks();
+
+      expect(events, hasLength(2),
+          reason: 'the second start emits its state although nothing changed');
+      expect(events.last.screenRecording, isTrue);
+      expect(events.last.hasChanges, isFalse);
+    });
+
+    test('a failed start check counts as the start\'s status', () async {
+      final events = <PermissionStatus>[];
+      final sub = watcher.permissionStream.listen(events.add);
+      addTearDown(sub.cancel);
+      watcher.startWatching(interval: tick);
+      await pumpTicks();
+      watcher.stopWatching();
+
+      platform.holding = true;
+      watcher.startWatching(interval: tick);
+      await Future<void>.delayed(Duration.zero);
+      platform.holding = false;
+      platform.held.single.completeError(StateError('platform failed'));
+      await pumpTicks();
+
+      expect(events.map((e) => e.screenRecording), [true, null],
+          reason: 'later unchanged readings emit nothing');
+    });
+
+    test('checks finishing in start order are both applied', () async {
+      final events = await startTwoHeldChecks();
+
+      platform.held[0].complete(true);
+      await Future<void>.delayed(Duration.zero);
+      platform.held[1].complete(false);
+      platform.holding = false;
+      platform.screenRecording = false;
+      await pumpTicks();
+
+      expect(events.map((e) => e.screenRecording), [true, false]);
+      expect(events.map((e) => e.hasChanges), [true, true]);
+    });
+  });
+
   test('a start right after dispose keeps polling for a listener that stays',
       () async {
     final oldSub = watcher.permissionStream.listen((_) {});

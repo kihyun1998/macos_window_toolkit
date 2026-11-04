@@ -342,7 +342,7 @@ void startPermissionWatching({
 
 **Parameters:**
 - `interval` (optional) - Frequency to check permissions. Defaults to 2 seconds.
-- `emitOnlyChanges` (optional) - If `true` (default), only emits when permissions change. If `false`, emits on every check.
+- `emitOnlyChanges` (optional) - If `true` (default), only emits when permissions change. If `false`, emits on every check, except a check that finishes after a newer one.
 
 **Example:**
 ```dart

@@ -1298,7 +1298,8 @@ class MacosWindowToolkit {
   /// Longer intervals are more efficient but may delay permission change detection.
   ///
   /// [emitOnlyChanges] If true (default), only emits when permissions change.
-  /// If false, emits on every check regardless of changes. Set to false if you
+  /// If false, emits on every check regardless of changes, except a check that
+  /// finishes after a newer one. Set to false if you
   /// need regular heartbeat signals or want to show "last checked" timestamps.
   ///
   /// Example usage:
