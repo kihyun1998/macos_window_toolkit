@@ -62,9 +62,18 @@ class PermissionWatcher {
   /// polling auto-resumes when a listener subscribes after an auto-stop.
   bool _watchRequested = false;
 
-  /// Advanced by [dispose]; a check started under an earlier value neither
-  /// emits nor updates [_previousState]
-  int _generation = 0;
+  /// Start number of the most recent check; each check takes the next one
+  int _checksStarted = 0;
+
+  /// Highest start number whose result was applied, or that [dispose]
+  /// superseded. A check numbered at or below it neither emits nor updates
+  /// [_previousState].
+  int _latestApplied = 0;
+
+  /// Start number of the latest forced check whose state has not been
+  /// emitted yet. The first check numbered at or above it that is applied
+  /// emits, so a start's state still arrives when a tick check overtakes it.
+  int? _pendingForcedCheck;
 
   /// Whether the watcher is currently monitoring permissions
   ///
@@ -127,7 +136,8 @@ class PermissionWatcher {
   ///
   /// [interval] The frequency to check permissions (default: 2 seconds)
   /// [emitOnlyChanges] If true, only emits when permissions change. If false,
-  /// emits on every check regardless of changes (default: true for efficiency)
+  /// emits on every check regardless of changes, except a check that finishes
+  /// after a newer one (default: true for efficiency)
   void startWatching({
     Duration interval = const Duration(seconds: 2),
     bool emitOnlyChanges = true,
@@ -176,20 +186,25 @@ class PermissionWatcher {
     _controller?.close();
     _controller = null;
     _previousState = null;
-    _generation++;
+    _latestApplied = _checksStarted;
   }
 
   /// Checks current permission status and emits changes if detected
   ///
+  /// A check that finishes after a later-started check has already applied
+  /// its result, success or failure, is discarded.
+  ///
   /// [forceEmit] If true, always emits the current state regardless of changes
   Future<void> _checkPermissions({bool forceEmit = false}) async {
-    final generation = _generation;
+    final checkNumber = ++_checksStarted;
+    if (forceEmit) _pendingForcedCheck = checkNumber;
     try {
       final screenRecording = await MacosWindowToolkitPlatform.instance
           .hasScreenRecordingPermission();
       final accessibility = await MacosWindowToolkitPlatform.instance
           .hasAccessibilityPermission();
-      if (generation != _generation) return;
+      if (checkNumber <= _latestApplied) return;
+      _latestApplied = checkNumber;
 
       // Check for changes
       final previous = _previousState;
@@ -206,7 +221,8 @@ class PermissionWatcher {
       );
 
       // Decide whether to emit based on settings
-      final shouldEmit = forceEmit || !_emitOnlyChanges || hasChanges;
+      final forced = _takePendingForce(checkNumber) || forceEmit;
+      final shouldEmit = forced || !_emitOnlyChanges || hasChanges;
 
       if (shouldEmit) {
         _controller?.add(permissionStatus);
@@ -215,7 +231,9 @@ class PermissionWatcher {
       // Update previous state for next comparison
       _previousState = permissionStatus;
     } catch (e) {
-      if (generation != _generation) return;
+      if (checkNumber <= _latestApplied) return;
+      _latestApplied = checkNumber;
+      _takePendingForce(checkNumber);
       // Emit error state
       final errorStatus = PermissionStatus(
         screenRecording: null,
@@ -225,5 +243,14 @@ class PermissionWatcher {
       );
       _controller?.add(errorStatus);
     }
+  }
+
+  /// Whether [checkNumber] honours the pending forced emission, clearing it
+  /// when it does
+  bool _takePendingForce(int checkNumber) {
+    final pending = _pendingForcedCheck;
+    if (pending == null || checkNumber < pending) return false;
+    _pendingForcedCheck = null;
+    return true;
   }
 }
