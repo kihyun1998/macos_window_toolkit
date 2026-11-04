@@ -4,18 +4,25 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:macos_window_toolkit/macos_window_toolkit.dart';
 
 /// Fake platform that counts permission checks. Any other platform method
-/// throws via [noSuchMethod]. While [holding] is set, each Screen Recording
-/// check waits for its entry in [held] to complete.
+/// throws via [noSuchMethod]. While [failing] is set, each Screen Recording
+/// check throws and is counted in [failedCalls]; while [holding] is set, it
+/// waits for its entry in [held].
 class _FakePlatform extends MacosWindowToolkitPlatform {
   int permissionCalls = 0;
   bool screenRecording = true;
   bool accessibility = true;
   bool holding = false;
+  bool failing = false;
+  int failedCalls = 0;
   final held = <Completer<bool>>[];
 
   @override
   Future<bool> hasScreenRecordingPermission() async {
     permissionCalls++;
+    if (failing) {
+      failedCalls++;
+      throw StateError('platform failed');
+    }
     if (holding) {
       final reply = Completer<bool>();
       held.add(reply);
@@ -286,7 +293,7 @@ void main() {
       expect(events.last.hasChanges, isFalse);
     });
 
-    test('a failed start check counts as the start\'s status', () async {
+    test('a failed start check is the start\'s status', () async {
       final events = <PermissionStatus>[];
       final sub = watcher.permissionStream.listen(events.add);
       addTearDown(sub.cancel);
@@ -301,8 +308,9 @@ void main() {
       platform.held.single.completeError(StateError('platform failed'));
       await pumpTicks();
 
-      expect(events.map((e) => e.screenRecording), [true, null],
-          reason: 'later unchanged readings emit nothing');
+      expect(events.map((e) => e.screenRecording), [true, null, true],
+          reason: 'the start emits its failure, then the reading after it '
+              'once, as a change');
     });
 
     test('checks finishing in start order are both applied', () async {
@@ -317,6 +325,53 @@ void main() {
 
       expect(events.map((e) => e.screenRecording), [true, false]);
       expect(events.map((e) => e.hasChanges), [true, true]);
+    });
+  });
+
+  group('a failed check', () {
+    /// Sets [failing] until [count] polling checks have failed.
+    Future<void> failChecks([int count = 1]) async {
+      platform.failing = true;
+      while (platform.failedCalls < count) {
+        await Future<void>.delayed(const Duration(milliseconds: 1));
+      }
+      platform.failing = false;
+    }
+
+    test('is what the next check compares against', () async {
+      final events = <PermissionStatus>[];
+      final sub = watcher.permissionStream.listen(events.add);
+      addTearDown(sub.cancel);
+      watcher.startWatching(interval: tick);
+      await pumpTicks();
+
+      await failChecks();
+      await pumpTicks();
+
+      final readings = events.map((e) => e.screenRecording).toList();
+      expect(readings.length, greaterThanOrEqualTo(3));
+      expect(readings.first, isTrue);
+      expect(readings.sublist(1, readings.length - 1), everyElement(isNull),
+          reason: 'the start, then only failures, then the recovery once');
+      expect(readings.last, isTrue, reason: 'the recovery is reported');
+      expect(events.last.hasChanges, isTrue);
+    });
+
+    test('keeps emitting while checks keep failing', () async {
+      final events = <PermissionStatus>[];
+      final sub = watcher.permissionStream.listen(events.add);
+      addTearDown(sub.cancel);
+      watcher.startWatching(interval: tick);
+      await pumpTicks();
+
+      await failChecks(2);
+      await pumpTicks();
+
+      final failures = events.where((e) => e.screenRecording == null);
+      expect(failures.length, platform.failedCalls,
+          reason: 'every failing check emits');
+      expect(failures.length, greaterThanOrEqualTo(2));
+      expect(failures.every((e) => e.hasChanges), isTrue);
     });
   });
 
