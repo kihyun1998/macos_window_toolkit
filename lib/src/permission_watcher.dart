@@ -49,7 +49,8 @@ class PermissionWatcher {
   Timer? _timer;
   StreamController<PermissionStatus>? _controller;
 
-  /// Previous permission state for change detection
+  /// Status of the last applied check, a failure included, for change
+  /// detection
   PermissionStatus? _previousState;
 
   /// Whether to emit only when permissions change
@@ -233,7 +234,6 @@ class PermissionWatcher {
     } catch (e) {
       if (checkNumber <= _latestApplied) return;
       _latestApplied = checkNumber;
-      _takePendingForce(checkNumber);
       // Emit error state
       final errorStatus = PermissionStatus(
         screenRecording: null,
@@ -242,6 +242,7 @@ class PermissionWatcher {
         timestamp: DateTime.now(),
       );
       _controller?.add(errorStatus);
+      _previousState = errorStatus;
     }
   }
 
